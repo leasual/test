@@ -1,9 +1,9 @@
-package com.untouch;
+package com.op;
 
 import android.app.Application;
 
 
-public class UntouchApp extends Application {
+public class MyApp extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
