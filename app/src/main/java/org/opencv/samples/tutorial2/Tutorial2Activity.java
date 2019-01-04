@@ -18,11 +18,10 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
-import android.view.MenuItem;
 import android.view.WindowManager;
 
+import com.op.dm.Utils;
 import com.untouch.androidjnionpencv.opencvnativeandroidstudio.R;
-import com.untouch.dsm.Utils;
 
 public class Tutorial2Activity extends Activity implements CvCameraViewListener2 {
     private static final String    TAG = "OCVSample::Activity";

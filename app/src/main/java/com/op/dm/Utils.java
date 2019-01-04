@@ -1,10 +1,8 @@
-package com.untouch.dsm;
+package com.op.dm;
 
 import android.content.Context;
 import android.content.res.AssetManager;
 import android.util.Log;
-
-import com.untouch.androidjnionpencv.MainActivity;
 
 import java.io.File;
 import java.io.FileNotFoundException;
