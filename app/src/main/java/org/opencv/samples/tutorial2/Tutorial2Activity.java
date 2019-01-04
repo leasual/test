@@ -1,27 +1,23 @@
 package org.opencv.samples.tutorial2;
 
-import org.opencv.android.BaseLoaderCallback;
-import org.opencv.android.CameraBridgeViewBase.CvCameraViewFrame;
-import org.opencv.android.LoaderCallbackInterface;
-import org.opencv.android.OpenCVLoader;
-import org.opencv.core.Core;
-import org.opencv.core.CvType;
-import org.opencv.core.Mat;
-import org.opencv.android.CameraBridgeViewBase;
-import org.opencv.android.CameraBridgeViewBase.CvCameraViewListener2;
-import org.opencv.imgproc.Imgproc;
-
 import android.app.Activity;
-import android.app.ProgressDialog;
 import android.content.Context;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.Menu;
 import android.view.WindowManager;
 
 import com.op.dm.Utils;
-import com.untouch.androidjnionpencv.opencvnativeandroidstudio.R;
+import com.ut.sdk.R;
+
+import org.opencv.android.BaseLoaderCallback;
+import org.opencv.android.CameraBridgeViewBase;
+import org.opencv.android.CameraBridgeViewBase.CvCameraViewFrame;
+import org.opencv.android.CameraBridgeViewBase.CvCameraViewListener2;
+import org.opencv.android.LoaderCallbackInterface;
+import org.opencv.android.OpenCVLoader;
+import org.opencv.core.Mat;
+import org.opencv.imgproc.Imgproc;
 
 public class Tutorial2Activity extends Activity implements CvCameraViewListener2 {
     private static final String    TAG = "OCVSample::Activity";
@@ -97,7 +93,7 @@ public class Tutorial2Activity extends Activity implements CvCameraViewListener2
         mOpenCvCameraView = (CameraBridgeViewBase) findViewById(R.id.tutorial2_activity_surface_view);
         mOpenCvCameraView.setVisibility(CameraBridgeViewBase.VISIBLE);
         mOpenCvCameraView.setCvCameraViewListener(this);
-        mOpenCvCameraView.setCameraIndex(0);
+        mOpenCvCameraView.setCameraIndex(1);
 
     }
 
@@ -137,7 +133,7 @@ public class Tutorial2Activity extends Activity implements CvCameraViewListener2
     long onCamer;
     public void onCameraViewStarted(int width, int height) {
         start =  System.currentTimeMillis();
-        Log.e("-onCameraViewStarted", "--" +start);
+//        Log.e("-onCameraViewStarted", "--" +start);
         mRgba = new Mat();
         mGray = new Mat();
         if(rgb == null){

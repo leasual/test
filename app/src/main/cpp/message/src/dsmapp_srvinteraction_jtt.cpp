@@ -2077,10 +2077,10 @@ kal_int32 dsm_srv_loc_report_jtt(void)
 
 
 
-kal_int32 dsm_srv_loc_report_jtt_extern(int type, const char *buf)
+kal_int32 dsm_srv_loc_report_jtt_extern(int warn_type, int file_type, const char *buf)
 {
 	dsmapp_trace("%s: enter", __FUNCTION__);
-	unsigned int size = 2 +  1 + strlen(buf) + 1;
+	unsigned int size = 2 +  1 + 1 + strlen(buf) + 1;
 	char *send_buf = (char *)malloc( size ); 
 	if (send_buf == NULL) {
 		err("cann't rememory the report issue\n");
@@ -2092,7 +2092,8 @@ kal_int32 dsm_srv_loc_report_jtt_extern(int type, const char *buf)
 	int i = 0, j = 0;
 	send_buf[i++] = 0xf0;
 	send_buf[i++] = size;
-	send_buf[i++] = (char)type;
+	send_buf[i++] = (char)warn_type;
+	send_buf[i++] = (char)file_type;
 	for ( j = 0;j < strlen(buf)+1; j++)
 		send_buf[i++] = buf[j];
 	

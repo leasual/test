@@ -1,4 +1,4 @@
-package com.untouch.androidjnionpencv;
+package com.op.androidjnionpencv;
 
 import android.Manifest;
 import android.content.pm.PackageManager;
@@ -11,6 +11,9 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.Toast;
+
+import com.ut.sdk.R;
+
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.CameraBridgeViewBase;
 import org.opencv.android.LoaderCallbackInterface;
@@ -27,7 +30,6 @@ import org.opencv.imgproc.Imgproc;
 
 import java.util.Arrays;
 
-import com.untouch.androidjnionpencv.opencvnativeandroidstudio.R;
 
 public class MainActivity2 extends AppCompatActivity implements CameraBridgeViewBase.CvCameraViewListener2 {
 

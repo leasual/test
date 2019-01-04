@@ -32,8 +32,10 @@
 #elif (MX_JTT808_SRV == JTT808_SERVER_3)
 //#define	DSMAPP_SRV_ADDR_IP		"47.101.52.88"
 //#define	DSMAPP_SRV_ADDR_PORT		20048
-#define    DSMAPP_SRV_ADDR_IP        "112.64.117.214"
-#define    DSMAPP_SRV_ADDR_PORT        20001
+//#define    DSMAPP_SRV_ADDR_IP        "112.64.117.214"
+//#define    DSMAPP_SRV_ADDR_PORT        20001
+#define    DSMAPP_SRV_ADDR_IP        "47.101.52.88"
+#define    DSMAPP_SRV_ADDR_PORT        20048
 #endif
 #endif
 
@@ -58,7 +60,7 @@ void dsmapp_srv_ind(kal_int32 hdl, kal_uint32 evt);
 void dsmapp_srv_recv_handle(kal_uint8 *dat_in, kal_uint16 in_len);
 
 
-kal_int32 dsm_srv_loc_report_jtt_extern(int type, const char *buf);
+kal_int32 dsm_srv_loc_report_jtt_extern(int warn_type, int file_type, const char *buf);
 
 
 

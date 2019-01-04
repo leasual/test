@@ -1,4 +1,4 @@
-package com.untouch.androidjnionpencv;
+package com.op.androidjnionpencv;
 
 import android.Manifest;
 import android.app.Activity;
@@ -17,9 +17,8 @@ import android.view.SurfaceView;
 import android.view.View;
 import android.widget.Button;
 
-import com.untouch.androidjnionpencv.opencvnativeandroidstudio.R;
+import com.ut.sdk.R;
 
-import org.opencv.android.Utils;
 
 public class MainActivity extends Activity {
 

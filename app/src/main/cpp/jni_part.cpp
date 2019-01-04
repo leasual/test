@@ -32,7 +32,7 @@ JNIEXPORT jlong JNICALL Java_org_opencv_samples_tutorial2_Tutorial2Activity_Find
 //    cv::cvtColor(*(Mat*)addrGray,*newMat,cv::COLOR_GRAY2RGB);
 //    cv::cvtColor(*(Mat*)addrRgba,*newMat,cv::COLOR_RGBA2RGB);
     if(totalFlow!= nullptr){
-        totalFlow ->Run(*(Mat*)copyMat,*result, true,"chr");
+        totalFlow ->Run(*(Mat*)copyMat,*result, false,"chr");
     }
 //    if(totalFlow!= nullptr){
 //        totalFlow ->Run(*newMat,*result, false,"chr");
@@ -90,7 +90,7 @@ JNIEXPORT void JNICALL Java_org_opencv_samples_tutorial2_Tutorial2Activity_FindF
 //    OnCmdSend();
 //    OnCmdStop();
 //    DestroyHPSocketObjects();
-    DSM_JTT808_Event_Callback(1,"sdc/1.png");
+    DSM_JTT808_Event_Callback(1,1,"sdc/1.png");
     if(totalFlow == nullptr){
         totalFlow = new TotalFlow("/sdcard/Android/data/com.untouch.androidjnionpencv/files");
         result = new Result();

@@ -131,7 +131,7 @@ void dsmapp_srvinteraction_locate_and_poweroff(void); // 5%�͵�ػ�
 kal_bool dsmapp_srvinteraction_if_connected(void); // 2016-6-22
 kal_bool dsmapp_srvinteraction_is_connected(void);
 
-kal_int32 dsm_srv_loc_report_jtt_extern(int type, const char *buf);
+kal_int32 dsm_srv_loc_report_jtt_extern(int warn_type, int file_type, const char *buf);
 
 
 #if defined(__WHMX_CALL_SUPPORT__)

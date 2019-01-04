@@ -1,4 +1,6 @@
 #if 1
+
+#include <VS_kal_general_types.h>
 #include "dsmapp_srv_jtt.h"
 #include "dsmapp_srvinteraction_jtt.h"
 

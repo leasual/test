@@ -48,8 +48,8 @@ void DestroyHPSocketObjects();
 
 int  StartTcpClient(const char *svr_ip, unsigned short int port);
 int  StopTcpClient(void);
-int HandleTcpClientEvent(int type, const char *path);
-kal_int32 dsm_srv_loc_report_jtt_extern(int type, const char *buf);
+int HandleTcpClientEvent(int warn_type, int file_type, const char *path);
+kal_int32 dsm_srv_loc_report_jtt_extern(int warn_type, int file_type, const char *buf);
 
 #endif
 

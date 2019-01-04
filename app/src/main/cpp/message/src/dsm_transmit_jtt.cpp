@@ -10,13 +10,13 @@
 #include "hpsocket/HPSocket4C.h"
 #include "dsmapp_srv_jtt.h"
 #include "others.h"
-//#include "dsm_transmit_jtt.h"
+#include "dsm_transmit_jtt.h"
 #include <android/log.h>
 
-#define LOG_TAG "OpenCV-NDK-Native"
-#define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
+//#define LOG_TAG "OpenCV-NDK-Native"
+//#define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
 
-//#define LOGE printf
+#define LOGE printf
 HP_TcpPullClientListener s_listener;
 HP_TcpPullClient s_client;
 
@@ -160,8 +160,8 @@ En_HP_HandleResult __HP_CALL OnClose(HP_Client pSender, HP_CONNID dwConnID, En_H
 }
 
 
-int HandleTcpClientEvent(int type, const char *path) {
-	return dsm_srv_loc_report_jtt_extern(type, path);
+int HandleTcpClientEvent(int warn_type, int file_type, const char *path) {
+	return dsm_srv_loc_report_jtt_extern(warn_type, file_type, path);
 }
 
 int  StartTcpClient(const char *svr_ip, unsigned short int port)

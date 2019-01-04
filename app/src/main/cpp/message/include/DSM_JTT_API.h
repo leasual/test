@@ -12,7 +12,8 @@
  *		3, Smoke Warning
  *		4, Call Warning
  *		5, Chat Warning
- * input 2,  the waring picture or movie's path
+ * input 2,  the type of the the waring file
+ * input 3,  the path name of the waring file 
  *
  * output the result of the uploadte waring event
  *         success  1 
@@ -28,7 +29,7 @@
  *
  */
 
-int DSM_JTT808_Event_Callback(int type, const char *path);
+int DSM_JTT808_Event_Callback(int warn_type, int file_type, const char *path);
 
 
 

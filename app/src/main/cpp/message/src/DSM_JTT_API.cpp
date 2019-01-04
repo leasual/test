@@ -18,7 +18,10 @@ static char first_start = 1;
  *		3, Smoke Warning
  *		4, Call Warning
  *		5, Chat Warning
- * input 2,  the waring picture or movie's path
+ * input 2,  the waring file type 
+ *              1, picture 
+ *              2, movie
+ * input 3,  the waring picture or movie's path
  *
  * output the result of the uploadte waring event
  *         success  1 
@@ -34,7 +37,7 @@ static char first_start = 1;
  *
  */
 
-int DSM_JTT808_Event_Callback(int type, const char *path) {
+int DSM_JTT808_Event_Callback(int warn_type, int file_type, const char *path) {
 
 	info("DSM_JTT808_event_callback enter\n");
 
@@ -60,7 +63,7 @@ int DSM_JTT808_Event_Callback(int type, const char *path) {
 		}
 	}
 
-	HandleTcpClientEvent(type, path);		   	
+	HandleTcpClientEvent(warn_type, file_type, path);		   	
 	
 
 	info("DSM_JTT808_event_callback leave\n");
