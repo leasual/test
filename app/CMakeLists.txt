@@ -11,8 +11,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 
+#include_directories(/media/chris/软件/OpenCV-android-sdk/sdk/native/jni/include)
+include_directories(D:/OpenCV-android-sdk/sdk/native/jni/include)
 
-include_directories(/media/chris/软件/OpenCV-android-sdk/sdk/native/jni/include)
 add_library( lib_opencv SHARED IMPORTED )
 set_target_properties(lib_opencv PROPERTIES IMPORTED_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/src/main/jniLibs/${ANDROID_ABI}/libopencv_java3.so)
 
@@ -79,7 +80,7 @@ add_library( # Sets the name of the library.
         src/main/cpp/dsm_strategy/judgement_strategy/fatigue_judger.cc
         src/main/cpp/dsm_strategy/judgement_strategy/real_time_detect.cc
         src/main/cpp/dsm_strategy/judgement_strategy/smoke_judger.cc
-        src/main/cpp/dsm_strategy/eyemouthstatus.cc
+       # src/main/cpp/dsm_strategy/eyemouthstatus.cc
         src/main/cpp/dsm_strategy/config_tracker.cc
         src/main/cpp/total_flow.cc
         src/main/cpp/algorithm/align/src/align_method.cpp
@@ -95,6 +96,9 @@ add_library( # Sets the name of the library.
         src/main/cpp/algorithm/object_detection/src/objDetection.cpp
         src/main/cpp/algorithm/utilities/src/transform.cpp
         src/main/cpp/algorithm/utilities/src/utils.cc
+        src/main/cpp/dsm_strategy/judgement_strategy/smoke_judger_plus.cc
+        src/main/cpp/dsm_strategy/judgement_strategy/fatigure_judger_plus.cc
+        src/main/cpp/dsm_strategy/eye_mouth_plus.cc
 
         src/main/cpp/dsm_strategy/utils/file/config.cc
         src/main/cpp/dsm_strategy/utils/file/file_read_write_utils.cc

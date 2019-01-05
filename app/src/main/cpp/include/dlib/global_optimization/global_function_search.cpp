@@ -80,7 +80,7 @@ namespace dlib
                 - This function finds a quadratic function, Q(x), that interpolates the
                   given set of points.  If there aren't enough points to uniquely define
                   Q(x) then the Q(x) that fits the given points with the minimum Frobenius
-                  norm hessian matrix is selected. 
+                  norm2 hessian matrix is selected.
                 - To be precise:
                     - Let: Q(x) == 0.5*trans(x)*H*x + trans(x)*g + c
                     - Then this function finds H, g, and c that minimizes the following:

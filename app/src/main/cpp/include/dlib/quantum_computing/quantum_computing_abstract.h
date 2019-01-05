@@ -92,7 +92,7 @@ namespace dlib
                 - 0 <= bit < num_bits()
             ensures
                 - returns the probability of measuring the given bit and it being in the 1 state.
-                - The returned value is also equal to the sum of norm(state_vector()(i)) for all
+                - The returned value is also equal to the sum of norm2(state_vector()(i)) for all
                   i where the bit'th bit in i is set to 1. (note that the lowest order bit is bit 0)
         !*/
 

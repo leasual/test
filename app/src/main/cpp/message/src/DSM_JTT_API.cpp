@@ -5,7 +5,8 @@
 
 /* API module first start flag */
 static char first_start = 1;
-
+extern  nvram_ef_dsmapp_jtt_config_t jtt_config;
+extern int need_register;
 
 /**
  * Driver Status Monitor System's communicate module API
@@ -54,6 +55,9 @@ int DSM_JTT808_Event_Callback(int warn_type, int file_type, const char *path) {
 
 		if (StartTcpClient(YOU_BANG_SERVER_IP, YOU_BANG_SERVER_PORT) == 1) {
 			first_start = 0;
+
+			jtt_config.srv_port = YOU_BANG_SERVER_PORT;
+			strcpy(jtt_config.srv_ip, YOU_BANG_SERVER_IP);
 		}
 		else {
 			DestroyHPSocketObjects();
@@ -96,22 +100,30 @@ int DSM_JTT808_Event_Callback(int warn_type, int file_type, const char *path) {
  */
 
 
-int DSM_JTT808_Start(const char *server, unsigned short int port) {
+int DSM_JTT808_Start(const char *server, unsigned short int port, int start_register_follow = 0) {
 
-	info("DSM_JTT808_Start enter\n");
+	info("DSM_JTT808_Start enter__ serverip %s, port %d need start register follow %d\n",server,port,start_register_follow);
+
+	first_start = 1;
+
+	need_register = start_register_follow;
 	/* create the socket resuorce for DSM JTT808 transmitter API */
 	if ( first_start ) {
 		CreateHPSocketObjects();
 
-		if (StartTcpClient(YOU_BANG_SERVER_IP, YOU_BANG_SERVER_PORT) == 1) {
+		if (StartTcpClient(server, port) == 1) {
 			first_start = 0;
 
+			jtt_config.srv_port = port;
+			strcpy(jtt_config.srv_ip, server);
+
+			succ("Staring server %s port %d error\n", server, port);
 			return 1;
 		}
 		else {
 			DestroyHPSocketObjects();
 
-			err("Staring server %s port %d error\n", YOU_BANG_SERVER_IP, YOU_BANG_SERVER_PORT);
+			err("Staring server %s port %d error\n", server, port);
 			return -1;
 		}
 	}

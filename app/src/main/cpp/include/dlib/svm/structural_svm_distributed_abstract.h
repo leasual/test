@@ -231,7 +231,7 @@ namespace dlib
         ) const; 
         /*!
             ensures
-                - returns the number of nuclear norm regularizers that are currently a part
+                - returns the number of nuclear norm2 regularizers that are currently a part
                   of this optimization problem.  That is, returns the number of times
                   add_nuclear_norm_regularizer() has been called since the last call to
                   clear_nuclear_norm_regularizers() or object construction, whichever is

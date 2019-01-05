@@ -106,10 +106,10 @@ void computeStats(Iter_T first, Iter_T last, T& sum, T& mean,
 }
 
 
-float norm(const cv::Point2f& p1,const cv::Point2f& p2) {
-  return sqrt((p1.x - p2.x) * (p1.x - p2.x) +
-	      (p1.y - p2.y) * (p1.y - p2.y)
-	      );
-}
+//float norm2(const cv::Point2f &p1, const cv::Point2f &p2) {
+//  return sqrt((p1.x - p2.x) * (p1.x - p2.x) +
+//	      (p1.y - p2.y) * (p1.y - p2.y)
+//	      );
+//}
 
 #endif	/* _STATS_BASIC_H */

@@ -763,7 +763,7 @@ namespace dlib
                 - Let A denote the input matrix to this class's constructor.  
                   Then this function finds the least squares solution to the equation A*X = B 
                   and returns X.  X has the following properties: 
-                    - X is the matrix that minimizes the two norm of A*X-B.  That is, it
+                    - X is the matrix that minimizes the two norm2 of A*X-B.  That is, it
                       minimizes sum(squared(A*X - B)).
                     - X.nr() == nc()
                     - X.nc() == B.nc()

@@ -140,7 +140,7 @@ namespace dlib
             if (_verbose)
             {
                 using namespace std;
-                cout << "iteration: " << _cur_iter << "   objective: " << funct_value << "   gradient norm: " << length(funct_derivative) << endl;
+                cout << "iteration: " << _cur_iter << "   objective: " << funct_value << "   gradient norm2: " << length(funct_derivative) << endl;
             }
 
             ++_cur_iter;
@@ -150,7 +150,7 @@ namespace dlib
             if (_max_iter != 0 && _cur_iter > _max_iter)
                 return false;
 
-            // check if the gradient norm is too small 
+            // check if the gradient norm2 is too small
             if (length(funct_derivative) < _min_norm)
                 return false;
 

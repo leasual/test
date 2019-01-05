@@ -5,8 +5,13 @@
 #include <cmath>
 #include <faceID.h>
 #include <faceAttribute.h>
-#include <objDetection.h>
 #include "total_flow.h"
+#include "Util.h"
+#if defined(USE_NCNN)
+#include <objDetectionNCNN.h>
+#else
+#include <objDetection.h>
+#endif
 
 const int TotalFlow::FEATURE_LENGTH = 128;
 
@@ -14,62 +19,56 @@ const float TotalFlow:: same_face_thresh = 0.55;
 const std::string TotalFlow::UnknowFace = std::string("UnknowFace");
 const std::string TotalFlow::NoFace = std::string("NoFace");
 
-void callback2(JNIEnv *jniEnv,jobject obj) {
-  jclass cl = jniEnv ->FindClass("org/opencv/samples/tutorial2/Tutorial2Activity");
-  jmethodID meth = jniEnv->GetMethodID(cl,"print","()V");
-  jniEnv->CallVoidMethod(obj,meth);
-}
-
-void callbackEnd2(JNIEnv *jniEnv,jobject obj) {
-  jclass cl = jniEnv ->FindClass("org/opencv/samples/tutorial2/Tutorial2Activity");
-  jmethodID meth = jniEnv->GetMethodID(cl,"printend","()V");
-  jniEnv->CallVoidMethod(obj,meth);
-}
-
 TotalFlow::TotalFlow(const std::string& path) :
         path_root_(path),
         config_path_(path_root_ + "/configure.yaml"),
         mtcnn_path_(path_root_ + "/mtcnn"),
-        sp_model_path_(path_root_ + "/align/1116-2054.dat"),
+        sp_model_path_(path_root_ + "/align/0102-1635-4000-800.dat"),
         faceid_path_(path_root_ + "/faceid"),
         gaze_tracking_path_(path_root_ + "/gaze_tracking"),
-        detector_(mtcnn_path_),
-        align_method_(std::make_shared<DlibAlign>(96, 96)),
+        detector_(std::make_shared<MTCNNDetector>(mtcnn_path_)),
+        align_method_(std::make_shared<FivePtsAlign>(96, 96)),
         face_align_(std::make_shared<FaceAlign>(align_method_.get())),
-        predictor_(sp_model_path_),
-        faceid_(faceid_path_),
-        faceAttribute_(faceid_path_),
+        predictor_(std::make_shared<ShapePredictor>(sp_model_path_)),
+        faceid_(std::make_shared<FaceID>(faceid_path_)),
+        faceAttribute_(std::make_shared<FaceAttribute>(faceid_path_)),
         arguments_(1, gaze_tracking_path_),
         config_(config_path_),
         first_time_flage_(true),
-        current_regist_num_(0),
+        keep_running_flag_(true),
         regist_over_flag_(false),
         mark_no_face_(false),
         face_match_flag_(true),
-        keep_running_flag_(true){
+        current_regist_num_(0){
 
     main_step_ = RunStep::CalibrationStep;
     alignment_time_ = config_.alignment_time_;
-    cur_driver_state_ = DetectionState::Normal;  //当前状态为正常状态
-    angles_ = {0, 0, 0};
+//    cur_driver_state_ = DetectionState::Normal;  //当前状态为正常状态
 
     // 初始化疲劳检测策略,吸烟检测策略,打电话检测策略,手掌检测策略,可疑行为检测策略,聊天检测策略
     // 分神检测的策略需要等到校准完成后再初始化
+#if defined(ZUOLEI)
     fatigue_judger_.SetParam(config_.fatigue_warn_thres_ / 100.0, config_.fatigue_judge_thres_ / 100.0,
                              config_.fatigue_warn_time_, config_.fatigue_judge_time_);
-    yawn_judger_.SetParam(config_.yawn_warn_thres_ / 100.0, config_.yawn_judge_thres_ / 100.0,
-                          config_.yawn_warn_time_, config_.yawn_judge_time_);
+#else
+    fatigue_judger_.SetParam(5, 8, 5, 8);
+#endif
+
     smoke_judger_.SetParam(config_.smoke_judge_thres_ / 100.0, config_.smoke_judge_thres_ / 100.0,
                            config_.smoke_judge_time_, config_.smoke_judge_time_);
+//    smoke_judger_.SetParam(2);
     call_judger_.SetParam(config_.call_warn_thres_ / 100.0, config_.call_judge_thres_ / 100.0,
                           config_.call_warn_time_, config_.call_judge_time_);
 
     // 初始化校准检测
     alignment_judger_.SetParam(config_.alignment_time_);
-
-
+#if defined(USE_NCNN)
+    net_.load_param("yolo.param");
+    net_.load_model("yolo.bin");
+#else
     net_ = createNet(path_root_ + "/object_detection/MobileNetSSD_deploy.prototxt",
-            path_root_ + "/object_detection/shuffle_iter_80000.caffemodel");
+            path_root_ + "/object_detection/shuffle_iter_300000.caffemodel");
+#endif
 }
 
 
@@ -79,10 +78,18 @@ TotalFlow::TotalFlow(const std::string& path) :
  * @return
  */
 bool TotalFlow::DetectFrame(const cv::Mat &image) {
-    chrono::steady_clock::time_point old = std::chrono::steady_clock::now();
-    std::vector<Face> faces = detector_.detect(image);
-    auto diff2 = chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - old);
-    LOGE(" last time DetectFrame -> detector_.detect(image) is %ld ",diff2.count());
+//    std::vector<Face> faces = detector_->detect(image);
+    std::vector<ObjInfo>faces;
+
+    chrono::steady_clock::time_point old = chrono::steady_clock::now();
+    std::vector<ObjInfo>obj_state = objDetection(net_, image, 0.4);
+    auto time =  chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now() - old);
+    LOGE("objDetection(net_, image, 0.4) is %ld", time.count());
+
+    for(auto& obj : obj_state){
+        if(obj.action_ == Action::FACE)
+            faces.push_back(obj);
+    }
 
     if(faces.empty()){
         std::lock_guard<std::mutex> lock_guard(landmark_mutex_);
@@ -106,26 +113,28 @@ bool TotalFlow::DetectFrame(const cv::Mat &image) {
     result_.SetAbnormal(0);
     result_mutex_.unlock();
 
-    Face face= detector_.get_largest_face(faces);
-    face_bbox_ = face.bbox.getRect();
+    auto Psort = [&](const ObjInfo& a, const ObjInfo& b){
+        return a.score_ < b.score_;
+    };
+    std::partial_sort(faces.begin(), faces.begin()+1, faces.end(), Psort);
+    auto face = faces[0];
+    face_bbox_ = cv::Rect(cv::Point(face.xL_, face.yL_), cv::Point(face.xR_, face.yR_));
+//    Face face= detector_->get_largest_face(faces);
+//    face_bbox_ = face.bbox.getRect();
 
-//        chrono::steady_clock::time_point old = std::chrono::steady_clock::now();
-    std::vector<cv::Point2f> shape = predictor_.predict(image, face_bbox_);
-//    auto diff2 = chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - old);
-//    LOGE(" last time DetectFrame -> predictor_.predict(image, face_bbox_) is %ld ",diff2.count());
+    chrono::steady_clock::time_point old2 = chrono::steady_clock::now();
+    std::vector<cv::Point2f> shape = predictor_->predict(image, face_bbox_);
+    auto time2 =  chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now() - old2);
+    LOGE("predictor_->predict(image, face_bbox_) is %ld", time2.count());
 
-    align_method_->set_im(image);
-    align_method_->set_pts(shape);
-    cv::Mat aligned_img = face_align_->DoAlign();
-    // now use six facial points to estimate head pose
     HeadPoseEstimator estimator(image);
     std::vector<cv::Point2f> six_points;
-    six_points.emplace_back(shape[30]);
-    six_points.emplace_back(shape[8]);
-    six_points.emplace_back(shape[36]);
-    six_points.emplace_back(shape[45]);
-    six_points.emplace_back(shape[48]);
-    six_points.emplace_back(shape[54]);
+    six_points.emplace_back(shape[38]); //鼻尖
+    six_points.emplace_back(shape[8]);  //下巴尖
+    six_points.emplace_back(shape[44]); //左外眼角
+    six_points.emplace_back(shape[56]); //右外眼角
+    six_points.emplace_back(shape[60]); //左外嘴角
+    six_points.emplace_back(shape[66]); //右外嘴角
     std::unique_lock<std::mutex>uniqueLock(landmark_mutex_);
     landmarks_.clear();
     for(auto& point:shape){
@@ -141,13 +150,16 @@ bool TotalFlow::DetectFrame(const cv::Mat &image) {
     angles_[0] = angles_[0] > 0 ? angles_[0] - 180 : angles_[0] + 180;
     uniqueLockAngles.unlock();
 
-    cv::Mat img = image.clone();
-    //运动检测
-//    chrono::steady_clock::time_point old = std::chrono::steady_clock::now();
-
-    std::vector<ObjInfo>obj_state = objDetection(net_, img, 0.4);
-//    auto diff2 = chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - old);
-//    LOGE(" last time DetectFrame -> objDetection(net_, img, 0.4) is %ld ",diff2.count());
+//    cv::Mat img = image.clone();
+//    std::vector<ObjInfo>obj_state = objDetection(net_, image, 0.4);
+    for(auto obj: obj_state){
+        if(obj.action_ == Action::CALL){
+            call_bbox_ = cv::Rect(cv::Point(obj.xL_, obj.yL_), cv::Point(obj.xR_, obj.yR_));
+        }
+        else if(obj.action_ == Action::SMOKE){
+            smoke_bbox_ = cv::Rect(cv::Point(obj.xL_, obj.yL_), cv::Point(obj.xR_, obj.yR_));
+        }
+    }
     call_state_ = getCallState();
     smoke_state_ = getSmokeState();
 //    std::cout << "call state : " << call_state_ << std::endl;
@@ -162,13 +174,22 @@ bool TotalFlow::DetectFrame(const cv::Mat &image) {
     name_mutex_.unlock();
     if(face_match_flag_){
         face_match_flag_ = false;
+        std::vector<cv::Point2f> cv_pts;
+        cv::Mat aligned_img;
+        cv_pts.emplace_back(shape[44]);
+        cv_pts.emplace_back(shape[56]);
+        cv_pts.emplace_back(shape[38]);
+        cv_pts.emplace_back(shape[60]);
+        cv_pts.emplace_back(shape[66]);
+        align_method_->set_im(image);
+        align_method_->set_pts(cv_pts);
+        aligned_img = face_align_->DoAlign();
         cv::Mat feat;
 
-//        chrono::steady_clock::time_point old = std::chrono::steady_clock::now();
-        faceid_.GetFaceFeature(aligned_img,feat);
-//        auto diff2 = chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - old);
-//        LOGE(" last time DetectFrame -> faceid_.GetFaceFeature(aligned_img,feat) is %ld ",diff2.count());
-
+        chrono::steady_clock::time_point old3 = chrono::steady_clock::now();
+        faceid_->GetFaceFeature(aligned_img,feat);
+        auto time3 =  chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now() - old3);
+        LOGE("GetFaceFeature(aligned_img,feat) is %ld", time3.count());
 
         std::string name = GetName(feat);
         name_mutex_.lock();
@@ -215,15 +236,14 @@ void TotalFlow::Run(cv::Mat& frame, Result& result, bool regist, const std::stri
         LoadFeature();
         if(Features_.empty()) {
             std::cerr << "Please register first!" << std::endl;
-            std::abort();
+//            std::abort();
         }
         name_ = NoFace;
-        thread process_image_thread(mem_fn(&TotalFlow::ProcessImageThread), this);
-        process_image_thread.detach();
+        process_image_thread_ = thread(mem_fn(&TotalFlow::ProcessImageThread), this);
+        process_image_thread_.detach();
 
         //当前没有人脸识别和规定动作,直接运行校准操作
         main_step_ = RunStep::CalibrationStep;
-
         no_face_time_ = std::chrono::steady_clock::now();
     }
 
@@ -258,11 +278,9 @@ void TotalFlow::ProcessImageThread() {
         if (!keep_running_flag_) {
             break;
         }
-//        LOGE(" THREAD keep_running_flag_ IS TRUE ----------------------- ");
         RunProcess();
     }
     std::cout << "keep_running_flag_ : " << keep_running_flag_ << std::endl;
-//    LOGE(" THREAD ABORT ----------------------- ");
     std::abort();
 }
 
@@ -277,11 +295,11 @@ void TotalFlow::RunProcess() {
     if (frame.empty()) {
         return;
     }
-//    chrono::steady_clock::time_point old = std::chrono::steady_clock::now();
+    chrono::steady_clock::time_point old = std::chrono::steady_clock::now();
 
     bool success_flag = DetectFrame(frame);
-//    auto diff2 = chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - old);
-//    LOGE(" last time RunProcess -> DetectFrame(frame) is %ld ",diff2.count());
+    auto diff = chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - old);
+    LOGE(" detectFrame is -- %ld", diff.count());
 
     if (success_flag == false) {
         if (main_step_ == RunStep::CalibrationStep) {
@@ -290,13 +308,13 @@ void TotalFlow::RunProcess() {
             result_.SetCalibration(1);
             result_mutex_.unlock();
         }
-        auto diff = chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - no_face_time_);
-        double diff_time = diff.count() / 1000.0f;
+//        auto diff = chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - no_face_time_);
+//        double diff_time = diff.count() / 1000.0f;
 
         if (main_step_ == RunStep::MainRunStep) {
             distract_judger_.ResetDetect();
-            fatigue_judger_.ResetDetect();
-            smoke_judger_.ResetDetect();
+//            fatigue_judger_.ResetDetect();
+//            smoke_judger_.ResetDetect();
             call_judger_.ResetDetect();
         }
         return;
@@ -337,9 +355,9 @@ void TotalFlow::RunMainStep() {
             case RunStep::FatigueDetectionStep: //疲劳检测
                 RunFatigueDectection();
                 break;
-            case RunStep::YawnDetectionStep:    //打哈欠（疲劳）检测
-                RunYawnDetection();
-                break;
+//            case RunStep::YawnDetectionStep:    //打哈欠（疲劳）检测
+//                RunYawnDetection();
+//                break;
             case RunStep::SmokeDetectionStep:   // 吸烟检测
                 RunSmokeDetection();
                 break;
@@ -384,6 +402,7 @@ void TotalFlow::RunCalibration() {
                                   config_.distraction_warn_time_, config_.distraction_judge_time_);
         main_step_ = RunStep::MainRunStep;
         sub_step_ = RunStep::SmokeDetectionStep;
+//        eye_mouth_detector_.Calibrate();
         result_mutex_.lock();
         result_.SetCalibration(2);
         result_mutex_.unlock();
@@ -399,10 +418,6 @@ void TotalFlow::RunCalibration() {
  * 分神检测策略
  */
 void TotalFlow::RunDistractDetection() {
-    if (sub_step_ != RunStep::DistractDetectionStep) {
-        cerr << "Error: sub_step is not DistractDetectionStep" << endl;
-        return;
-    }
     //TODO: 修改策略的返回类型,这样就不需要Switch操作了
     float angles_0, angles_1;
     std::unique_lock<std::mutex>uniqueLock(angle_mutex_);
@@ -437,7 +452,7 @@ void TotalFlow::RunDistractDetection() {
 //        call_judger_.ResetDetect();
 //    } else if (distract_value == 2 && cur_driver_state_ != DetectionState::DistractionJudge) {
 //        // 结束当前检测
-//        sub_step_ = s
+//        sub_step_ = RunStep::EndDetectionStep;
 //        cur_driver_state_ = DetectionState::DistractionJudge;
 //    } else {
 //        // 当前为状态为分神,下一阶段为人脸检测
@@ -450,20 +465,26 @@ void TotalFlow::RunDistractDetection() {
  * 疲劳检测
  */
 void TotalFlow::RunFatigueDectection() {
-    if (sub_step_ != RunStep::FatigueDetectionStep) {
-        cerr << "Error: sub_step is not FatigueDetectionStep" << endl;
-        return;
-    }
-    righteye_state_ = eye_mouth_detector_.GetRightEyeStatus();
-    lefteye_state_ = eye_mouth_detector_.GetLeftEyeStatus();
-    int fatigue_value = fatigue_judger_.CheckFatigue(righteye_state_, lefteye_state_);
+#if defined(ZUOLEI)
+    int righteye_state_ = eye_mouth_detector_.GetRightEyeStatus();
+    int lefteye_state_ = eye_mouth_detector_.GetLeftEyeStatus();
+    int eye_value = fatigue_judger_.CheckFatigue(righteye_state_, lefteye_state_);
+#else
+    bool eye_state = eye_mouth_detector_.GetEyeStatus();
+    bool mouth_state = eye_mouth_detector_.GetMouthStatus();
+    int fatigue_value = fatigue_judger_.CheckFatigue(eye_state, mouth_state);
+#endif
 
-    yawn_state_ = eye_mouth_detector_.GetMouthStatus();
-    int yawn_value = yawn_judger_.CheckYawn(yawn_state_);
+//    int yawn_value = yawn_judger_.CheckYawn(yawn_state_);
 
+//    int fatigue_value = MAX(eye_value, yawn_value);
+//    std::cout << "eye_value : " << eye_value << " "\
+//              << "yawn_value: " << yawn_value << " "\
+//              << "fatigue_value : " << fatigue_value << std::endl;
     cv::Rect bbox;
     result_mutex_.lock();
-    result_.SetFatigue(MAX(fatigue_value, yawn_value), bbox);
+    result_.SetFatigue(fatigue_value, bbox);
+//    result_.SetFatigue(eye_value, bbox);
     result_mutex_.unlock();
     sub_step_ = RunStep::DistractDetectionStep;
 //    // 当前不是疲劳状态
@@ -499,119 +520,29 @@ void TotalFlow::RunFatigueDectection() {
  * 吸烟检测
  */
 void TotalFlow::RunSmokeDetection() {
-    if (sub_step_ != RunStep::SmokeDetectionStep) {
-        cerr << "Error: sub_step is not SmokeDetectionStep" << endl;
-        return;
-    }
-    // 需要确定smoke_state_为最新的
     int smoke_value = smoke_judger_.CheckSmoking(smoke_state_);
+//    std::cout << "smoke_state : " << smoke_state_ << "  " \
+//              << "smoke_value : " << smoke_value << std::endl;
 
-    cv::Rect bbox;
     result_mutex_.lock();
-    result_.SetSmoke(smoke_value, bbox);
+    result_.SetSmoke(smoke_value, smoke_bbox_);
     result_mutex_.unlock();
     sub_step_ = RunStep::CallDetectionStep;
 
-//    // 如果当前未吸烟,则执行打电话检测
-//    if (smoke_value == 0) {
-//        // 如果当前为吸烟判决状态,则更新为正常状态
-//        if (cur_driver_state_ == DetectionState::SmokeJudge) {
-//            cur_driver_state_ = DetectionState::Normal;
-//        }
-//        // 结束当前检测
-//        sub_step_ = RunStep::CallDetectionStep;
-//    } else if (smoke_value == 2 && cur_driver_state_ != DetectionState::SmokeJudge) {
-//        // 复位打电话,手掌,说话
-//        call_judger_.ResetDetect();
-//        // 结束当前检测
-//        sub_step_ = RunStep::EndDetectionStep;
-//        cur_driver_state_ = DetectionState::SmokeJudge;
-//    } else {
-//        // 结束当前检测
-//        sub_step_ = RunStep::EndDetectionStep;
-//    }
 }
 
 /**
  * 打电话检测
  */
 void TotalFlow::RunCallDetection() {
-    if (sub_step_ != RunStep::CallDetectionStep) {
-        cerr << "Error: cur sub_step is not CallDetectionStep" << endl;
-        return;
-    }
-
     int call_value = call_judger_.CheckCalling(call_state_);
-    cv::Rect bbox;
+//    std::cout << "call_state : " << call_state_ << "  " \
+//              << "call_value : " << call_value << std::endl;
     result_mutex_.lock();
-    result_.SetCall(call_value, bbox);
+    result_.SetCall(call_value, call_bbox_);
     result_mutex_.unlock();
     sub_step_ = RunStep::FatigueDetectionStep;
-
-//    if (calling_value == 0) {
-//        if (cur_driver_state_ == DetectionState::CallWarn ||
-//            cur_driver_state_ == DetectionState::CallJudge) {
-//            cur_driver_state_ = DetectionState::Normal;
-//        }
-//        sub_step_ = RunStep::FatigueDetectionStep;
-//    } else if (calling_value == 1 && cur_driver_state_ != DetectionState::CallWarn) { // 进入打电话预警阶段
-//        // 结束当前检测
-//        sub_step_ = RunStep::EndDetectionStep;
-//        cur_driver_state_ = DetectionState::CallWarn;
-//
-//    } else if (calling_value == 2 && cur_driver_state_ != DetectionState::CallJudge) {    // 进入打电话判决状态
-//        // 结束当前检测
-//        sub_step_ = RunStep::EndDetectionStep;
-//        cur_driver_state_ = DetectionState::CallJudge;
-//    } else {
-//        // 结束当前检测
-//        sub_step_ = RunStep::EndDetectionStep;
-//    }
 }
-
-
-/**
- * 打哈欠检测
- */
-void TotalFlow::RunYawnDetection() {
-    if (sub_step_ != RunStep::YawnDetectionStep) {
-        cerr << "Error: cur sub_step is not YawnDetectionStep" << endl;
-        return;
-    }
-
-    yawn_state_ = eye_mouth_detector_.GetMouthStatus();
-    int yawn_value = yawn_judger_.CheckYawn(yawn_state_);
-
-    if (yawn_value == 0) {
-        if (cur_driver_state_ == DetectionState::YawnWarn ||
-            cur_driver_state_ == DetectionState::YawnJudge) {
-            cur_driver_state_ = DetectionState::Normal;
-        }
-        sub_step_ = RunStep::DistractDetectionStep;
-//        sub_step_ = RunStep::EndDetectionStep;
-    } else if (yawn_value == 1 && cur_driver_state_ != DetectionState::YawnWarn) { // ?????????
-        // 结束当前检测
-        sub_step_ = RunStep::EndDetectionStep;
-        std::cout << "打哈欠预警" << std::endl;
-        cur_driver_state_ = DetectionState::YawnWarn;
-        distract_judger_.ResetDetect();
-    } else if (yawn_value == 2 && cur_driver_state_ != DetectionState::YawnJudge) {    // ?????????
-        // 结束当前检测
-        sub_step_ = RunStep::EndDetectionStep;
-        std::cout << "打哈欠判决" << std::endl;
-        cur_driver_state_ = DetectionState::YawnJudge;
-    } else {
-        if (yawn_value == 1) {
-            std::cout << "打哈欠预警" << std::endl;
-        } else if (yawn_value == 2) {
-            std::cout << "打哈欠判决" << std::endl;
-        }
-        // 结束当前检测
-        sub_step_ = RunStep::EndDetectionStep;
-    }
-
-}
-
 
 
 bool TotalFlow::Regist(const std::string& feature_path) {
@@ -622,20 +553,39 @@ bool TotalFlow::Regist(const std::string& feature_path) {
     cv::Mat frame = frame_.clone();
     frame_mutex_.unlock();
 
-    std::vector<Face> faces = detector_.detect(frame);
-    if (faces.empty()) {
+    std::vector<ObjInfo>faces;
+    std::vector<ObjInfo>obj_state = objDetection(net_, frame, 0.4);
+    for(auto& obj : obj_state){
+        if(obj.action_ == Action::FACE)
+            faces.push_back(obj);
+    }
+
+    if(faces.empty()){
         std::cout << "no face detect in current image!" << std::endl;
         return false;
     }
-    Face largest_face = detector_.get_largest_face(faces);
-    cv::Rect bbox = largest_face.bbox.getRect();
-    std::vector<cv::Point2f> shape = predictor_.predict(frame, bbox);
+
+    auto Psort = [&](const ObjInfo& a, const ObjInfo& b){
+        return a.score_ < b.score_;
+    };
+    std::partial_sort(faces.begin(), faces.begin()+1, faces.end(), Psort);
+    auto face = faces[0];
+    face_bbox_ = cv::Rect(cv::Point(face.xL_, face.yL_), cv::Point(face.xR_, face.yR_));
+
+    cv::Rect bbox = face_bbox_;
+    std::vector<cv::Point2f> shape = predictor_->predict(frame, bbox);
+    std::vector<cv::Point2f> cv_pts;
     cv::Mat aligned_img;
+    cv_pts.emplace_back(shape[44]);
+    cv_pts.emplace_back(shape[56]);
+    cv_pts.emplace_back(shape[38]);
+    cv_pts.emplace_back(shape[60]);
+    cv_pts.emplace_back(shape[66]);
     align_method_->set_im(frame);
-    align_method_->set_pts(shape);
+    align_method_->set_pts(cv_pts);
     aligned_img = face_align_->DoAlign();
 
-    faceid_.GetFaceFeature(aligned_img, feature);
+    faceid_->GetFaceFeature(aligned_img, feature);
 
     if(!WriteFeature(feature, feature_path)) {
         std::cout << "[ERROR] : Write feature failed." << std::endl;
@@ -683,7 +633,7 @@ std::string TotalFlow::GetName(const cv::Mat &feature) {
 
     for (const auto &Fea: Features_) {
         for (const auto &fea: Fea.features) {
-            float score = faceid_.CalcCosScore(fea, feature);
+            float score = faceid_->CalcCosScore(fea, feature);
             if (score > same_face_thresh) {
                 name = Fea.name;
                 name_times_[Fea.name]++;

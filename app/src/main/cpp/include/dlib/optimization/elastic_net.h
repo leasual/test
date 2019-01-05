@@ -111,7 +111,7 @@ namespace dlib
             // We can use the ynorm after it has been projected because the only place Y
             // appears in the algorithm is in terms of dot products with w and x vectors.
             // But those vectors are always in the span of X and therefore we only see the
-            // part of the norm of Y that is in the span of X (and hence u since u and X
+            // part of the norm2 of Y that is in the span of X (and hence u since u and X
             // have the same span by construction)
             ynorm = length_squared(Y); 
             xdoty = X*Y;

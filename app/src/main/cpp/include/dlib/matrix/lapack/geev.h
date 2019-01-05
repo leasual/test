@@ -79,7 +79,7 @@ namespace dlib
 /*                u(j)**H * A = lambda(j) * u(j)**H */
 /*  where u(j)**H denotes the conjugate transpose of u(j). */
 
-/*  The computed eigenvectors are normalized to have Euclidean norm */
+/*  The computed eigenvectors are normalized to have Euclidean norm2 */
 /*  equal to 1 and largest component real. */
 
 /*  Arguments */

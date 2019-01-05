@@ -17,13 +17,13 @@ class Camera{
 public:
     Camera() = default;
     virtual ~Camera(){};
-    virtual bool Read(cv::Mat& frame) = 0;
+    virtual std::string Read(cv::Mat& frame) = 0;
 };
 
 class CameraOnLine: public Camera{
 public:
     explicit CameraOnLine(int index = 0);
-    bool Read(cv::Mat& frame) override;
+    std::string Read(cv::Mat& frame) override;
 
 protected:
     cv::VideoCapture cam_;
@@ -33,7 +33,7 @@ class CameraOffLine: public Camera{
 public:
     explicit CameraOffLine(const std::string& path = "");
 
-    bool Read(cv::Mat& frame) override;
+    std::string Read(cv::Mat& frame) override;
 
 private:
     std::vector<std::string>Listdir(const std::string& folder);

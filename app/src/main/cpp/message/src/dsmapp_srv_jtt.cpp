@@ -7,6 +7,12 @@
 #define DSMAPP_SRV_BUFF_MAX_RX 256
 #define DSMAPP_SRV_BUFF_MAX_TX 448
 
+
+
+
+int need_register = 0;
+
+
 #define DSMAPP_SRV_DEBUG_TXRX 1
 #if DSMAPP_SRV_DEBUG_TXRX
 static kal_uint8 edp_dbg_buf[DSMAPP_SRV_BUFF_MAX_TX * 3];
@@ -225,11 +231,19 @@ void dsmapp_srv_ind(kal_int32 hdl, kal_uint32 evt)
 		dsmapp_srv_con_state = 2;
 		printf("connected dsmapp_srv_con_state : %d \n",dsmapp_srv_con_state);
 		dsmapp_srvinteraction_first_location(); // ��AGPS
+		if (need_register)
+			dsmapp_srvinteraction_connect(0);
+		else
+			dsmapp_srv_heart(NULL); // ��������
+
+			
+			/*
 	#if (SRV_NO_REGISTER == 1) // ��ע���Ȩ
 		dsmapp_srv_heart(NULL); // ��������
 	#else
 		dsmapp_srvinteraction_connect(0);
 	#endif
+	*/
 		break;
 
 	case DSM_TCP_EVT_CAN_WRITE:
@@ -353,8 +367,11 @@ void dsmapp_srv_connect(void )
 		dsmapp_trace("tcp_connect:%s(%d)\r\n", jtt_config.srv_ip, jtt_config.srv_port);
 		hdl = dsm_tcp_connect(jtt_config.srv_ip, jtt_config.srv_port, dsm_net_get_apn(0)/*, dsmapp_srv_ind*/);
 #else
-		dsmapp_trace("tcp_connect:%s(%d)\r\n", DSMAPP_SRV_ADDR_IP, DSMAPP_SRV_ADDR_PORT);
-		hdl = dsm_tcp_connect(DSMAPP_SRV_ADDR_IP, DSMAPP_SRV_ADDR_PORT, dsm_net_get_apn(0)/*, dsmapp_srv_ind*/);
+		//dsmapp_trace("tcp_connect:%s(%d)\r\n", DSMAPP_SRV_ADDR_IP, DSMAPP_SRV_ADDR_PORT);
+		//hdl = dsm_tcp_connect(DSMAPP_SRV_ADDR_IP, DSMAPP_SRV_ADDR_PORT, dsm_net_get_apn(0)/*, dsmapp_srv_ind*/);
+
+		info("tcp_connect:%s(%d)\r\n", jtt_config.srv_ip, jtt_config.srv_port);
+		hdl = dsm_tcp_connect(jtt_config.srv_ip, jtt_config.srv_port, dsm_net_get_apn(0)/*, dsmapp_srv_ind*/);
 #endif
 	}
 

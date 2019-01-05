@@ -1,5 +1,6 @@
 apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
+apply plugin: 'kotlin-android-extensions'
 //apply plugin: 'bugly'
 //bugly {
 //    appId = '50cd1cb403'
@@ -24,7 +25,8 @@ android {
 //                        "-DANDROID_PLATFORM=android-24"
                 abiFilters  'arm64-v8a'
 //                        'armeabi-v7a'
-                arguments '-DANDROID_STL=gnustl_static '
+                arguments '-DANDROID_STL=gnustl_static ',
+                            "-DCMAKE_BUILD_TYPE=Release"
 //                arguments '-DANDROID_STL=c++_shared',
 //                          '-DANDROID_TOOLCHAIN=gcc'
 //                arguments '-DANDROID_STL=gnustl_shared'
@@ -38,13 +40,13 @@ android {
 
     signingConfigs {
         release {
-            storeFile file('/home/chris/untouch.jks')
+            storeFile file('key/untouch.jks')
             storePassword '123456'
             keyAlias 'untouch'
             keyPassword '123456'
         }
         debug {
-            storeFile file('/home/chris/untouch.jks')
+            storeFile file('key/untouch.jks')
             storePassword '123456'
             keyAlias 'untouch'
             keyPassword '123456'

@@ -121,7 +121,7 @@ namespace dlib
               which minimizes the mean squared error is selected.  Additionally, if many
               equally good transformations exist, then the transformation with the smallest
               squared parameters is selected (i.e. if you wrote the transformation as a
-              matrix then we say we select the transform with minimum Frobenius norm among
+              matrix then we say we select the transform with minimum Frobenius norm2 among
               all possible solutions).
     !*/
 

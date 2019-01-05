@@ -108,9 +108,19 @@ void EyeMouthStatus::Calibrate1() {
         left_eye_ratios.push_back(getLeftEyeRatio(landmarks));
         mouth_ratios.push_back(getMouthRatio(landmarks));
     }
+//try
+    sort(right_eye_ratios.begin(), right_eye_ratios.end(), std::greater<float>());
+    sort(left_eye_ratios.begin(), left_eye_ratios.end(), std::greater<float>());
+    size_t right_size = right_eye_ratios.size()/2;
+    size_t left_size = left_eye_ratios.size()/2;
+    for(auto iter = right_eye_ratios.begin(); iter != right_eye_ratios.begin()+right_size; ++iter){
+        *(iter + right_size) = *iter * 0.666667f;
+    }
 
-    //sort(right_eye_ratios.begin(), right_eye_ratios.end(), std::greater<float>());
-    //sort(left_eye_ratios.begin(), left_eye_ratios.end(), std::greater<float>());
+    for(auto iter = left_eye_ratios.begin(); iter != left_eye_ratios.begin()+left_size; ++iter){
+        *(iter + left_size) = *iter * 0.666667f;
+    }
+//try over
     sort(mouth_ratios.begin(), mouth_ratios.end());
 
     cv::Mat train_data_left;
@@ -118,10 +128,12 @@ void EyeMouthStatus::Calibrate1() {
     cv::Mat train_data_right;
     cv::Mat train_labels_right(100, 1, CV_32SC1);   //聚类后的标签数组
 
+    std::cout << "left_eye_ratios" << std::endl;
     for (int i = 0; i < left_eye_ratios.size(); i++) {
         train_data_left.push_back(left_eye_ratios[i]);  //序列化后放入data
-
+        std::cout << left_eye_ratios[i] << std::endl;
     }
+    std::cout << "left_eye_ratios end" << std::endl;
     for (int i = 0; i < right_eye_ratios.size(); i++) {
         train_data_right.push_back(right_eye_ratios[i]);  //序列化后放入data
     }
@@ -179,7 +191,6 @@ bool EyeMouthStatus::GetLeftEyeStatus() {
         Calibrate1();
     }
     float left_eye_ratio = getLeftEyeRatio(landmark_history.back());
-//    std::cout << "left eye ratio : " << left_eye_ratio << " " << little_left_eye_thresh << " " << std::endl;
     return (abs(left_eye_ratio - left_eye_thresh_close)< abs(left_eye_thresh_open - left_eye_ratio))?false:true;
 }
 
@@ -189,7 +200,6 @@ bool EyeMouthStatus::GetRightEyeStatus() {
         Calibrate1();
     }
     float right_eye_ratio = getRightEyeRatio(landmark_history.back());
-//    std::cout << "right eye ratio : " << right_eye_ratio << " " << little_right_eye_thresh<< " ";
     return (abs(right_eye_ratio - right_eye_thresh_close)< abs(right_eye_thresh_open - right_eye_ratio))?false:true;
 }
 
@@ -199,23 +209,23 @@ bool EyeMouthStatus::GetMouthStatus() {
         Calibrate1();
     }
     float mouth_ratio = getMouthRatio(landmark_history.back());
-    std::cout << "ratio : " << mouth_ratio << "  thresh: " << mouth_thresh*MOUTH_FACTOR << std::endl;
+//    std::cout << "ratio : " << mouth_ratio << "  thresh: " << mouth_thresh*MOUTH_FACTOR << std::endl;
 
     return mouth_ratio > mouth_thresh*MOUTH_FACTOR;
 }
 
 
 float EyeMouthStatus::getLeftEyeRatio(const std::vector<cv::Point2f> & lm) {
-    float dist1 = norm(lm[43],lm[47]);
-    float dist2 = norm(lm[44],lm[46]);
-    float dist3 = norm(lm[42],lm[45]);
+    float dist1 = norm2(lm[43], lm[47]);
+    float dist2 = norm2(lm[44], lm[46]);
+    float dist3 = norm2(lm[42], lm[45]);
     return (dist1 + dist2) / (2 * dist3);
 }
 
 float EyeMouthStatus::getRightEyeRatio(const std::vector<cv::Point2f> & lm){
-    float dist1 = norm(lm[37],lm[41]);
-    float dist2 = norm(lm[38],lm[40]);
-    float dist3 = norm(lm[36],lm[39]);
+    float dist1 = norm2(lm[37], lm[41]);
+    float dist2 = norm2(lm[38], lm[40]);
+    float dist3 = norm2(lm[36], lm[39]);
     return (dist1 + dist2) / (2 * dist3);
 }
 

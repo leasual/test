@@ -13,11 +13,11 @@ CameraOnLine::CameraOnLine(int index) :
     }
 }
 
-bool CameraOnLine::Read(cv::Mat &frame) {
+std::string CameraOnLine::Read(cv::Mat &frame) {
     if(!cam_.read(frame)){
-        return false;
+        return "";
     }
-    return true;
+    return "";
 }
 
 CameraOffLine::CameraOffLine(const std::string &path) :
@@ -31,9 +31,10 @@ CameraOffLine::CameraOffLine(const std::string &path) :
     std::cout << "files size : " << files_.size() << std::endl;
 }
 
-bool CameraOffLine::Read(cv::Mat &frame) {
+std::string CameraOffLine::Read(cv::Mat &frame) {
+    std::string path = files_.at(index_++);
     try {
-        frame = cv::imread(files_.at(index_++));
+        frame = cv::imread(path);
     }
     catch (...){
         if(index_ >= files_.size()){
@@ -41,9 +42,9 @@ bool CameraOffLine::Read(cv::Mat &frame) {
             std::abort();
         }
         std::cerr << "img read failed!" << std::endl;
-        return false;
+        return path;
     }
-    return true;
+    return path;
 }
 
 std::vector<std::string> CameraOffLine::Listdir(const std::string &folder) {

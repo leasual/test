@@ -2600,7 +2600,7 @@ namespace dlib
         /*!
             ensures
                 - When we normalize a vector we divide it by its L2 norm.  However, the
-                  get_eps() value is added to the squared norm prior to division to avoid
+                  get_eps() value is added to the squared norm2 prior to division to avoid
                   ever dividing by zero. 
         !*/
 

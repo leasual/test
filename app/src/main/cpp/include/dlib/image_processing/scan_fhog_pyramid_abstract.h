@@ -656,7 +656,7 @@ namespace dlib
                 - if (get_nuclear_norm_regularization_strength() == 0) then
                     - This feature is disabled
                 - else
-                    - A nuclear norm regularizer will be added when
+                    - A nuclear norm2 regularizer will be added when
                       structural_object_detection_trainer is used to learn a HOG filter
                       bank.  Note that this can make the training process take
                       significantly longer (but can result in faster object detectors).

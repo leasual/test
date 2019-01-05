@@ -17,6 +17,8 @@ import org.opencv.android.CameraBridgeViewBase.CvCameraViewListener2;
 import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
 import org.opencv.core.Mat;
+import org.opencv.core.Point;
+import org.opencv.core.Scalar;
 import org.opencv.imgproc.Imgproc;
 
 public class Tutorial2Activity extends Activity implements CvCameraViewListener2 {
@@ -25,7 +27,8 @@ public class Tutorial2Activity extends Activity implements CvCameraViewListener2
     private Mat                    mIntermediateMat;
     private Mat                    mGray;
     private CameraBridgeViewBase   mOpenCvCameraView;
-
+    private String[] name = {"用户","分神","疲劳","吸烟","打电话","异常","校准"};
+    private int[] ids = {R.id.name,R.id.dis,R.id.fat,R.id.smoke,R.id.call,R.id.abnm,R.id.calibrate};
     private BaseLoaderCallback  mLoaderCallback = new BaseLoaderCallback(this) {
         @Override
         public void onManagerConnected(int status) {
@@ -93,7 +96,9 @@ public class Tutorial2Activity extends Activity implements CvCameraViewListener2
         mOpenCvCameraView = (CameraBridgeViewBase) findViewById(R.id.tutorial2_activity_surface_view);
         mOpenCvCameraView.setVisibility(CameraBridgeViewBase.VISIBLE);
         mOpenCvCameraView.setCvCameraViewListener(this);
-        mOpenCvCameraView.setCameraIndex(1);
+        mOpenCvCameraView.setCameraIndex(0);
+//        mOpenCvCameraView.setMaxFrameSize(640,480);
+        mOpenCvCameraView.setMaxFrameSize(1280 ,720);
 
     }
 
@@ -114,7 +119,7 @@ public class Tutorial2Activity extends Activity implements CvCameraViewListener2
         super.onResume();
         if (!OpenCVLoader.initDebug()) {
             Log.d(TAG, "Internal OpenCV library not found. Using OpenCV Manager for initialization");
-            OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_3_4_0, this, mLoaderCallback);
+            OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION, this, mLoaderCallback);
         } else {
             Log.d(TAG, "OpenCV library found inside package. Using it!");
             mLoaderCallback.onManagerConnected(LoaderCallbackInterface.SUCCESS);
@@ -164,7 +169,8 @@ public class Tutorial2Activity extends Activity implements CvCameraViewListener2
         if(totalDone)
             FindFeatures2(rgb.getNativeObjAddr(), mRgba.getNativeObjAddr(),(onCamera-lastTime));
 //        lastTime = onCamera;
-
+//        else
+//            Imgproc.putText(mRgba,"正在初始化",new Point(120,120),2,2,new Scalar(122,255,50));
         return mRgba;
     }
 

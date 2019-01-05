@@ -508,7 +508,7 @@ namespace dlib
         ) const;
         /*!
             ensures
-                - returns the squared norm of the point represented by this object.  This value is
+                - returns the squared norm2 of the point represented by this object.  This value is
                   equal to the following expression:
                     trans(get_alpha()) * kernel_matrix(get_kernel(),get_basis_vectors()) * get_alpha()
         !*/

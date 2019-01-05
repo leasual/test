@@ -32,7 +32,7 @@ JNIEXPORT jlong JNICALL Java_org_opencv_samples_tutorial2_Tutorial2Activity_Find
 //    cv::cvtColor(*(Mat*)addrGray,*newMat,cv::COLOR_GRAY2RGB);
 //    cv::cvtColor(*(Mat*)addrRgba,*newMat,cv::COLOR_RGBA2RGB);
     if(totalFlow!= nullptr){
-        totalFlow ->Run(*(Mat*)copyMat,*result, false,"chr");
+        totalFlow ->Run(*(Mat*)copyMat,*result, true,"user");
     }
 //    if(totalFlow!= nullptr){
 //        totalFlow ->Run(*newMat,*result, false,"chr");
@@ -58,13 +58,13 @@ JNIEXPORT jlong JNICALL Java_org_opencv_samples_tutorial2_Tutorial2Activity_Find
 
 //    callbackEnd(jniEnv,obj);
 
-    cv::putText(*(Mat*)addrRgba, faceid, cv::Point(120,120),2,2,cv::Scalar(122,255,50));
-    cv::putText(*(Mat*)addrRgba, distration+to_string(dis), cv::Point(120,180),2,2,cv::Scalar(122,255,50));
-    cv::putText(*(Mat*)addrRgba, fatigue+to_string(fat), cv::Point(120,260),2,2,cv::Scalar(122,255,50));
-    cv::putText(*(Mat*)addrRgba, showSmoke+to_string(smoke), cv::Point(120,300),2,2,cv::Scalar(122,255,50));
-    cv::putText(*(Mat*)addrRgba, showCall+to_string(call), cv::Point(120,350),2,2,cv::Scalar(122,255,50));
-    cv::putText(*(Mat*)addrRgba, showAbnorm+to_string(abnorm), cv::Point(120,400),2,2,cv::Scalar(122,255,50));
-    cv::putText(*(Mat*)addrRgba, showCalibrt+to_string(cal), cv::Point(120,460),2,2,cv::Scalar(122,255,50));
+    cv::putText(*(Mat*)addrRgba, faceid, cv::Point(120,80),1,1,cv::Scalar(122,255,50));
+    cv::putText(*(Mat*)addrRgba, distration+to_string(dis), cv::Point(120,110),1,1,cv::Scalar(122,255,50));
+    cv::putText(*(Mat*)addrRgba, fatigue+to_string(fat), cv::Point(120,140),1,1,cv::Scalar(122,255,50));
+    cv::putText(*(Mat*)addrRgba, showSmoke+to_string(smoke), cv::Point(120,170),1,1,cv::Scalar(122,255,50));
+    cv::putText(*(Mat*)addrRgba, showCall+to_string(call), cv::Point(120,200),1,1,cv::Scalar(122,255,50));
+    cv::putText(*(Mat*)addrRgba, showAbnorm+to_string(abnorm), cv::Point(120,230),1,1,cv::Scalar(122,255,50));
+    cv::putText(*(Mat*)addrRgba, showCalibrt+to_string(cal), cv::Point(120,260),1,1,cv::Scalar(122,255,50));
 
 //    LOGD("JNI distration -- %d",dis);
 //    LOGD("JNI calibrate -- %d",cal);
@@ -78,7 +78,7 @@ JNIEXPORT jlong JNICALL Java_org_opencv_samples_tutorial2_Tutorial2Activity_Find
 
 JNIEXPORT void JNICALL Java_org_opencv_samples_tutorial2_Tutorial2Activity_stop(JNIEnv* jniEnv, jobject){
     if(totalFlow != nullptr){
-        totalFlow ->Destroy();
+//        totalFlow ->Destroy();
     }
 //    std::abort();
 }
@@ -90,13 +90,17 @@ JNIEXPORT void JNICALL Java_org_opencv_samples_tutorial2_Tutorial2Activity_FindF
 //    OnCmdSend();
 //    OnCmdStop();
 //    DestroyHPSocketObjects();
-    DSM_JTT808_Event_Callback(1,1,"sdc/1.png");
+    DSM_JTT808_Start("112.64.116.41",20005,0);
+    DSM_JTT808_Event_Callback(1,1,"http://220.194.43.233:8080/1.jpeg");
+    sleep(100);
+    DSM_JTT808_Stop(1);
+
     if(totalFlow == nullptr){
-        totalFlow = new TotalFlow("/sdcard/Android/data/com.untouch.androidjnionpencv/files");
+        totalFlow = new TotalFlow("/sdcard/Android/data/com.ut.sdk/files");
         result = new Result();
 //        newMat = new Mat();
         bbox = new cv::Rect();
-        LOGD("JNI abnormal -- init TotalFlow ----");
+        LOGE("JNI abnormal -- init TotalFlow ----");
     }
 }
 

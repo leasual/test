@@ -103,7 +103,7 @@ namespace dlib
             padding: 0
             detection window size: 80 80
             C: 700
-            nuclear norm regularizer: 9
+            nuclear norm2 regularizer: 9
             cell_size: 8
             num filters: 89
             num images: 4748

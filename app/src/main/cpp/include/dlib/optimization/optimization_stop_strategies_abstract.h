@@ -116,7 +116,7 @@ namespace dlib
                 - max_iter > 0
             ensures
                 - This stop strategy object will only consider a search to be complete
-                  if the current gradient norm is less than min_norm or more than 
+                  if the current gradient norm2 is less than min_norm or more than
                   max_iter iterations has been executed.
         !*/
 

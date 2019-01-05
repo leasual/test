@@ -188,7 +188,7 @@ namespace
                     // the projection error should be the distance between the test_point and the point it gets
                     // projected onto
                     DLIB_TEST_MSG(abs(df(test_point) - err) < 1e-10, abs(df(test_point) - err));
-                    // while we are at it make sure the squared norm in the distance function is right
+                    // while we are at it make sure the squared norm2 in the distance function is right
                     double df_error = abs(df.get_squared_norm() - trans(df.get_alpha())*kernel_matrix(kern, samples)*df.get_alpha());
                     DLIB_TEST_MSG( df_error < 1e-10, df_error);
                 }

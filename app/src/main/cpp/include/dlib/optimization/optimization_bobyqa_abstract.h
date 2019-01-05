@@ -13,7 +13,7 @@
     Powell described it as a method that seeks the least value of a function of many 
     variables, by applying a trust region method that forms quadratic models by 
     interpolation.  There is usually some freedom in the interpolation conditions, 
-    which is taken up by minimizing the Frobenius norm of the change to the second 
+    which is taken up by minimizing the Frobenius norm2 of the change to the second
     derivative of the model, beginning with the zero matrix. The values of the variables 
     are constrained by upper and lower bounds.  
 

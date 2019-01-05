@@ -183,7 +183,7 @@ namespace dlib
             - horz_gradient.nc() == vert_gradient.nc()
             - horz_gradient and vert_gradient represent unit normalized vectors.  That is,
               you should have called normalize_image_gradients(horz_gradient,vert_gradient)
-              or otherwise caused all the gradients to have unit norm.
+              or otherwise caused all the gradients to have unit norm2.
             - for all valid i,j:
                 get_rect(horz_gradient).contains(lines[i][j])
         ensures

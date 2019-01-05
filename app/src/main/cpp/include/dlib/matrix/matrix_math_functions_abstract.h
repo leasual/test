@@ -371,7 +371,7 @@ namespace dlib
                 - R has the same dimensions as m
                 - for all valid r and c:
                   R(r,c) == std::norm(m(r,c))
-                  (note that std::norm(val) == val.real()*val.real() + val.imag()*val.imag())
+                  (note that std::norm2(val) == val.real()*val.real() + val.imag()*val.imag())
     !*/
 
 // ----------------------------------------------------------------------------------------

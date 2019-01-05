@@ -9,6 +9,8 @@
 #define SRV_USE_NVRAM 0 // ʹ��NV����
 #define SRV_NO_REGISTER 0 // ��ע���Ȩ
 
+
+
 #if (SRV_USE_NVRAM == 0)
 #define JTT808_SERVER_1 1 // ƽ̨
 #define JTT808_SERVER_1_DEBUG 2 // ƽ̨
@@ -18,24 +20,22 @@
 #define MX_JTT808_SRV JTT808_SERVER_3
 
 #if (MX_JTT808_SRV == JTT808_SERVER_1)
-#define	DSMAPP_SRV_ADDR_IP		"221.204.237.94"
-#define	DSMAPP_SRV_ADDR_PORT		9988
+#define	DSMAPP_SRV_ADDR_IP		"47.101.52.88"
+#define	DSMAPP_SRV_ADDR_PORT		20048
 
-#elif (MX_JTT808_SRV == JTT808_SERVER_1_DEBUG)
-#define	DSMAPP_SRV_ADDR_IP		"112.74.87.95"
-#define	DSMAPP_SRV_ADDR_PORT		6968
 
-#elif (MX_JTT808_SRV == JTT808_SERVER_2)
-#define	DSMAPP_SRV_ADDR_IP		"139.196.164.147"
-#define	DSMAPP_SRV_ADDR_PORT		9090
 
 #elif (MX_JTT808_SRV == JTT808_SERVER_3)
 //#define	DSMAPP_SRV_ADDR_IP		"47.101.52.88"
 //#define	DSMAPP_SRV_ADDR_PORT		20048
 //#define    DSMAPP_SRV_ADDR_IP        "112.64.117.214"
 //#define    DSMAPP_SRV_ADDR_PORT        20001
-#define    DSMAPP_SRV_ADDR_IP        "47.101.52.88"
-#define    DSMAPP_SRV_ADDR_PORT        20048
+//#define    DSMAPP_SRV_ADDR_IP        "47.101.52.88"
+//#define    DSMAPP_SRV_ADDR_PORT        20048
+
+#define    DSMAPP_SRV_ADDR_IP        "112.64.116.41"
+#define    DSMAPP_SRV_ADDR_PORT        20005
+
 #endif
 #endif
 

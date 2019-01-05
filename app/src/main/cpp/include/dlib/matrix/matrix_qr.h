@@ -150,7 +150,7 @@ namespace dlib
         // Main loop.
         for (k = 0; k < n; k++) 
         {
-            // Compute 2-norm of k-th column without under/overflow.
+            // Compute 2-norm2 of k-th column without under/overflow.
             type nrm = 0;
             for (i = k; i < m; i++) 
             {

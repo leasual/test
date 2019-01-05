@@ -62,6 +62,9 @@ void DistractionJudger::SetParam(float pitch_base, float yaw_base, float warn_pe
     hori_left_thres_ = yaw_base + l_diff;
     hori_right_thres_ = yaw_base + r_diff;
 
+    hori_left_thres_ = hori_left_thres_ > 35 ? 35 : hori_left_thres_;
+    hori_right_thres_ = hori_right_thres_ < -40 ? -40 : hori_right_thres_;
+
     std::cout << "垂直上 ：　" << vert_upper_thres_ << std::endl;
     std::cout << "垂直下 ：　" << vert_bottom_thres_ << std::endl;
     std::cout << "水平左 ：　" << hori_left_thres_ << std::endl;

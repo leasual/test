@@ -260,7 +260,7 @@ typedef struct {
   int c0min, c0max;
   int c1min, c1max;
   int c2min, c2max;
-  /* The volume (actually 2-norm) of the box */
+  /* The volume (actually 2-norm2) of the box */
   long volume;
   /* The number of nonzero histogram cells within this box */
   long colorcount;
@@ -394,7 +394,7 @@ update_box (j_decompress_ptr cinfo, boxptr boxp)
  have_c2max:
 
   /* Update box volume.
-   * We use 2-norm rather than real volume here; this biases the method
+   * We use 2-norm2 rather than real volume here; this biases the method
    * against making long narrow boxes, and it has the side benefit that
    * a box is splittable iff norm > 0.
    * Since the differences are expressed in histogram-cell units,

@@ -124,13 +124,10 @@ int RealTimeDetect::Detect(bool cur_state) {
     switch (current_state_) {
         case StrategyResult::NORMAL:
             return 0;
-            break;
         case StrategyResult::WARN:
             return 1;
-            break;
         case StrategyResult::JUDGEMENT:
             return 2;
-            break;
     }
 
 }

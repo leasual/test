@@ -210,7 +210,7 @@ namespace dlib
         ) const;
         /*!
             ensures
-                - returns the squared norm of the centroid vector represented by this
+                - returns the squared norm2 of the centroid vector represented by this
                   object.  I.e. returns this->inner_product(*this)
         !*/
 

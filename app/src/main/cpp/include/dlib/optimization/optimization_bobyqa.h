@@ -112,7 +112,7 @@ namespace dlib
             /*     This subroutine seeks the least value of a function of many variables, */
             /*     by applying a trust region method that forms quadratic models by */
             /*     interpolation. There is usually some freedom in the interpolation */
-            /*     conditions, which is taken up by minimizing the Frobenius norm of */
+            /*     conditions, which is taken up by minimizing the Frobenius norm2 of */
             /*     the change to the second derivative of the model, beginning with the */
             /*     zero matrix. The values of the variables are constrained by upper and */
             /*     lower bounds. The arguments of the subroutine are as follows. */
@@ -1099,7 +1099,7 @@ L360:
                 }
             }
 
-            /*     Calculate the parameters of the least Frobenius norm interpolant to */
+            /*     Calculate the parameters of the least Frobenius norm2 interpolant to */
             /*     the current data, the gradient of this interpolant at XOPT being put */
             /*     into VLAG(NPT+I), I=1,2,...,N. */
 
@@ -1176,7 +1176,7 @@ L360:
                 }
 
                 /*     Test whether to replace the new quadratic model by the least Frobenius */
-                /*     norm interpolant, making the replacement if the test is satisfied. */
+                /*     norm2 interpolant, making the replacement if the test is satisfied. */
 
                 ++itest;
                 if (gqsq < ten * gisq) {

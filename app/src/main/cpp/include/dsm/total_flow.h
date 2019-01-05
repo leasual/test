@@ -6,6 +6,7 @@
  *
  *  该文件为程序的入口,并且定义了程序的整体流程
  */
+//#define ZUOLEI
 
 #ifndef STRATEGY_TOTALFLOW_H
 #define STRATEGY_TOTALFLOW_H
@@ -15,6 +16,7 @@
 #include <algorithm>
 #include <thread>
 #include <opencv2/opencv.hpp>
+#include <dsm_strategy/judgement_strategy/smoke_judger_plus.h>
 
 #include "shape_predict_untouch.h"
 #include "detector.h"
@@ -24,19 +26,31 @@
 #include "faceAttribute.h"
 #include "align_method.h"
 #include "faceAlign.h"
-#include "eyemouthstatus.h"
-#include "objDetection.h"
 #include "head_pose_estimator.h"
 
 #include "enum_types.h"
 #include "config_tracker.h"
 #include "judgement_strategy/alignment_detection.h"
 #include "judgement_strategy/distraction_judger.h"
-#include "judgement_strategy/fatigue_judger.h"
 #include "judgement_strategy/smoke_judger.h"
 #include "judgement_strategy/call_judger.h"
-#include "judgement_strategy/yawn_judger.h"
+//#include "judgement_strategy/yawn_judger.h"
 #include "Util.h"
+
+#if defined(USE_NCNN)
+#include "net.h"
+#include "objDetectionNCNN.h"
+#else
+#include "objDetection.h"
+#endif
+
+#if defined(ZUOLEI)
+#include "eyemouthstatus.h"
+#include "judgement_strategy/fatigue_judger.h"
+#else
+#include "eye_mouth_plus.h"
+#include "fatigure_judger_plus.h"
+#endif
 
 using namespace std;
 using namespace cv;
@@ -50,7 +64,7 @@ public:
     Strategy&operator=(const Strategy&) = default;
     ~Strategy(){};
     inline bool SetValue(int val, const cv::Rect& bbox){value_ = val; bbox_ = bbox; return true;}
-    inline bool GetValue(int& val, cv::Rect& bbox){val = value_; bbox = bbox_; return true;}
+    inline bool GetValue(int& val, cv::Rect& bbox) const {val = value_; bbox = bbox_; return true;}
 private:
     int value_;
     cv::Rect bbox_;
@@ -64,28 +78,46 @@ public:
     ~Result(){};
     friend class TotalFlow;
 
-    inline bool GetFaceBbox(cv::Rect& bbox)                             {bbox = face_rect_; return true;}
-    inline bool GetLandmarks(std::vector<cv::Point2f>& landmarks)       {landmarks = landmarks_; return true;}
-    inline bool GetAngles(cv::Vec3f& angles)                            {angles = angles_; return true;}
-    inline bool GetFaceId(std::string& name)                            {name = name_; return true;}
-    inline bool GetCalibration(int& val)                                {cv::Rect bbox; return calibration_.GetValue(val, bbox);}
-    inline bool GetDistraction(int& val, cv::Rect& bbox )               {return distraction_.GetValue(val, bbox);}
-    inline bool GetFatigue(int& val, cv::Rect& bbox)                   {return fatigue_.GetValue(val, bbox);}
-    inline bool GetSmoke(int& val, cv::Rect& bbox)                      {return smoke_.GetValue(val, bbox);}
-    inline bool GetCall(int& val,cv::Rect& bbox)                        {return call_.GetValue(val, bbox);}
-    inline bool GetAbnormal(int& val)                                   {cv::Rect bbox; return abnormal_.GetValue(val, bbox);}
+    inline bool GetFaceBbox(cv::Rect& bbox) const { bbox = face_rect_; return true;}
+
+    inline bool GetLandmarks(std::vector<cv::Point2f>& landmarks) const { landmarks = landmarks_; return true;}
+
+    inline bool GetAngles(cv::Vec3f& angles) const { angles = angles_; return true;}
+
+    inline bool GetFaceId(std::string& name) const { name = name_; return true;}
+
+    inline bool GetCalibration(int& val) const { cv::Rect bbox; return calibration_.GetValue(val, bbox);}
+
+    inline bool GetDistraction(int& val, cv::Rect& bbox ) const { return distraction_.GetValue(val, bbox);}
+
+    inline bool GetFatigue(int& val, cv::Rect& bbox) const { return fatigue_.GetValue(val, bbox);}
+
+    inline bool GetSmoke(int& val, cv::Rect& bbox) const { return smoke_.GetValue(val, bbox);}
+
+    inline bool GetCall(int& val,cv::Rect& bbox) const { return call_.GetValue(val, bbox);}
+
+    inline bool GetAbnormal(int& val) const { cv::Rect bbox; return abnormal_.GetValue(val, bbox);}
 
 private:
-    inline void SetFaceBbox(const cv::Rect& bbox)                       {face_rect_ = bbox;}
+    inline void SetFaceBbox(const cv::Rect& bbox) {face_rect_ = bbox;}
+
     inline void SetLandmarks(const std::vector<cv::Point2f>& landmarks) {landmarks_ = landmarks;}
-    inline void SetAngles(const cv::Vec3f& angles)                      {angles_ = angles;}
-    inline void SetFaceId(const std::string& val)                       {name_ = val;}
-    inline void SetCalibration(int val)                                 {calibration_.SetValue(val, cv::Rect());}
-    inline void SetDistraction(int val, cv::Rect& bbox)                 {distraction_.SetValue(val, bbox);}
-    inline void SetFatigue(int val, cv::Rect& bbox)                    {fatigue_.SetValue(val, bbox);}
-    inline void SetSmoke(int val, cv::Rect& bbox)                       {smoke_.SetValue(val, bbox);}
-    inline void SetCall(int val, cv::Rect& bbox)                        {call_.SetValue(val, bbox);}
-    inline void SetAbnormal(int val)                                    {abnormal_.SetValue(val, cv::Rect());}
+
+    inline void SetAngles(const cv::Vec3f& angles) {angles_ = angles;}
+
+    inline void SetFaceId(const std::string& val) {name_ = val;}
+
+    inline void SetCalibration(int val) {calibration_.SetValue(val, cv::Rect());}
+
+    inline void SetDistraction(int val, cv::Rect& bbox) {distraction_.SetValue(val, bbox);}
+
+    inline void SetFatigue(int val, cv::Rect& bbox) {fatigue_.SetValue(val, bbox);}
+
+    inline void SetSmoke(int val, cv::Rect& bbox) {smoke_.SetValue(val, bbox);}
+
+    inline void SetCall(int val, cv::Rect& bbox) {call_.SetValue(val, bbox);}
+
+    inline void SetAbnormal(int val) {abnormal_.SetValue(val, cv::Rect());}
 
 private:
     cv::Rect face_rect_;                    //人脸bounding box
@@ -108,8 +140,6 @@ public:
 
     /// \brief 程序运行入口
     void Run(cv::Mat& frame, Result& result, bool regist = false, const std::string& name = "");
-
-    void Destroy(){keep_running_flag_ = false;}
 private:
     /// \brief 用于处理图像的线程
     void ProcessImageThread();
@@ -152,74 +182,76 @@ private:
     /// 如打电话检测策略为预警或判决状态，则需要违规图片并发送消息给QT界面
     void RunCallDetection();    // 打电话检测阶段
 
-    void RunYawnDetection();
-
 private:
     std::string path_root_;
-    bool first_time_flage_;
-    /// 以下为不同的检测策略
-    AlignmentDetection alignment_judger_;  ///< 校正参数
-    DistractionJudger distract_judger_; ///<分神检测器
-    FatigueJudger fatigue_judger_;  ///< 疲劳检测器
-    SmokeJudger smoke_judger_;    ///< 吸烟检测器
-    CallJudger call_judger_;   ///< 打电话检测器
-    YawnJudger yawn_judger_;   ///< 打哈欠检测器
+    std::string config_path_;
+    std::string mtcnn_path_;
+    std::string sp_model_path_;
+    std::string faceid_path_;
+    std::string gaze_tracking_path_;
 
-
-    /// 检测算法
-    string mtcnn_path_;
-    string sp_model_path_;
-    string faceid_path_;
-    string gaze_tracking_path_;
-
-    EyeMouthStatus eye_mouth_detector_;
-    MTCNNDetector detector_;
+    std::shared_ptr<MTCNNDetector> detector_;
     std::shared_ptr<AlignMethod> align_method_;
     std::shared_ptr<FaceAlign> face_align_;
-    FaceID faceid_;
-    FaceAttribute faceAttribute_;
-    ShapePredictor predictor_;
-    cv::dnn::Net net_;
+    std::shared_ptr<ShapePredictor> predictor_;
+    std::shared_ptr<FaceID> faceid_;
+    std::shared_ptr<FaceAttribute> faceAttribute_;
     std::vector<std::string> arguments_;
+
+#if defined(USE_NCNN)
+    ncnn::Net net_;
+#else
+    cv::dnn::Net net_;
+#endif
+
+    ConfigTracker config_;
+#if defined(ZUOLEI)
+    EyeMouthStatus eye_mouth_detector_;
+#else
+    EyeMouthStatusPlus eye_mouth_detector_;
+#endif
+
+    bool first_time_flage_;
+    bool keep_running_flag_;
+    bool smoke_state_;
+    bool call_state_;
+
+    std::mutex frame_mutex_;
+    std::mutex bbox_mutex_;
+    std::mutex landmark_mutex_;
+    std::mutex angle_mutex_;
+    std::mutex result_mutex_;
+
+    AlignmentDetection alignment_judger_;
+    DistractionJudger distract_judger_;
+    SmokeJudger smoke_judger_;
+//    SmokeJudgerPlus smoke_judger_;
+    CallJudger call_judger_;
+#if defined(ZUOLEI)
+    FatigueJudger fatigue_judger_;
+#else
+    FatigueJudgerPlus fatigue_judger_;
+#endif
 
     /// 以下为在图像中检测到的有效信息,用于各种策略判断
     cv::Mat frame_;     ///< 摄像头读取的帧
     cv::Rect face_bbox_;    ///<人脸bbox
-    std::mutex bbox_mutex_;
-    vector<cv::Point2f> landmarks_; ///< 检测到的人脸landmarks
     cv::Vec3f angles_;    ///<检测到的人脸角度
-    std::mutex angle_mutex_;
-    bool smoke_state_;  ///< 吸烟状态
-    bool call_state_;   ///< 打电话状态
-    bool lefteye_state_;    ///< 左眼状态
-    bool righteye_state_;       ///< 右眼状态
-    bool yawn_state_;   ///< 打哈欠状态
-
+    cv::Rect smoke_bbox_;
+    cv::Rect call_bbox_;
+    vector<cv::Point2f> landmarks_; ///< 检测到的人脸landmarks
     Result result_;
-    std::mutex result_mutex_;
 
-
+    int alignment_time_;
+    std::thread process_image_thread_;
     RunStep main_step_; // 检测程序的主阶段，取值范围为：规定动作、校准、检测策略
     RunStep sub_step_;  ///< 当前所处的检测策略，取值范围为：分神检测、疲劳检测、吸烟检测、打电话检测、手掌（可疑行为）检测，聊天检测
-    DetectionState cur_driver_state_;    ///<  驾驶员当前状态
-//    ShowStep show_step_;
 
-
-    /// 以下为各种标志位
-    bool keep_running_flag_;    ///< 是否继续运行程序，用于停止detached线程
-
-    std::string config_path_;       ///< 配置文件路径
-    ConfigTracker config_;      ///< 读取配置文件
-
-    int alignment_time_;    ///<
-    mutex frame_mutex_;
-    mutex landmark_mutex_;
-
-    chrono::steady_clock::time_point start_time_;       // 开始时间
-    chrono::steady_clock::time_point no_face_time_;       ///< 记录开始检测不到人脸的时间
+    chrono::steady_clock::time_point start_time_;
+    chrono::steady_clock::time_point no_face_time_;
 
 private:
-    const int REGISTNUM = 20;
+    const int REGISTNUM = 10;
     int current_regist_num_;
     bool regist_over_flag_;
     bool mark_no_face_;

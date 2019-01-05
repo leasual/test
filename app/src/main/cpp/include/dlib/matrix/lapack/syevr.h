@@ -196,7 +196,7 @@ namespace dlib
 *
 *          where EPS is the machine precision.  If ABSTOL is less than
 *          or equal to zero, then  EPS*|T|  will be used in its place,
-*          where |T| is the 1-norm of the tridiagonal matrix obtained
+*          where |T| is the 1-norm2 of the tridiagonal matrix obtained
 *          by reducing A to tridiagonal form.
 *
 *          See "Computing Small Singular Values of Bidiagonal Matrices

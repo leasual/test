@@ -851,7 +851,7 @@ namespace dlib
         type exshift = 0.0;
         type p=0,q=0,r=0,s=0,z=0,t,w,x,y;
 
-        // Store roots isolated by balanc and compute matrix norm
+        // Store roots isolated by balanc and compute matrix norm2
 
         type norm = 0.0;
         for (long i = 0; i < nn; i++) 

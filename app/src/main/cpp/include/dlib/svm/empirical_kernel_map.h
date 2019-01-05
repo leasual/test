@@ -345,7 +345,7 @@ namespace dlib
             basis.clear();
             basis.reserve(basis_samples.size());
 
-            // find out the value of the largest norm of the elements in basis_samples.
+            // find out the value of the largest norm2 of the elements in basis_samples.
             const scalar_type max_norm = max(diag(kernel_matrix(kernel, basis_samples)));
             // we will consider anything less than or equal to this number to be 0
             const scalar_type eps = max_norm*100*std::numeric_limits<scalar_type>::epsilon();

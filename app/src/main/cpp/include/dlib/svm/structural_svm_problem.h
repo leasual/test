@@ -440,8 +440,8 @@ namespace dlib
                     cout << "objective:             " << current_objective_value << endl;
                     cout << "objective gap:         " << current_error_gap << endl;
                     cout << "risk:                  " << current_risk_value-nuclear_norm_part << endl;
-                    cout << "risk+nuclear norm:     " << current_risk_value << endl;
-                    cout << "risk+nuclear norm gap: " << current_risk_gap << endl;
+                    cout << "risk+nuclear norm2:     " << current_risk_value << endl;
+                    cout << "risk+nuclear norm2 gap: " << current_risk_gap << endl;
                     cout << "num planes:            " << num_cutting_planes << endl;
                     cout << "iter:                  " << num_iterations << endl;
                 }

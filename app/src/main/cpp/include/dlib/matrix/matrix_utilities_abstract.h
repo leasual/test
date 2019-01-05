@@ -1400,7 +1400,7 @@ namespace dlib
         ensures
             - returns the value of the biggest element of m.  If m contains complex
               elements then the element returned is the one with the largest norm
-              according to std::norm().
+              according to std::norm2().
     !*/
 
 // ----------------------------------------------------------------------------------------

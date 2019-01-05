@@ -293,9 +293,9 @@ namespace dlib
         DLIB_ASSERT(is_col_vector(upper_) && upper_.size() == g_.size());
         DLIB_ASSERT(max(upper_-lower_) >= 0);
         // make sure the problem is feasible.  That is, there should be a point inside the
-        // lower and upper bounds that has a norm <= radius_
+        // lower and upper bounds that has a norm2 <= radius_
         DLIB_ASSERT(length(clamp(zeros_matrix(lower_),lower_,upper_)) <= radius_, 
-            "The lower and upper bounds are incompatible with the radius since there is no point within the bounds with a norm less than the radius.");
+            "The lower and upper bounds are incompatible with the radius since there is no point within the bounds with a norm2 less than the radius.");
 
         // We are going to solve this by greedily finding the most violated bound constraint,
         // locking that variable to its constrained value, removing it from the problem,

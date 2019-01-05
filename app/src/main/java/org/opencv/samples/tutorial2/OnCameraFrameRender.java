@@ -14,7 +14,8 @@ import org.opencv.imgproc.Imgproc;
 
 import android.content.res.Resources;
 
-import com.untouch.androidjnionpencv.opencvnativeandroidstudio.R;
+import com.ut.sdk.R;
+
 
 abstract class FrameRender {
     protected CameraCalibrator mCalibrator;

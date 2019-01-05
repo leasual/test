@@ -43,6 +43,7 @@ int DSM_JTT808_Event_Callback(int warn_type, int file_type, const char *path);
  * parameters desc:  
  * input 1  svr_ip, server ip address 
  * input 2, port  , server port  
+ * input 3, need to start the register follow or not 
  *
  * output the result of connect server  
  *         success  1 
@@ -55,7 +56,7 @@ int DSM_JTT808_Event_Callback(int warn_type, int file_type, const char *path);
  */
 
 
-int DSM_JTT808_Start(const char *server, unsigned short int port);
+int DSM_JTT808_Start(const char *server, unsigned short int port, int start_register_follow = 0);
 
 
 
