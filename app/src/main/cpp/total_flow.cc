@@ -6,7 +6,7 @@
 #include <faceID.h>
 #include <faceAttribute.h>
 #include "total_flow.h"
-#include "Util.h"
+
 #if defined(USE_NCNN)
 #include <objDetectionNCNN.h>
 #else
@@ -24,12 +24,14 @@ TotalFlow::TotalFlow(const std::string& path) :
         config_path_(path_root_ + "/configure.yaml"),
         mtcnn_path_(path_root_ + "/mtcnn"),
         sp_model_path_(path_root_ + "/align/0102-1635-4000-800.dat"),
+        head_pose_model_path_(path_root_ + "/3D_model/model.txt"),
         faceid_path_(path_root_ + "/faceid"),
         gaze_tracking_path_(path_root_ + "/gaze_tracking"),
         detector_(std::make_shared<MTCNNDetector>(mtcnn_path_)),
         align_method_(std::make_shared<FivePtsAlign>(96, 96)),
         face_align_(std::make_shared<FaceAlign>(align_method_.get())),
         predictor_(std::make_shared<ShapePredictor>(sp_model_path_)),
+        head_pose_estimator_(std::make_shared<HeadPoseEstimator>(head_pose_model_path_, cv::Size(640,480))),
         faceid_(std::make_shared<FaceID>(faceid_path_)),
         faceAttribute_(std::make_shared<FaceAttribute>(faceid_path_)),
         arguments_(1, gaze_tracking_path_),
@@ -67,7 +69,7 @@ TotalFlow::TotalFlow(const std::string& path) :
     net_.load_model("yolo.bin");
 #else
     net_ = createNet(path_root_ + "/object_detection/MobileNetSSD_deploy.prototxt",
-            path_root_ + "/object_detection/shuffle_iter_300000.caffemodel");
+            path_root_ + "/object_detection/shuffle_iter_60000.caffemodel");
 #endif
 }
 
@@ -81,10 +83,10 @@ bool TotalFlow::DetectFrame(const cv::Mat &image) {
 //    std::vector<Face> faces = detector_->detect(image);
     std::vector<ObjInfo>faces;
 
-    chrono::steady_clock::time_point old = chrono::steady_clock::now();
     std::vector<ObjInfo>obj_state = objDetection(net_, image, 0.4);
-    auto time =  chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now() - old);
-    LOGE("objDetection(net_, image, 0.4) is %ld", time.count());
+//    chrono::steady_clock::time_point old = chrono::steady_clock::now();
+//    auto time =  chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now() - old);
+//    LOGE("objDetection(net_, image, 0.4) is %ld", time.count());
 
     for(auto& obj : obj_state){
         if(obj.action_ == Action::FACE)
@@ -122,12 +124,11 @@ bool TotalFlow::DetectFrame(const cv::Mat &image) {
 //    Face face= detector_->get_largest_face(faces);
 //    face_bbox_ = face.bbox.getRect();
 
-    chrono::steady_clock::time_point old2 = chrono::steady_clock::now();
     std::vector<cv::Point2f> shape = predictor_->predict(image, face_bbox_);
-    auto time2 =  chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now() - old2);
-    LOGE("predictor_->predict(image, face_bbox_) is %ld", time2.count());
+//    chrono::steady_clock::time_point old2 = chrono::steady_clock::now();
+//    auto time2 =  chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now() - old2);
+//    LOGE("predictor_->predict(image, face_bbox_) is %ld", time2.count());
 
-    HeadPoseEstimator estimator(image);
     std::vector<cv::Point2f> six_points;
     six_points.emplace_back(shape[38]); //鼻尖
     six_points.emplace_back(shape[8]);  //下巴尖
@@ -142,12 +143,13 @@ bool TotalFlow::DetectFrame(const cv::Mat &image) {
     }
     uniqueLock.unlock();
 
-    cv::Vec3d angles = estimator.estimate_pose(six_points);
+    cv::Vec3d angles = head_pose_estimator_->estimate_pose(shape);
     std::unique_lock<std::mutex> uniqueLockAngles(angle_mutex_);
     angles_[0] = static_cast<float>(angles[0] * 180 / M_PI);
     angles_[1] = static_cast<float>(angles[1] * 180 / M_PI);
     angles_[2] = static_cast<float>(angles[2] * 180 / M_PI);
-    angles_[0] = angles_[0] > 0 ? angles_[0] - 180 : angles_[0] + 180;
+//    angles_[0] = angles_[0] > 0 ? angles_[0] - 180 : angles_[0] + 180;
+    angles_[2] = angles_[2] > 0 ? angles_[2] - 180 : angles_[2] + 180;
     uniqueLockAngles.unlock();
 
 //    cv::Mat img = image.clone();
@@ -186,10 +188,10 @@ bool TotalFlow::DetectFrame(const cv::Mat &image) {
         aligned_img = face_align_->DoAlign();
         cv::Mat feat;
 
-        chrono::steady_clock::time_point old3 = chrono::steady_clock::now();
         faceid_->GetFaceFeature(aligned_img,feat);
-        auto time3 =  chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now() - old3);
-        LOGE("GetFaceFeature(aligned_img,feat) is %ld", time3.count());
+//        chrono::steady_clock::time_point old3 = chrono::steady_clock::now();
+//        auto time3 =  chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now() - old3);
+//        LOGE("GetFaceFeature(aligned_img,feat) is %ld", time3.count());
 
         std::string name = GetName(feat);
         name_mutex_.lock();
@@ -295,11 +297,10 @@ void TotalFlow::RunProcess() {
     if (frame.empty()) {
         return;
     }
-    chrono::steady_clock::time_point old = std::chrono::steady_clock::now();
-
     bool success_flag = DetectFrame(frame);
-    auto diff = chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - old);
-    LOGE(" detectFrame is -- %ld", diff.count());
+//    chrono::steady_clock::time_point old = std::chrono::steady_clock::now();
+//    auto diff = chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - old);
+//    LOGE(" detectFrame is -- %ld", diff.count());
 
     if (success_flag == false) {
         if (main_step_ == RunStep::CalibrationStep) {

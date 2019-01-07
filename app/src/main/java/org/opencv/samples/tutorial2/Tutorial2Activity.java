@@ -6,6 +6,7 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.WindowManager;
+import android.widget.TextView;
 
 import com.op.dm.Utils;
 import com.ut.sdk.R;
@@ -27,6 +28,7 @@ public class Tutorial2Activity extends Activity implements CvCameraViewListener2
     private Mat                    mIntermediateMat;
     private Mat                    mGray;
     private CameraBridgeViewBase   mOpenCvCameraView;
+    private TextView[] views;
     private String[] name = {"用户","分神","疲劳","吸烟","打电话","异常","校准"};
     private int[] ids = {R.id.name,R.id.dis,R.id.fat,R.id.smoke,R.id.call,R.id.abnm,R.id.calibrate};
     private BaseLoaderCallback  mLoaderCallback = new BaseLoaderCallback(this) {
@@ -65,7 +67,7 @@ public class Tutorial2Activity extends Activity implements CvCameraViewListener2
              return contexts[0];
          }
      }
-
+    private String[] strings = new String[6];
     static class AsyncTaskInitTotalFlow extends AsyncTask<Tutorial2Activity,Integer,Tutorial2Activity>  {
         @Override
         protected void onPostExecute(Tutorial2Activity integer) {

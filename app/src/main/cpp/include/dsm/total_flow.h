@@ -187,6 +187,7 @@ private:
     std::string config_path_;
     std::string mtcnn_path_;
     std::string sp_model_path_;
+    std::string head_pose_model_path_;
     std::string faceid_path_;
     std::string gaze_tracking_path_;
 
@@ -194,6 +195,7 @@ private:
     std::shared_ptr<AlignMethod> align_method_;
     std::shared_ptr<FaceAlign> face_align_;
     std::shared_ptr<ShapePredictor> predictor_;
+    std::shared_ptr<HeadPoseEstimator> head_pose_estimator_;
     std::shared_ptr<FaceID> faceid_;
     std::shared_ptr<FaceAttribute> faceAttribute_;
     std::vector<std::string> arguments_;

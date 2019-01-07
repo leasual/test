@@ -15,9 +15,9 @@ std::string to_string(T value){
 }
 
 extern "C" {
-JNIEXPORT void JNICALL Java_org_opencv_samples_tutorial2_Tutorial2Activity_FindFeatures(JNIEnv*, jobject, jlong addrGray, jlong addrRgba);
-JNIEXPORT jlong JNICALL Java_org_opencv_samples_tutorial2_Tutorial2Activity_FindFeatures2(JNIEnv* jniEnv, jobject, jlong addrGray, jlong addrRgba,jlong);
-JNIEXPORT void JNICALL Java_org_opencv_samples_tutorial2_Tutorial2Activity_stop(JNIEnv* jniEnv, jobject);
+JNIEXPORT void JNICALL Java_org_opencv_samples_tutorial2_DetectActitvity_FindFeatures(JNIEnv*, jobject, jlong addrGray, jlong addrRgba);
+JNIEXPORT jintArray JNICALL Java_org_opencv_samples_tutorial2_DetectActitvity_FindFeatures2(JNIEnv* jniEnv, jobject, jlong addrGray, jlong addrRgba,jboolean regis);
+JNIEXPORT void JNICALL Java_org_opencv_samples_tutorial2_DetectActitvity_stop(JNIEnv* jniEnv, jobject);
 
 
 
@@ -26,74 +26,82 @@ TotalFlow* totalFlow = nullptr;
 Result* result = nullptr;
 Mat* newMat = nullptr;
 cv::Rect* bbox;
-JNIEXPORT jlong JNICALL Java_org_opencv_samples_tutorial2_Tutorial2Activity_FindFeatures2(JNIEnv* jniEnv, jobject obj, jlong copyMat, jlong addrRgba,jlong time)
+//jintArray*  re = nullptr;
+//jint* index = nullptr;
+JNIEXPORT jintArray JNICALL Java_org_opencv_samples_tutorial2_DetectActitvity_FindFeatures2(JNIEnv* jniEnv, jobject obj, jlong copyMat, jlong addrRgba,jboolean regis)
 {
-//    callback(jniEnv,obj);
-//    cv::cvtColor(*(Mat*)addrGray,*newMat,cv::COLOR_GRAY2RGB);
-//    cv::cvtColor(*(Mat*)addrRgba,*newMat,cv::COLOR_RGBA2RGB);
+    jintArray  re1;
+    jint *index2;
     if(totalFlow!= nullptr){
-        totalFlow ->Run(*(Mat*)copyMat,*result, true,"user");
+        totalFlow ->Run(*(Mat*)copyMat,*result, regis,"user");
+
+        int cal, dis, fat, smoke, call, abnorm;
+        std::string showFaceid = "name : ";
+        std::string distration = "dis  : ";
+        std::string fatigue    = "fat  : ";
+        std::string showSmoke  = "smoke: ";
+        std::string showCall   = "call : ";
+        std::string showAbnorm = "abnm : ";
+        std::string showCalibrt= "calibrate : ";
+        std::string faceid;
+
+        result->GetFaceId(faceid);
+        result->GetDistraction(dis, *bbox);
+        result->GetFatigue(fat, *bbox);
+        result->GetSmoke(smoke, *bbox);
+        result->GetCall(call, *bbox);
+        result->GetAbnormal(abnorm);
+        result->GetCalibration(cal);
+
+         re1 = jniEnv-> NewIntArray(5);
+         index2 = jniEnv ->GetIntArrayElements(re1, NULL);
+
+        index2[0] = dis;
+        index2[1] = fat;
+        index2[2] = smoke;
+        index2[3] = call;
+        index2[4] = abnorm;
+
     }
-//    if(totalFlow!= nullptr){
-//        totalFlow ->Run(*newMat,*result, false,"chr");
-//    }
 
-    int cal, dis, fat, smoke, call, abnorm;
-    std::string showFaceid = "name : ";
-    std::string distration = "dis  : ";
-    std::string fatigue    = "fat  : ";
-    std::string showSmoke  = "smoke: ";
-    std::string showCall   = "call : ";
-    std::string showAbnorm = "abnm : ";
-    std::string showCalibrt= "calibrate : ";
-    std::string faceid;
+    if(index2!= nullptr){
+        jniEnv ->ReleaseIntArrayElements(re1,index2,0);
+    }
 
-    result->GetFaceId(faceid);
-    result->GetDistraction(dis, *bbox);
-    result->GetFatigue(fat, *bbox);
-    result->GetSmoke(smoke, *bbox);
-    result->GetCall(call, *bbox);
-    result->GetAbnormal(abnorm);
-    result->GetCalibration(cal);
+
 
 //    callbackEnd(jniEnv,obj);
 
-    cv::putText(*(Mat*)addrRgba, faceid, cv::Point(120,80),1,1,cv::Scalar(122,255,50));
-    cv::putText(*(Mat*)addrRgba, distration+to_string(dis), cv::Point(120,110),1,1,cv::Scalar(122,255,50));
-    cv::putText(*(Mat*)addrRgba, fatigue+to_string(fat), cv::Point(120,140),1,1,cv::Scalar(122,255,50));
-    cv::putText(*(Mat*)addrRgba, showSmoke+to_string(smoke), cv::Point(120,170),1,1,cv::Scalar(122,255,50));
-    cv::putText(*(Mat*)addrRgba, showCall+to_string(call), cv::Point(120,200),1,1,cv::Scalar(122,255,50));
-    cv::putText(*(Mat*)addrRgba, showAbnorm+to_string(abnorm), cv::Point(120,230),1,1,cv::Scalar(122,255,50));
-    cv::putText(*(Mat*)addrRgba, showCalibrt+to_string(cal), cv::Point(120,260),1,1,cv::Scalar(122,255,50));
+//    cv::putText(*(Mat*)addrRgba, faceid, cv::Point(120,80),1,1,cv::Scalar(122,255,50));
+//    cv::putText(*(Mat*)addrRgba, distration+to_string(dis), cv::Point(120,110),1,1,cv::Scalar(122,255,50));
+//    cv::putText(*(Mat*)addrRgba, fatigue+to_string(fat), cv::Point(120,140),1,1,cv::Scalar(122,255,50));
+//    cv::putText(*(Mat*)addrRgba, showSmoke+to_string(smoke), cv::Point(120,170),1,1,cv::Scalar(122,255,50));
+//    cv::putText(*(Mat*)addrRgba, showCall+to_string(call), cv::Point(120,200),1,1,cv::Scalar(122,255,50));
+//    cv::putText(*(Mat*)addrRgba, showAbnorm+to_string(abnorm), cv::Point(120,230),1,1,cv::Scalar(122,255,50));
+//    cv::putText(*(Mat*)addrRgba, showCalibrt+to_string(cal), cv::Point(120,260),1,1,cv::Scalar(122,255,50));
 
-//    LOGD("JNI distration -- %d",dis);
-//    LOGD("JNI calibrate -- %d",cal);
-//    LOGD("JNI fatigure -- %d",fat);
-//    LOGD("JNI smoke -- %d",smoke);
-//    LOGD("JNI call -- %d",call);
-//    LOGD("JNI abnormal -- %d",abnorm);
-//    LOGD("JNI faceid -- %s",faceid.c_str());
-    return 0;
+    return re1;
 }
 
-JNIEXPORT void JNICALL Java_org_opencv_samples_tutorial2_Tutorial2Activity_stop(JNIEnv* jniEnv, jobject){
+JNIEXPORT void JNICALL Java_org_opencv_samples_tutorial2_DetectActitvity_stop(JNIEnv* jniEnv, jobject){
     if(totalFlow != nullptr){
 //        totalFlow ->Destroy();
     }
 //    std::abort();
 }
 
-JNIEXPORT void JNICALL Java_org_opencv_samples_tutorial2_Tutorial2Activity_FindFeatures(JNIEnv* jniEnv, jobject obj, jlong addrGray, jlong addrRgba)
+JNIEXPORT void JNICALL Java_org_opencv_samples_tutorial2_DetectActitvity_FindFeatures(JNIEnv* jniEnv, jobject obj, jlong addrGray, jlong addrRgba)
 {
 //    CreateHPSocketObjects();
 //      OnCmdStart();
 //    OnCmdSend();
 //    OnCmdStop();
 //    DestroyHPSocketObjects();
-    DSM_JTT808_Start("112.64.116.41",20005,0);
-    DSM_JTT808_Event_Callback(1,1,"http://220.194.43.233:8080/1.jpeg");
-    sleep(100);
-    DSM_JTT808_Stop(1);
+
+//    DSM_JTT808_Start("112.64.116.41",20005,0);
+//    DSM_JTT808_Event_Callback(1,1,"http://220.194.43.233:8080/1.jpeg");
+//    sleep(5);
+//    DSM_JTT808_Stop(1);
 
     if(totalFlow == nullptr){
         totalFlow = new TotalFlow("/sdcard/Android/data/com.ut.sdk/files");
