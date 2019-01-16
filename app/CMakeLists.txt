@@ -43,6 +43,7 @@ add_library( libmsg STATIC IMPORTED )
 set_target_properties(libmsg PROPERTIES IMPORTED_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/src/main/jniLibs/${ANDROID_ABI}/libhpsocket.so)
 
 include_directories(src/main/cpp/message/include)
+include_directories(src/main/cpp/aes/include)
 
 
 # Creates and names a library, sets it as either STATIC

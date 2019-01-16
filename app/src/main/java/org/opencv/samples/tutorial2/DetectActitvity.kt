@@ -25,7 +25,6 @@ import org.opencv.android.LoaderCallbackInterface
 import org.opencv.android.OpenCVLoader
 import org.opencv.core.Mat
 import org.opencv.imgproc.Imgproc
-
 /**
  * Created by chris on 1/4/19.
  */
@@ -62,7 +61,7 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
         with(tutorial2_activity_surface_view) {
             visibility = CameraBridgeViewBase.VISIBLE
             setCvCameraViewListener(this@DetectActitvity)
-            setCameraIndex(1)
+            setCameraIndex(0)
             setMaxFrameSize(1280, 720)
         }
 

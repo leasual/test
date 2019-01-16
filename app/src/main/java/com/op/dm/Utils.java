@@ -60,17 +60,16 @@ public class Utils {
                 FileOutputStream fos = new FileOutputStream(temp);
                 byte[] buffer = new byte[1024];
                 int byteCount=0;
-                while((byteCount=is.read(buffer))!=-1) {//循环从输入流读取 buffer字节
-                    fos.write(buffer, 0, byteCount);//将读取的输入流写入到输出流
+                while((byteCount=is.read(buffer))!=-1) {
+                    fos.write(buffer, 0, byteCount);
                 }
-                fos.flush();//刷新缓冲区
+                fos.flush();
                 is.close();
                 fos.close();
             }
         } catch (Exception e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
-            //如果捕捉到错误则通知UI线程
         }
     }
 

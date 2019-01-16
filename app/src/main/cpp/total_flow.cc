@@ -82,11 +82,10 @@ TotalFlow::TotalFlow(const std::string& path) :
 bool TotalFlow::DetectFrame(const cv::Mat &image) {
 //    std::vector<Face> faces = detector_->detect(image);
     std::vector<ObjInfo>faces;
-
     std::vector<ObjInfo>obj_state = objDetection(net_, image, 0.4);
-//    chrono::steady_clock::time_point old = chrono::steady_clock::now();
-//    auto time =  chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now() - old);
-//    LOGE("objDetection(net_, image, 0.4) is %ld", time.count());
+    chrono::steady_clock::time_point old = chrono::steady_clock::now();
+    auto time =  chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now() - old);
+    LOGE("objDetection(net_, image, 0.4) is %ld", time.count());
 
     for(auto& obj : obj_state){
         if(obj.action_ == Action::FACE)
