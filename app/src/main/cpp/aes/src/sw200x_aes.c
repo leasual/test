@@ -5,19 +5,23 @@
 //	
 //  written by :  jason, iSmartware Technology Co.,LTD
 //	History    :
-//                 2017/03/15      jason       v0.1    Initial version
-//******************************************************************************
-#include "sw2001_aes.h"
-static int32_t aes_init_done = 0;
+//                 2017/03/21      jason       v0.1    Initial version
+//****************************************************************************** 
+#include "sw200x_aes.h"                                                                                                                                                                        
 #define Nb 4                                                                                                                                                             
+                                                                                                                                                           
+//==================user define key according to sw200x================================== 
+uint8_t  Key[16] = {0x01,0x23,0x45,0x67,0x89,0xab,0xcd,0xef,0x01,0x23,0x45,0x67,0x89,0xab,0xcd,0xef};
+//=======================================================================================
 uint8_t Nr=0;                                                                                                                                                                
-uint8_t Nk=0;
-uint8_t Key[16];                                                                                                                                                 
-uint8_t in[16];                                                                                                                                    
-uint8_t out[16];                                                                                                                                   
-uint8_t state[4][4];                                                                                                                                                     
-uint8_t RoundKey[240];                                                                                                                                                   
-uint8_t sbox[256] =   {                                                                                                                                                
+uint8_t Nk=0;                                                                                                                                                                        
+ uint8_t in[16];
+ uint8_t out[16];
+ uint8_t state[4][4];
+                                                                                                                                                                         
+ uint8_t RoundKey[240];
+                                                                                                                                                                         
+uint8_t  sbox[256] =   {
 //0  1  2     3  4  5    6   7    8 9    A    B C    D   E   F                                                                                                           
 0x63, 0x7c, 0x77, 0x7b, 0xf2, 0x6b, 0x6f, 0xc5, 0x30, 0x01, 0x67, 0x2b, 0xfe, 0xd7, 0xab, 0x76, //0                                                                      
 0xca, 0x82, 0xc9, 0x7d, 0xfa, 0x59, 0x47, 0xf0, 0xad, 0xd4, 0xa2, 0xaf, 0x9c, 0xa4, 0x72, 0xc0, //1                                                                      
@@ -35,8 +39,14 @@ uint8_t sbox[256] =   {
 0x70, 0x3e, 0xb5, 0x66, 0x48, 0x03, 0xf6, 0x0e, 0x61, 0x35, 0x57, 0xb9, 0x86, 0xc1, 0x1d, 0x9e, //D                                                                      
 0xe1, 0xf8, 0x98, 0x11, 0x69, 0xd9, 0x8e, 0x94, 0x9b, 0x1e, 0x87, 0xe9, 0xce, 0x55, 0x28, 0xdf, //E                                                                      
 0x8c, 0xa1, 0x89, 0x0d, 0xbf, 0xe6, 0x42, 0x68, 0x41, 0x99, 0x2d, 0x0f, 0xb0, 0x54, 0xbb, 0x16 }; //F                                                                    
-
-uint8_t Rcon[255] = {                                                                                                                                                  
+                                                                                                                                                                         
+                                                                                                                                                                         
+uint8_t getSBoxValue(uint8_t num)                                                                                                                                                
+{                                                                                                                                                                        
+    return sbox[num];                                                                                                                                                    
+}                                                                                                                                                                        
+                                                                                                                                                                         
+uint8_t  Rcon[255] = {
 0x8d, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36, 0x6c, 0xd8, 0xab, 0x4d, 0x9a,                                                                          
 0x2f, 0x5e, 0xbc, 0x63, 0xc6, 0x97, 0x35, 0x6a, 0xd4, 0xb3, 0x7d, 0xfa, 0xef, 0xc5, 0x91, 0x39,                                                                          
 0x72, 0xe4, 0xd3, 0xbd, 0x61, 0xc2, 0x9f, 0x25, 0x4a, 0x94, 0x33, 0x66, 0xcc, 0x83, 0x1d, 0x3a,                                                                          
@@ -53,23 +63,20 @@ uint8_t Rcon[255] = {
 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36, 0x6c, 0xd8, 0xab, 0x4d, 0x9a, 0x2f, 0x5e, 0xbc, 0x63,                                                                          
 0xc6, 0x97, 0x35, 0x6a, 0xd4, 0xb3, 0x7d, 0xfa, 0xef, 0xc5, 0x91, 0x39, 0x72, 0xe4, 0xd3, 0xbd,                                                                          
 0x61, 0xc2, 0x9f, 0x25, 0x4a, 0x94, 0x33, 0x66, 0xcc, 0x83, 0x1d, 0x3a, 0x74, 0xe8, 0xcb  };                                                                             
-
-uint8_t getSBoxValue(uint8_t num)                                                                                                                                                
-{                                                                                                                                                                        
-    return sbox[num];                                                                                                                                                    
-}                                                                                                                                                                          
-
+                                                                                                                                                                         
 void KeyExpansion()                                                                                                                                                      
 {                                                                                                                                                                        
     uint8_t i,j;                                                                                                                                                             
-    uint8_t temp[4],k;                                                                                                                              
+    uint8_t temp[4],k;                                                                                                                                             
+                                                                                                                                                                         
     for(i=0;i<Nk;i++)                                                                                                                                                    
     {                                                                                                                                                                    
         RoundKey[i*4]=Key[i*4];                                                                                                                                          
         RoundKey[i*4+1]=Key[i*4+1];                                                                                                                                      
         RoundKey[i*4+2]=Key[i*4+2];                                                                                                                                      
         RoundKey[i*4+3]=Key[i*4+3];                                                                                                                                      
-    }                                                                                                       
+    }                                                                                                                                                                    
+                                                                                                                                                                         
     while (i < (Nb * (Nr+1)))                                                                                                                                            
     {                                                                                                                                                                    
         for(j=0;j<4;j++)                                                                                                                                                 
@@ -78,6 +85,7 @@ void KeyExpansion()
         }                                                                                                                                                                
         if (i % Nk == 0)                                                                                                                                                 
         {                                                                                                                                                                
+            // Function RotWord()                                                                                                                                        
             {                                                                                                                                                            
                 k = temp[0];                                                                                                                                             
                 temp[0] = temp[1];                                                                                                                                       
@@ -85,7 +93,8 @@ void KeyExpansion()
                 temp[2] = temp[3];                                                                                                                                       
                 temp[3] = k;                                                                                                                                             
             }                                                                                                                                                            
-                                                                                                                                  
+                                                                                                                                                                         
+            // Function Subword()                                                                                                                                        
             {                                                                                                                                                            
                 temp[0]=getSBoxValue(temp[0]);                                                                                                                           
                 temp[1]=getSBoxValue(temp[1]);                                                                                                                           
@@ -96,7 +105,8 @@ void KeyExpansion()
             temp[0] =  temp[0] ^ Rcon[i/Nk];                                                                                                                             
         }                                                                                                                                                                
         else if (Nk > 6 && i % Nk == 4)                                                                                                                                  
-        {                                                                                                                                        
+        {                                                                                                                                                                
+            // Function Subword()                                                                                                                                        
             {                                                                                                                                                            
                 temp[0]=getSBoxValue(temp[0]);                                                                                                                           
                 temp[1]=getSBoxValue(temp[1]);                                                                                                                           
@@ -112,7 +122,7 @@ void KeyExpansion()
     }                                                                                                                                                                    
 }                                                                                                                                                                        
                                                                                                                                                                          
-void AddRoundKey(uint8_t round)                                                                                                                                              
+void AddRoundKey(int round)                                                                                                                                              
 {                                                                                                                                                                        
     uint8_t i,j;                                                                                                                                                             
     for(i=0;i<4;i++)                                                                                                                                                     
@@ -141,12 +151,14 @@ void ShiftRows()
 {                                                                                                                                                                        
     uint8_t temp;                                                                                                                                                  
                                                                                                                                                                          
+    // Rotate first row 1 columns to left                                                                                                                                
     temp=state[1][0];                                                                                                                                                    
     state[1][0]=state[1][1];                                                                                                                                             
     state[1][1]=state[1][2];                                                                                                                                             
     state[1][2]=state[1][3];                                                                                                                                             
     state[1][3]=temp;                                                                                                                                                    
                                                                                                                                                                          
+    // Rotate second row 2 columns to left                                                                                                                               
     temp=state[2][0];                                                                                                                                                    
     state[2][0]=state[2][2];                                                                                                                                             
     state[2][2]=temp;                                                                                                                                                    
@@ -155,6 +167,7 @@ void ShiftRows()
     state[2][1]=state[2][3];                                                                                                                                             
     state[2][3]=temp;                                                                                                                                                    
                                                                                                                                                                          
+    // Rotate third row 3 columns to left                                                                                                                                
     temp=state[3][0];                                                                                                                                                    
     state[3][0]=state[3][3];                                                                                                                                             
     state[3][3]=state[3][2];                                                                                                                                             
@@ -183,6 +196,7 @@ void Cipher()
 {                                                                                                                                                                        
     uint8_t i,j,round=0;                                                                                                                                                     
                                                                                                                                                                          
+    //Copy the input PlainText to state array.                                                                                                                           
     for(i=0;i<4;i++)                                                                                                                                                     
     {                                                                                                                                                                    
         for(j=0;j<4;j++)                                                                                                                                                 
@@ -199,8 +213,8 @@ void Cipher()
         ShiftRows();                                                                                                                                                     
         MixColumns();                                                                                                                                                    
         AddRoundKey(round);                                                                                                                                              
-    }                                                                                                                                                                    
-    
+    }
+                                                                                                                                                                       
     SubBytes();                                                                                                                                                          
     ShiftRows();                                                                                                                                                         
     AddRoundKey(Nr);                                                                                                                                                     
@@ -212,19 +226,34 @@ void Cipher()
             out[i*4+j]=state[j][i];                                                                                                                                      
         }                                                                                                                                                                
     }                                                                                                                                                                    
-}   
+}                                                                                                                                                                       
 
-//*********************************************************************************
-// function    : sw2001_aes_parity(uint8_t *text, uint8_t *parity)
-// description : compute parity bit of plain text
-// parameters  :
-//                text  : aes plain text
-//                parity  : parity of plain text
-// return        : 
-//               TRUE : success
-//               FALSE : fail
-//*********************************************************************************
-uint8_t sw2001_aes_parity(uint8_t *text, uint8_t *parity)
+uint8_t sw200x_aes_compute(uint8_t *pt, uint8_t *ct)                                                                                                                                                 
+{                                                                                                                                                                        
+    uint8_t i;      //General purpose loop counter variable.
+    uint8_t *pttext;
+    pttext = pt;
+    for(i=0;i<16;i++)
+    {
+    	 in[i] = *pttext++;
+    }                                                                                                                                                                     
+    Nr=128;     //The length of key: 128-bits. (The possible values allowed by AES are 128, 192 or 256 only)                                                             
+                                                                                                                                                                         
+    Nk = Nr / 32;       //Calculate Nk and Nr from the                                                                                                                   
+    Nr = Nk + 6;        // "length of the key" value.                                                                                                                    
+                                                                                                                                                                        
+    KeyExpansion();     //The KeyExpansion routine must be called before encryption.                                                                                     
+                                                                                                                                                                      
+    Cipher();       //The next function call encrypts the PlainText with the Key using AES algorithm. 
+                                                                       
+    pttext = ct;
+    for(i=0;i<16;i++)
+    {
+    	 *pttext++ = out[i];
+    }                                                                                                                                                                                                                                                                                                                                  
+}  
+
+uint8_t sw200x_aes_parity(uint8_t *text, uint8_t *parity)
 {
 	uint8_t *textpt = text;
 	uint8_t temp=0, temp1=0;
@@ -242,44 +271,4 @@ uint8_t sw2001_aes_parity(uint8_t *text, uint8_t *parity)
 	}
 	*parity = temp1;
 	return (0);
-}
-
-//*********************************************************************************
-// function    : sw2001_aes_compute(uint8_t *key, uint8_t *pt, uint8_t *ct)
-// description : compute the cipher text according plain text and key
-// parameters  :
-//                key : aes 128 bit key
-//                pt  : aes plain text
-//                ct  : aes cipher text
-// return        : 
-//               TRUE : success
-//               FALSE : fail
-//*********************************************************************************
-uint8_t sw2001_aes_compute(uint8_t *key, uint8_t *pt, uint8_t *ct)
-{
-    uint8_t i;      //General purpose loop counter variable.                                                                                                                 
-    uint8_t *pttext, *ptkey;
-    pttext = pt;
-	  ptkey = key;
-    for(i=0;i<16;i++)
-    {
-    	 in[i] = *pttext++;
-		   Key[i] = *ptkey++;
-    }                                                                                                                                                                     
-    Nr=128;     //The length of key: 128-bits. (The possible values allowed by AES are 128, 192 or 256 only)                                                             
-                                                                                                                                                                         
-    Nk = Nr / 32;       //Calculate Nk and Nr from the                                                                                                                   
-    Nr = Nk + 6;        // "length of the key" value. 
-                                                                                                                                                                         
-    KeyExpansion();     //The KeyExpansion routine must be called before encryption. 
-                                                                                                                                                                          
-    Cipher();       //The next function call encrypts the PlainText with the Key using AES algorithm. 
-                                                                       
-    pttext = ct;
-    for(i=0;i<16;i++)
-    {
-    	 *pttext++ = out[i];
-    }  
-    return (0);
-}
-
+}                                                                                                                                                                      

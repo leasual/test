@@ -28,6 +28,7 @@ public class Tutorial2Activity extends Activity implements CvCameraViewListener2
     private Mat                    mIntermediateMat;
     private Mat                    mGray;
     private CameraBridgeViewBase   mOpenCvCameraView;
+    private byte s;
     private TextView[] views;
     private String[] name = {"用户","分神","疲劳","吸烟","打电话","异常","校准"};
     private int[] ids = {R.id.name,R.id.dis,R.id.fat,R.id.smoke,R.id.call,R.id.abnm,R.id.calibrate};

@@ -68,8 +68,8 @@ TotalFlow::TotalFlow(const std::string& path) :
     net_.load_param("yolo.param");
     net_.load_model("yolo.bin");
 #else
-    net_ = createNet(path_root_ + "/object_detection/MobileNetSSD_deploy.prototxt",
-            path_root_ + "/object_detection/shuffle_iter_60000.caffemodel");
+    net_ = createNet(path_root_ + "/object_detection/oldMobileNetSSD_deploy.prototxt",
+            path_root_ + "/object_detection/oldshuffle_iter_300000.caffemodel");
 #endif
 }
 

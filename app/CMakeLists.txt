@@ -107,6 +107,12 @@ add_library( # Sets the name of the library.
         src/main/cpp/dsm_strategy/utils/file/file_utils.cc
         src/main/cpp/dsm_strategy/utils/file/system_config.cc
         src/main/cpp/dsm_strategy/utils/file/text_table_file.cc
+
+        src/main/cpp/aes/src/example2.c
+        src/main/cpp/aes/src/interface.c
+        src/main/cpp/aes/src/sw200x_aes.c
+        src/main/cpp/aes/src/sw2001.c
+        src/main/cpp/aes/src/sw2001_aes.c
         )
 
 

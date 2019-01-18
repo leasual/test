@@ -10,7 +10,6 @@
 //                 2015/05/31      jason       v1.0    added iSleep()
 //******************************************************************************
 #include "interface.h"
-
 //******************************************************************************
 // function    : iDeviceInit(uint8_t device_addr, uint8_t speed)
 // description : initial the i2c, including configure pin, device address and speed
@@ -25,7 +24,6 @@
 //*******************************************************************************
 BOOL iDeviceInit(uint8_t device_addr, uint8_t speed)
 {
-	//user implement, config pin, device address and speed
 	return TRUE;
 }
 
@@ -38,8 +36,7 @@ BOOL iDeviceInit(uint8_t device_addr, uint8_t speed)
 //********************************************************************************
 BOOL iDeviceDeInit()
 {
-	//user implement, release i2c resource
-	return TRUE;
+		return TRUE;
 }
 
 //********************************************************************************
@@ -54,7 +51,6 @@ BOOL iDeviceDeInit()
 //*********************************************************************************
 BOOL iWriteByte(uint8_t addr, uint8_t data)
 {
-	//user implement, transimit data to slave
 	return TRUE;
 }
 
@@ -70,7 +66,7 @@ BOOL iWriteByte(uint8_t addr, uint8_t data)
 //*********************************************************************************
 BOOL iReadByte(uint8_t addr, uint8_t *data)
 {
-	//user implement, receive data from slave
+
 	return TRUE;
 }
 
@@ -86,6 +82,7 @@ BOOL iReadByte(uint8_t addr, uint8_t *data)
 BOOL iSleep(uint8_t waittime)
 {
 	//user implement, sleep
+	Sleep(waittime);
 	return TRUE;
 }
 
@@ -214,7 +211,7 @@ BOOL iCheckBits(uint8_t addr, uint8_t mask, uint8_t ref)
 		{
 			return FALSE;
 		}
-	}while(data&mask != ref);
+	}while((data&mask) != ref);
 
 	return TRUE;
 }
