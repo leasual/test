@@ -1,16 +1,22 @@
 package org.opencv.samples.tutorial2
 
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.AlertDialog
 import android.app.ProgressDialog
 import android.content.ContentValues.TAG
+import android.content.Context
 import android.content.DialogInterface
 import android.media.AudioManager
 import android.media.MediaPlayer
 import android.net.Uri
+import android.net.wifi.WifiInfo
+import android.net.wifi.WifiManager
 import android.os.AsyncTask
 import android.os.Bundle
 import android.os.Looper
+import android.telephony.TelephonyManager
+import android.text.TextUtils
 import android.util.Log
 import android.view.WindowManager
 import android.widget.TextView
@@ -37,7 +43,7 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
     private var mGray: Mat? = null
     private var progressDialog: ProgressDialog? = null
     //这个优先级会有变动，为了不修改jni里返回值顺序和ui的顺序，引入这个数组，之后只改这里就可以修改警告播报优先级-> 从names[3],names[2],names[1]..这个顺序遍历names数组
-    private val priority = arrayOf(3,2,1,0,4)
+    private val priority = arrayOf(3,2,0,1,4)
     private val names = arrayOf("分神", "疲劳", "吸烟", "打电话", "画面异常")
     private val lastTime = arrayOf(0L,0L,0L,0L,0L)
     private val audio = arrayOf(R.raw.fenshen, R.raw.pilao, R.raw.chouyan, R.raw.dadianhua, R.raw.huamianyichang)
@@ -52,9 +58,31 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
         Log.i(TAG, "Instantiated new " + this.javaClass)
     }
 
+    private fun getAndroidLowVersionMac(wifiManager: WifiManager): String {
+        try {
+            val wifiInfo = wifiManager.connectionInfo
+            val mac = wifiInfo.macAddress
+            return if (TextUtils.isEmpty(mac)) {
+                "null"
+            } else {
+                mac.substring(0,5)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Log.e("mac", "get android low version mac error:" + e.message)
+            return "null"
+        }
+
+    }
+
+
+    @SuppressLint("MissingPermission")
     public override fun onCreate(savedInstanceState: Bundle?) {
         Log.i(TAG, "called onCreate")
         super.onCreate(savedInstanceState)
+        var mac = checks()
+        Log.e("mac  dizhi   " , mac)
+
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         setContentView(R.layout.tutorial2_surface_view)
         views = arrayOf(dis, fat, smoke, call, abnm)
@@ -87,6 +115,11 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
                 alertDialog?.setCanceledOnTouchOutside(false)
             }
         }
+    }
+
+    private fun checks(): String {
+        var mac = getAndroidLowVersionMac(applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager)
+        return mac
     }
 
     private fun getStringResult(result: IntArray?) {
@@ -187,10 +220,7 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
     }
 
     override fun onCameraFrame(inputFrame: CameraBridgeViewBase.CvCameraViewFrame): Mat {
-//        onCamera = System.currentTimeMillis()
-        //        Log.e("-onCameraFrame", "--" + (onCamera-lastTime));
-//        lastTime = onCamer
-        //        print2();
+
         mRgba = inputFrame.rgba()
         mGray = inputFrame.gray()
         rgb?.let { it1 ->
@@ -253,7 +283,9 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
                 textView.text = integer.names[index] + " : " + "正常"
             }
             integer.progressDialog?.dismiss()
-            integer.alertDialog?.show()
+//            integer.alertDialog?.show()
+            integer.register = true
+            integer.totalDone = true
             Log.e(TAG, "AsyncTaskInitTotalFlow  successfully")
         }
 
@@ -261,12 +293,17 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
             for (index in 0..4){
                 contexts[0].players[index] = MediaPlayer.create(contexts[0],contexts[0].audio[index])
             }
-            contexts[0].FindFeatures(0, 0)
+            if(contexts[0].CHECK(contexts[0].checks()))
+                contexts[0].FindFeatures(0, 0)
+            else
+                contexts[0].finish()
             return contexts[0]
         }
     }
 
     external fun stop()
+    external fun CHECK(mac: String):Boolean
+    //    external fun CHECK(mac:String)
     external fun FindFeatures(matAddrGr: Long, matAddrRgba: Long)
     external fun FindFeatures2(matAddrGr: Long, matAddrRgba: Long, time: Boolean): IntArray
 

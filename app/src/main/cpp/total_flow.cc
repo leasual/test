@@ -53,7 +53,7 @@ TotalFlow::TotalFlow(const std::string& path) :
     fatigue_judger_.SetParam(config_.fatigue_warn_thres_ / 100.0, config_.fatigue_judge_thres_ / 100.0,
                              config_.fatigue_warn_time_, config_.fatigue_judge_time_);
 #else
-    fatigue_judger_.SetParam(5, 8, 5, 8);
+    fatigue_judger_.SetParam(8, 12, 8, 12);
 #endif
 
     smoke_judger_.SetParam(config_.smoke_judge_thres_ / 100.0, config_.smoke_judge_thres_ / 100.0,
@@ -68,8 +68,8 @@ TotalFlow::TotalFlow(const std::string& path) :
     net_.load_param("yolo.param");
     net_.load_model("yolo.bin");
 #else
-    net_ = createNet(path_root_ + "/object_detection/MobileNetSSD_deploy.prototxt",
-            path_root_ + "/object_detection/shuffle_iter_60000.caffemodel");
+    net_ = createNet(path_root_ + "/object_detection/oldMobileNetSSD_deploy.prototxt",
+            path_root_ + "/object_detection/oldshuffle_iter_300000.caffemodel");
 #endif
 }
 
@@ -83,9 +83,9 @@ bool TotalFlow::DetectFrame(const cv::Mat &image) {
 //    std::vector<Face> faces = detector_->detect(image);
     std::vector<ObjInfo>faces;
     std::vector<ObjInfo>obj_state = objDetection(net_, image, 0.4);
-    chrono::steady_clock::time_point old = chrono::steady_clock::now();
-    auto time =  chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now() - old);
-    LOGE("objDetection(net_, image, 0.4) is %ld", time.count());
+//    chrono::steady_clock::time_point old = chrono::steady_clock::now();
+//    auto time =  chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now() - old);
+//    LOGE("objDetection(net_, image, 0.4) is %ld", time.count());
 
     for(auto& obj : obj_state){
         if(obj.action_ == Action::FACE)

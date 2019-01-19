@@ -26,7 +26,8 @@ Java_org_opencv_samples_tutorial2_DetectActitvity_FindFeatures2(JNIEnv *jniEnv, 
                                                                 jboolean regis);
 JNIEXPORT void JNICALL
 Java_org_opencv_samples_tutorial2_DetectActitvity_stop(JNIEnv *jniEnv, jobject);
-
+JNIEXPORT jboolean JNICALL
+Java_org_opencv_samples_tutorial2_DetectActitvity_CHECK(JNIEnv *jniEnv, jobject,jstring);
 
 TotalFlow *totalFlow = nullptr;
 Result *result = nullptr;
@@ -113,6 +114,23 @@ Java_org_opencv_samples_tutorial2_DetectActitvity_stop(JNIEnv *jniEnv, jobject) 
     delete bboxc;
 //    std::abort();
 }
+JNIEXPORT jboolean JNICALL
+    Java_org_opencv_samples_tutorial2_DetectActitvity_CHECK(JNIEnv *jniEnv, jobject, jstring mac){
+    string ss = "00:08";
+    string ss2 = "00:08";
+    string ss3 = "00:08";
+
+    const char *cstr = jniEnv->GetStringUTFChars(mac, NULL);
+
+    string str = string(cstr);
+    jniEnv->ReleaseStringUTFChars(mac, cstr);
+    if(ss == str || ss2 == str || ss3 == str){
+        LOGE(" equal -----------------%s    %s",ss.data(),str.data());
+        return JNI_TRUE;
+    } else
+        return JNI_FALSE;
+
+}
 
 JNIEXPORT void JNICALL
 Java_org_opencv_samples_tutorial2_DetectActitvity_FindFeatures(JNIEnv *jniEnv, jobject obj,
@@ -128,6 +146,8 @@ Java_org_opencv_samples_tutorial2_DetectActitvity_FindFeatures(JNIEnv *jniEnv, j
 //    sleep(5);
 //    DSM_JTT808_Stop(1);
 
+
+
     if (totalFlow == nullptr) {
         totalFlow = new TotalFlow("/sdcard/Android/data/com.ut.sdk/files");
         result = new Result();
@@ -139,6 +159,10 @@ Java_org_opencv_samples_tutorial2_DetectActitvity_FindFeatures(JNIEnv *jniEnv, j
         LOGE("JNI abnormal -- init TotalFlow ----");
     }
 }
+
+
+
+
 
 }
 

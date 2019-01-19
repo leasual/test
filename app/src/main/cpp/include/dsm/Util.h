@@ -30,9 +30,9 @@
 //  return (jstring)env->NewObject(strClass, ctorID, bytes, encoding);
 //}
 //
-//std::string jstring2string(JNIEnv *env, jstring jStr){
+//string js2string(JNIEnv *env, jstring jStr){
 //  const char *cstr = env->GetStringUTFChars(jStr, NULL);
-//  std::string str = std::string(cstr);
+//  string str = string(cstr);
 //  env->ReleaseStringUTFChars(jStr, cstr);
 //  return str;
 //}

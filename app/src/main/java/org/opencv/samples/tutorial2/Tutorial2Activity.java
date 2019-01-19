@@ -2,8 +2,11 @@ package org.opencv.samples.tutorial2;
 
 import android.app.Activity;
 import android.content.Context;
+import android.net.wifi.WifiInfo;
+import android.net.wifi.WifiManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.WindowManager;
 import android.widget.TextView;
@@ -28,6 +31,7 @@ public class Tutorial2Activity extends Activity implements CvCameraViewListener2
     private Mat                    mIntermediateMat;
     private Mat                    mGray;
     private CameraBridgeViewBase   mOpenCvCameraView;
+    private byte s;
     private TextView[] views;
     private String[] name = {"用户","分神","疲劳","吸烟","打电话","异常","校准"};
     private int[] ids = {R.id.name,R.id.dis,R.id.fat,R.id.smoke,R.id.call,R.id.abnm,R.id.calibrate};
@@ -67,6 +71,9 @@ public class Tutorial2Activity extends Activity implements CvCameraViewListener2
              return contexts[0];
          }
      }
+
+
+
     private String[] strings = new String[6];
     static class AsyncTaskInitTotalFlow extends AsyncTask<Tutorial2Activity,Integer,Tutorial2Activity>  {
         @Override
@@ -202,6 +209,7 @@ public class Tutorial2Activity extends Activity implements CvCameraViewListener2
     }
 
     public native void stop();
+    public native void CHECK(String mac);
     public native void FindFeatures(long matAddrGr, long matAddrRgba);
     public native long FindFeatures2(long matAddrGr, long matAddrRgba,long time);
 }
