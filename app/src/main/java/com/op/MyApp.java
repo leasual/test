@@ -2,14 +2,14 @@ package com.op;
 
 import android.app.Application;
 
-//import com.tencent.bugly.crashreport.CrashReport;
+import com.tencent.bugly.crashreport.CrashReport;
 
 
 public class MyApp extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
-//        CrashReport.initCrashReport(getApplicationContext(), "50cd1cb403", true);
+        CrashReport.initCrashReport(getApplicationContext(), "50cd1cb403", true);
     }
 
     @Override

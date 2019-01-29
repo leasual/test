@@ -23,7 +23,7 @@ Java_org_opencv_samples_tutorial2_DetectActitvity_FindFeatures(JNIEnv *, jobject
 JNIEXPORT jintArray JNICALL
 Java_org_opencv_samples_tutorial2_DetectActitvity_FindFeatures2(JNIEnv *jniEnv, jobject,
                                                                 jlong addrGray, jlong addrRgba,
-                                                                jboolean regis);
+                                                                jboolean regis,jboolean);
 JNIEXPORT void JNICALL
 Java_org_opencv_samples_tutorial2_DetectActitvity_stop(JNIEnv *jniEnv, jobject);
 JNIEXPORT jboolean JNICALL
@@ -38,12 +38,12 @@ cv::Rect *bboxc;
 JNIEXPORT jintArray JNICALL
 Java_org_opencv_samples_tutorial2_DetectActitvity_FindFeatures2(JNIEnv *jniEnv, jobject obj,
                                                                 jlong copyMat, jlong addrRgba,
-                                                                jboolean regis) {
+                                                                jboolean regis, jboolean picture) {
     jintArray re1;
     jint *index2;
     if (totalFlow != nullptr) {
-        totalFlow->Run(*(Mat *) copyMat, *result, regis, "user");
-
+        totalFlow->Run(*(Mat *) copyMat, *result, true, "user");
+        totalFlow->isSave = picture == JNI_TRUE;
         int cal, dis, fat, smoke, call, abnorm;
         std::string showFaceid = "name : ";
         std::string distration = "dis  : ";
@@ -61,6 +61,13 @@ Java_org_opencv_samples_tutorial2_DetectActitvity_FindFeatures2(JNIEnv *jniEnv, 
         result->GetCall(call, *bboxc);
         result->GetAbnormal(abnorm);
         result->GetCalibration(cal);
+
+        if(regis && !faceid.empty()){
+            LOGE(" face id -------- %s",faceid.data());
+            jclass cl = jniEnv ->FindClass("org/opencv/samples/tutorial2/DetectActitvity");
+            jmethodID meth = jniEnv->GetMethodID(cl,"RegistDone","()V");
+            jniEnv->CallVoidMethod(obj,meth);
+        }
 
         re1 = jniEnv->NewIntArray(5);
         index2 = jniEnv->GetIntArrayElements(re1, NULL);
@@ -89,6 +96,9 @@ Java_org_opencv_samples_tutorial2_DetectActitvity_FindFeatures2(JNIEnv *jniEnv, 
     if (index2 != nullptr) {
         jniEnv->ReleaseIntArrayElements(re1, index2, 0);
     }
+
+    cv::putText(*(Mat*)addrRgba, to_string(totalFlow->isSave), cv::Point(220,80),1,1,cv::Scalar(122,255,50));
+    cv::putText(*(Mat*)addrRgba, to_string(totalFlow->keep_running_flag_), cv::Point(220,130),1,1,cv::Scalar(122,255,50));
 
 
 //    cv::putText(*(Mat*)addrRgba, faceid, cv::Point(120,80),1,1,cv::Scalar(122,255,50));

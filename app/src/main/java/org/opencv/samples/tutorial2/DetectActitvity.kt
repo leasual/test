@@ -4,26 +4,19 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.AlertDialog
 import android.app.ProgressDialog
-import android.content.ContentValues.TAG
 import android.content.Context
-import android.content.DialogInterface
-import android.media.AudioManager
 import android.media.MediaPlayer
-import android.net.Uri
-import android.net.wifi.WifiInfo
 import android.net.wifi.WifiManager
 import android.os.AsyncTask
 import android.os.Bundle
+import android.os.Handler
 import android.os.Looper
-import android.telephony.TelephonyManager
 import android.text.TextUtils
 import android.util.Log
 import android.view.WindowManager
 import android.widget.TextView
 import com.op.dm.Utils
 import com.ut.sdk.R
-import com.ut.sdk.R.id.calibrate
-import com.ut.sdk.R.id.tutorial2_activity_surface_view
 import kotlinx.android.synthetic.main.tutorial2_surface_view.*
 import org.opencv.android.BaseLoaderCallback
 import org.opencv.android.CameraBridgeViewBase
@@ -31,6 +24,8 @@ import org.opencv.android.LoaderCallbackInterface
 import org.opencv.android.OpenCVLoader
 import org.opencv.core.Mat
 import org.opencv.imgproc.Imgproc
+import java.util.*
+
 /**
  * Created by chris on 1/4/19.
  */
@@ -52,7 +47,12 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
     internal var totalDone = false
     internal var register = false
     private var players = arrayOfNulls<MediaPlayer>(5)//每秒有n次检测，即时响应，分多个实例
-
+    private var sdPlayer:MediaPlayer? = null
+    private var detectFacePlayer:MediaPlayer? = null
+    private var haveface = false
+    private var save = false
+    private var timer:Timer? = null
+    private var timerTask: TimerTask? = null
 
     init {
         Log.i(TAG, "Instantiated new " + this.javaClass)
@@ -80,8 +80,8 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
     public override fun onCreate(savedInstanceState: Bundle?) {
         Log.i(TAG, "called onCreate")
         super.onCreate(savedInstanceState)
-        var mac = checks()
-        Log.e("mac  dizhi   " , mac)
+//        var mac = checks()
+//        Log.e("mac  dizhi   " , mac)
 
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         setContentView(R.layout.tutorial2_surface_view)
@@ -90,7 +90,9 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
             visibility = CameraBridgeViewBase.VISIBLE
             setCvCameraViewListener(this@DetectActitvity)
             setCameraIndex(0)
-            setMaxFrameSize(1280, 720)
+//            setMaxFrameSize(1280, 720)
+            setMaxFrameSize(640, 480)
+
         }
 
         progressDialog = ProgressDialog(this)
@@ -115,6 +117,22 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
                 alertDialog?.setCanceledOnTouchOutside(false)
             }
         }
+        sdPlayer = MediaPlayer.create(this,R.raw.sdcard)
+        detectFacePlayer = MediaPlayer.create(this,R.raw.detect)
+
+        timerTask = kotlin.concurrent.timerTask {
+            var size = Utils.getSDAvailableSize(this@DetectActitvity)
+            save = size > 500
+            Log.e(" save  ",save.toString())
+            if(size > 0 && size < 500 && !(sdPlayer?.isPlaying()?:false)){
+                runOnUiThread {
+                    sdPlayer?.start()
+                }
+            }
+        }
+        timer = Timer()
+        timer?.schedule(timerTask,0,5000)
+
     }
 
     private fun checks(): String {
@@ -123,6 +141,9 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
     }
 
     private fun getStringResult(result: IntArray?) {
+        if(!haveface){
+//            playWarnning()
+        }
         result?.let { array ->
             priority.forEach {// access the uiText and Jni result by the order of 'priority'
                 when(array[it]){//jni function return value which represents each item's status --> fat, call, smoke etc.
@@ -141,14 +162,34 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
     private fun playWarnning(index: Int) {//每种提示音分开计算，4秒内不重复播放同一种
         var time = System.currentTimeMillis()- lastTime[0]
         if(time > 4000){
-            players[index]?.apply {
-                if (!this.isPlaying){
-                    lastTime[0] = System.currentTimeMillis()
-                    start()
+            if(index == 100){
+                Log.e(" --- no face warning -- ","  yes  ")
+                detectFacePlayer?.apply {
+                    if(register && !this.isPlaying){
+                        start()
+                    }
+                }
+            }else{
+                players[index]?.apply {
+                    if (!this.isPlaying){
+                        lastTime[0] = System.currentTimeMillis()
+                        start()
+                    }
                 }
             }
+
+
         }
 
+    }
+
+    fun RegistDone(){
+        haveface = true
+        register = false
+        save = true
+        var detectFacePlayerDone = MediaPlayer.create(this, R.raw.detectdone)
+        detectFacePlayerDone.start()
+        Log.e("sss","has registerd --------------- ")
     }
 
     private fun writeViews() {
@@ -178,7 +219,7 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
 
     public override fun onPause() {
         super.onPause()
-        tutorial2_activity_surface_view?.disableView()
+//        tutorial2_activity_surface_view?.disableView()
     }
 
     public override fun onResume() {
@@ -196,11 +237,15 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
         super.onDestroy()
         stop()
         tutorial2_activity_surface_view?.disableView()
-        android.os.Process.killProcess(android.os.Process.myPid())
+//        android.os.Process.killProcess(android.os.Process.myPid())
         players.forEach {
             it?.stop()
             it?.release()
         }
+        sdPlayer?.stop()
+        sdPlayer?.release()
+//        timer?.purge()
+        timer?.cancel()
         System.exit(0)
     }
 
@@ -228,11 +273,15 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
             if (totalDone)
                 mRgba?.let {
                     //                    if(index % 2 == 0){//每两帧调用一次算法
-                    if (index % 4 == 0)//减少uitext更新频率，没必要每帧都改变
-                        getStringResult(FindFeatures2(it1.nativeObjAddr, it.nativeObjAddr, register))
+//                    Log.e("save is --", save.toString())
+                    if (index % 3 == 0)//减少uitext更新频率，没必要每帧都改变
+                        getStringResult(FindFeatures2(it1.nativeObjAddr, it.nativeObjAddr, register,save))
                     else
-                        FindFeatures2(it1.nativeObjAddr, it.nativeObjAddr, register)
+                        FindFeatures2(it1.nativeObjAddr, it.nativeObjAddr, register,save)
 //                    }
+                    if(!haveface && !(detectFacePlayer?.isPlaying?:false)){
+                        playWarnning(100)
+                    }
                 }
         }
         if (index >= 10000)
@@ -293,10 +342,16 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
             for (index in 0..4){
                 contexts[0].players[index] = MediaPlayer.create(contexts[0],contexts[0].audio[index])
             }
-            if(contexts[0].CHECK(contexts[0].checks()))
-                contexts[0].FindFeatures(0, 0)
-            else
-                contexts[0].finish()
+            contexts[0].FindFeatures(0, 0)
+            var handler = Handler(Looper.getMainLooper());
+            handler.postDelayed({
+                contexts[0].playWarnning(100)
+            },10000)
+
+//            if(contexts[0].CHECK(contexts[0].checks()))
+//                contexts[0].FindFeatures(0, 0)
+//            else
+//                contexts[0].finish()
             return contexts[0]
         }
     }
@@ -305,7 +360,7 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
     external fun CHECK(mac: String):Boolean
     //    external fun CHECK(mac:String)
     external fun FindFeatures(matAddrGr: Long, matAddrRgba: Long)
-    external fun FindFeatures2(matAddrGr: Long, matAddrRgba: Long, time: Boolean): IntArray
+    external fun FindFeatures2(matAddrGr: Long, matAddrRgba: Long, time: Boolean, save: Boolean): IntArray
 
     companion object {
         private const val TAG = "OCVSample::Activity"

@@ -137,12 +137,16 @@ public:
     /// \brief 构造函数
     explicit TotalFlow(const std::string& path);
     ~TotalFlow();
+    bool isSave = false;
+    bool keep_running_flag_;
 
     /// \brief 程序运行入口
     void Run(cv::Mat& frame, Result& result, bool regist = false, const std::string& name = "");
+    void setPicture(bool save);
 private:
     /// \brief 用于处理图像的线程
     void ProcessImageThread();
+    void ProcessPictureThread();
 
     /// \brief 处理程序的函数
     void RunProcess();
@@ -190,7 +194,7 @@ private:
     std::string head_pose_model_path_;
     std::string faceid_path_;
     std::string gaze_tracking_path_;
-
+    string path = "/storage/sdcard1/";
     std::shared_ptr<MTCNNDetector> detector_;
     std::shared_ptr<AlignMethod> align_method_;
     std::shared_ptr<FaceAlign> face_align_;
@@ -199,7 +203,6 @@ private:
     std::shared_ptr<FaceID> faceid_;
     std::shared_ptr<FaceAttribute> faceAttribute_;
     std::vector<std::string> arguments_;
-
 #if defined(USE_NCNN)
     ncnn::Net net_;
 #else
@@ -214,7 +217,6 @@ private:
 #endif
 
     bool first_time_flage_;
-    bool keep_running_flag_;
     bool smoke_state_;
     bool call_state_;
 
@@ -243,9 +245,11 @@ private:
     cv::Rect call_bbox_;
     vector<cv::Point2f> landmarks_; ///< 检测到的人脸landmarks
     Result result_;
-
+    int index = 0;
     int alignment_time_;
     std::thread process_image_thread_;
+    std::thread process_picture_thread_;
+
     RunStep main_step_; // 检测程序的主阶段，取值范围为：规定动作、校准、检测策略
     RunStep sub_step_;  ///< 当前所处的检测策略，取值范围为：分神检测、疲劳检测、吸烟检测、打电话检测、手掌（可疑行为）检测，聊天检测
 

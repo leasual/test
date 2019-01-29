@@ -6,20 +6,23 @@
 #include <faceID.h>
 #include <faceAttribute.h>
 #include "total_flow.h"
+#include <time.h>
 
 #if defined(USE_NCNN)
 #include <objDetectionNCNN.h>
 #else
+
 #include <objDetection.h>
+
 #endif
 
 const int TotalFlow::FEATURE_LENGTH = 128;
 
-const float TotalFlow:: same_face_thresh = 0.55;
+const float TotalFlow::same_face_thresh = 0.55;
 const std::string TotalFlow::UnknowFace = std::string("UnknowFace");
 const std::string TotalFlow::NoFace = std::string("NoFace");
 
-TotalFlow::TotalFlow(const std::string& path) :
+TotalFlow::TotalFlow(const std::string &path) :
         path_root_(path),
         config_path_(path_root_ + "/configure.yaml"),
         mtcnn_path_(path_root_ + "/mtcnn"),
@@ -31,7 +34,8 @@ TotalFlow::TotalFlow(const std::string& path) :
         align_method_(std::make_shared<FivePtsAlign>(96, 96)),
         face_align_(std::make_shared<FaceAlign>(align_method_.get())),
         predictor_(std::make_shared<ShapePredictor>(sp_model_path_)),
-        head_pose_estimator_(std::make_shared<HeadPoseEstimator>(head_pose_model_path_, cv::Size(640,480))),
+        head_pose_estimator_(
+                std::make_shared<HeadPoseEstimator>(head_pose_model_path_, cv::Size(640, 480))),
         faceid_(std::make_shared<FaceID>(faceid_path_)),
         faceAttribute_(std::make_shared<FaceAttribute>(faceid_path_)),
         arguments_(1, gaze_tracking_path_),
@@ -41,7 +45,7 @@ TotalFlow::TotalFlow(const std::string& path) :
         regist_over_flag_(false),
         mark_no_face_(false),
         face_match_flag_(true),
-        current_regist_num_(0){
+        current_regist_num_(0) {
 
     main_step_ = RunStep::CalibrationStep;
     alignment_time_ = config_.alignment_time_;
@@ -69,7 +73,7 @@ TotalFlow::TotalFlow(const std::string& path) :
     net_.load_model("yolo.bin");
 #else
     net_ = createNet(path_root_ + "/object_detection/oldMobileNetSSD_deploy.prototxt",
-            path_root_ + "/object_detection/oldshuffle_iter_300000.caffemodel");
+                     path_root_ + "/object_detection/oldshuffle_iter_300000.caffemodel");
 #endif
 }
 
@@ -81,25 +85,26 @@ TotalFlow::TotalFlow(const std::string& path) :
  */
 bool TotalFlow::DetectFrame(const cv::Mat &image) {
 //    std::vector<Face> faces = detector_->detect(image);
-    std::vector<ObjInfo>faces;
-    std::vector<ObjInfo>obj_state = objDetection(net_, image, 0.4);
+    std::vector<ObjInfo> faces;
+    std::vector<ObjInfo> obj_state = objDetection(net_, image, 0.4);
 //    chrono::steady_clock::time_point old = chrono::steady_clock::now();
 //    auto time =  chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now() - old);
 //    LOGE("objDetection(net_, image, 0.4) is %ld", time.count());
 
-    for(auto& obj : obj_state){
-        if(obj.action_ == Action::FACE)
+    for (auto &obj : obj_state) {
+        if (obj.action_ == Action::FACE)
             faces.push_back(obj);
     }
 
-    if(faces.empty()){
+    if (faces.empty()) {
         std::lock_guard<std::mutex> lock_guard(landmark_mutex_);
         landmarks_.clear();
         face_bbox_ = cv::Rect();
         cerr << "[Error]:detect frame failed to find face" << endl;
-        if(mark_no_face_) no_face_time_ = chrono::steady_clock::now();
-        if (chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now() - no_face_time_).count() > 3000) {
-            std::lock_guard<std::mutex>lk(result_mutex_);
+        if (mark_no_face_) no_face_time_ = chrono::steady_clock::now();
+        if (chrono::duration_cast<chrono::milliseconds>(
+                chrono::steady_clock::now() - no_face_time_).count() > 3000) {
+            std::lock_guard<std::mutex> lk(result_mutex_);
             result_.SetAbnormal(2);
         }
         mark_no_face_ = false;
@@ -109,15 +114,15 @@ bool TotalFlow::DetectFrame(const cv::Mat &image) {
         name_mutex_.unlock();
         return false;
     }
-    if(!mark_no_face_) mark_no_face_ = true;
+    if (!mark_no_face_) mark_no_face_ = true;
     result_mutex_.lock();
     result_.SetAbnormal(0);
     result_mutex_.unlock();
 
-    auto Psort = [&](const ObjInfo& a, const ObjInfo& b){
+    auto Psort = [&](const ObjInfo &a, const ObjInfo &b) {
         return a.score_ < b.score_;
     };
-    std::partial_sort(faces.begin(), faces.begin()+1, faces.end(), Psort);
+    std::partial_sort(faces.begin(), faces.begin() + 1, faces.end(), Psort);
     auto face = faces[0];
     face_bbox_ = cv::Rect(cv::Point(face.xL_, face.yL_), cv::Point(face.xR_, face.yR_));
 //    Face face= detector_->get_largest_face(faces);
@@ -135,9 +140,9 @@ bool TotalFlow::DetectFrame(const cv::Mat &image) {
     six_points.emplace_back(shape[56]); //右外眼角
     six_points.emplace_back(shape[60]); //左外嘴角
     six_points.emplace_back(shape[66]); //右外嘴角
-    std::unique_lock<std::mutex>uniqueLock(landmark_mutex_);
+    std::unique_lock<std::mutex> uniqueLock(landmark_mutex_);
     landmarks_.clear();
-    for(auto& point:shape){
+    for (auto &point:shape) {
         landmarks_.emplace_back(point);
     }
     uniqueLock.unlock();
@@ -153,11 +158,10 @@ bool TotalFlow::DetectFrame(const cv::Mat &image) {
 
 //    cv::Mat img = image.clone();
 //    std::vector<ObjInfo>obj_state = objDetection(net_, image, 0.4);
-    for(auto obj: obj_state){
-        if(obj.action_ == Action::CALL){
+    for (auto obj: obj_state) {
+        if (obj.action_ == Action::CALL) {
             call_bbox_ = cv::Rect(cv::Point(obj.xL_, obj.yL_), cv::Point(obj.xR_, obj.yR_));
-        }
-        else if(obj.action_ == Action::SMOKE){
+        } else if (obj.action_ == Action::SMOKE) {
             smoke_bbox_ = cv::Rect(cv::Point(obj.xL_, obj.yL_), cv::Point(obj.xR_, obj.yR_));
         }
     }
@@ -171,9 +175,9 @@ bool TotalFlow::DetectFrame(const cv::Mat &image) {
     landmark_mutex_.unlock();
 
     name_mutex_.lock();
-    if(name_ == TotalFlow::UnknowFace) face_match_flag_ = true;
+    if (name_ == TotalFlow::UnknowFace) face_match_flag_ = true;
     name_mutex_.unlock();
-    if(face_match_flag_){
+    if (face_match_flag_) {
         face_match_flag_ = false;
         std::vector<cv::Point2f> cv_pts;
         cv::Mat aligned_img;
@@ -187,7 +191,7 @@ bool TotalFlow::DetectFrame(const cv::Mat &image) {
         aligned_img = face_align_->DoAlign();
         cv::Mat feat;
 
-        faceid_->GetFaceFeature(aligned_img,feat);
+        faceid_->GetFaceFeature(aligned_img, feat);
 //        chrono::steady_clock::time_point old3 = chrono::steady_clock::now();
 //        auto time3 =  chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now() - old3);
 //        LOGE("GetFaceFeature(aligned_img,feat) is %ld", time3.count());
@@ -201,7 +205,7 @@ bool TotalFlow::DetectFrame(const cv::Mat &image) {
 }
 
 
-void CropAndResize(cv::Mat& src) {
+void CropAndResize(cv::Mat &src) {
     if (src.cols != 1280) {
         return;
     }
@@ -209,40 +213,42 @@ void CropAndResize(cv::Mat& src) {
     int half_width = src.cols / 2;
     int left_x = half_width - target_half_length;
     int right_x = half_width + target_half_length;
-    cv::Rect bb(left_x,0,960,720);
+    cv::Rect bb(left_x, 0, 960, 720);
     src = src(bb);
-    cv::resize(src,src,cv::Size(640,480));
+    cv::resize(src, src, cv::Size(640, 480));
 }
 
 
-
-
+void TotalFlow::setPicture(bool save) {
+    isSave = save;
+}
 
 /**
  * 程序运行入口
  */
-void TotalFlow::Run(cv::Mat& frame, Result& result, bool regist, const std::string& registName) {
+void TotalFlow::Run(cv::Mat &frame, Result &result, bool regist, const std::string &registName) {
     frame_mutex_.lock();
     frame_ = frame.clone();
     frame_mutex_.unlock();
-    if(regist and not regist_over_flag_) {
+    if (regist and not regist_over_flag_) {
         FaceIDRun(registName);
         if (not regist_over_flag_) {
             result.SetCalibration(-1);
             return;
         }
     }
-    if(first_time_flage_) {
+    if (first_time_flage_) {
         first_time_flage_ = false;
         LoadFeature();
-        if(Features_.empty()) {
+        if (Features_.empty()) {
             std::cerr << "Please register first!" << std::endl;
 //            std::abort();
         }
         name_ = NoFace;
         process_image_thread_ = thread(mem_fn(&TotalFlow::ProcessImageThread), this);
         process_image_thread_.detach();
-
+        process_picture_thread_ = thread(mem_fn(&TotalFlow::ProcessPictureThread), this);
+        process_picture_thread_.detach();
         //当前没有人脸识别和规定动作,直接运行校准操作
         main_step_ = RunStep::CalibrationStep;
         no_face_time_ = std::chrono::steady_clock::now();
@@ -274,12 +280,68 @@ void TotalFlow::Run(cv::Mat& frame, Result& result, bool regist, const std::stri
 
 }
 
+void TotalFlow::ProcessPictureThread() {
+    while (true) {
+        if (!keep_running_flag_) {
+            break;
+        }
+//        auto start1 = std::chrono::steady_clock::now();
+
+        LOGE(" TotalFlow::ProcessPictureThread() %d", isSave);
+//        auto end1 = std::chrono::steady_clock::now();
+//        auto coun1t = std::chrono::duration_cast<std::chrono::milliseconds>(
+//                end1 - start1).count();
+//        LOGE("calculate time ---- %ld", coun1t);
+        if (isSave) {
+//            LOGE(" TotalFlow::ProcessPictureThread() %d", isSave);
+            std::unique_lock<std::mutex> uniqueLock(frame_mutex_);
+            cv::Mat frame = frame_.clone();
+            uniqueLock.unlock();
+            if (!frame.empty()) {
+                index++;
+                if (index % 3 == 0) {
+//                    auto start1 = std::chrono::steady_clock::now();
+                    struct tm p;
+                    time_t nSrc;
+                    nSrc = time(NULL);
+                    p = *localtime(&nSrc);
+                    char str[80];
+                    strftime(str, 1000, "%Y-%m-%d %H-%M-%S", &p);
+                    string file = path + "test" + str + "-" + to_string(index) + ".png";
+//                    auto end1 = std::chrono::steady_clock::now();
+//                    auto coun1t = std::chrono::duration_cast<std::chrono::milliseconds>(
+//                            end1 - start1).count();
+//                    LOGE("calculate time ---- %ld", coun1t);
+
+                    auto start = std::chrono::steady_clock::now();
+//                    string file = path + "test" + to_string(start.time_since_epoch().count()) + ".png";
+//                    LOGE("copy image ---- %s", file.data());
+                    cv::imwrite(file, frame);
+                    auto end = std::chrono::steady_clock::now();
+                    auto count = std::chrono::duration_cast<std::chrono::milliseconds>(
+                            end - start).count();
+                    LOGE("copy image ---- %ld", count);
+//                    LOGE("copy image ---- %d,%d", frame.cols,frame.rows);
+                }
+                if (index > 1000)
+                    index = 0;
+            }
+        }
+    }
+    std::abort();
+}
+
 void TotalFlow::ProcessImageThread() {
     while (true) {
         if (!keep_running_flag_) {
             break;
         }
+
+//        chrono::steady_clock::time_point old = std::chrono::steady_clock::now();
         RunProcess();
+//        auto diff = chrono::duration_cast<std::chrono::milliseconds>(
+//                std::chrono::steady_clock::now() - old);
+//        LOGE("  RunProcess(); is -- %ld", diff.count());
     }
     std::cout << "keep_running_flag_ : " << keep_running_flag_ << std::endl;
     std::abort();
@@ -291,8 +353,9 @@ void TotalFlow::ProcessImageThread() {
  */
 void TotalFlow::RunProcess() {
     std::unique_lock<std::mutex> uniqueLock(frame_mutex_);
-    cv::Mat frame =frame_.clone();
+    cv::Mat frame = frame_.clone();
     uniqueLock.unlock();
+//    LOGE("copy RunProcess ---- %d,%d", frame.cols,frame.rows);
     if (frame.empty()) {
         return;
     }
@@ -372,7 +435,6 @@ void TotalFlow::RunMainStep() {
 }
 
 
-
 /**
  * 校准阶段
  */
@@ -383,7 +445,7 @@ void TotalFlow::RunCalibration() {
     }
 
     float angles_0, angles_1;
-    std::unique_lock<std::mutex>uniqueLock(angle_mutex_);
+    std::unique_lock<std::mutex> uniqueLock(angle_mutex_);
     angles_0 = angles_[0];
     angles_1 = angles_[1];
     uniqueLock.unlock();
@@ -410,7 +472,6 @@ void TotalFlow::RunCalibration() {
     }
 
 
-
 }
 
 
@@ -420,7 +481,7 @@ void TotalFlow::RunCalibration() {
 void TotalFlow::RunDistractDetection() {
     //TODO: 修改策略的返回类型,这样就不需要Switch操作了
     float angles_0, angles_1;
-    std::unique_lock<std::mutex>uniqueLock(angle_mutex_);
+    std::unique_lock<std::mutex> uniqueLock(angle_mutex_);
     angles_0 = angles_[0];
     angles_1 = angles_[1];
     uniqueLock.unlock();
@@ -545,7 +606,7 @@ void TotalFlow::RunCallDetection() {
 }
 
 
-bool TotalFlow::Regist(const std::string& feature_path) {
+bool TotalFlow::Regist(const std::string &feature_path) {
 
     cv::Mat feature;
 
@@ -553,22 +614,22 @@ bool TotalFlow::Regist(const std::string& feature_path) {
     cv::Mat frame = frame_.clone();
     frame_mutex_.unlock();
 
-    std::vector<ObjInfo>faces;
-    std::vector<ObjInfo>obj_state = objDetection(net_, frame, 0.4);
-    for(auto& obj : obj_state){
-        if(obj.action_ == Action::FACE)
+    std::vector<ObjInfo> faces;
+    std::vector<ObjInfo> obj_state = objDetection(net_, frame, 0.4);
+    for (auto &obj : obj_state) {
+        if (obj.action_ == Action::FACE)
             faces.push_back(obj);
     }
 
-    if(faces.empty()){
+    if (faces.empty()) {
         std::cout << "no face detect in current image!" << std::endl;
         return false;
     }
 
-    auto Psort = [&](const ObjInfo& a, const ObjInfo& b){
+    auto Psort = [&](const ObjInfo &a, const ObjInfo &b) {
         return a.score_ < b.score_;
     };
-    std::partial_sort(faces.begin(), faces.begin()+1, faces.end(), Psort);
+    std::partial_sort(faces.begin(), faces.begin() + 1, faces.end(), Psort);
     auto face = faces[0];
     face_bbox_ = cv::Rect(cv::Point(face.xL_, face.yL_), cv::Point(face.xR_, face.yR_));
 
@@ -587,7 +648,7 @@ bool TotalFlow::Regist(const std::string& feature_path) {
 
     faceid_->GetFaceFeature(aligned_img, feature);
 
-    if(!WriteFeature(feature, feature_path)) {
+    if (!WriteFeature(feature, feature_path)) {
         std::cout << "[ERROR] : Write feature failed." << std::endl;
         return false;
     }
@@ -602,18 +663,16 @@ bool TotalFlow::LoadFeature() {
 
     people_name = Listdir(feature_path);
 
-    for(const auto& name:people_name)
-    {
+    for (const auto &name:people_name) {
         Feature peple_feature;
         peple_feature.name = name;
         name_times_[name] = 0;
 
         std::vector<std::string> feature_paths = Listfile(feature_path + name);
-        for(const auto& fea: feature_paths)
-        {
+        for (const auto &fea: feature_paths) {
             std::string fea_name = feature_path + name + "/" + fea;
             cv::Mat feature;
-            if(!ReadFeature(feature, fea_name)){
+            if (!ReadFeature(feature, fea_name)) {
                 std::cout << "[ERROR]: read feature failed!" << fea_name << std::endl;
                 continue;
             }
@@ -629,7 +688,7 @@ std::string TotalFlow::GetName(const cv::Mat &feature) {
     name_times_.clear();
     std::string name = UnknowFace;
 
-    if(feature.empty()) return name;
+    if (feature.empty()) return name;
 
     for (const auto &Fea: Features_) {
         for (const auto &fea: Fea.features) {
@@ -642,8 +701,8 @@ std::string TotalFlow::GetName(const cv::Mat &feature) {
     }
 
     int max_times = 0;
-    for(auto& item: name_times_) {
-        if(item.second > max_times){
+    for (auto &item: name_times_) {
+        if (item.second > max_times) {
             name = item.first;
             max_times = item.second;
         }
@@ -655,17 +714,16 @@ std::vector<std::string> TotalFlow::Listdir(const std::string &folder) {
     std::vector<std::string> filenames;
     DIR *dir;
     struct dirent *ptr;
-    if((dir = opendir(folder.c_str())) == nullptr){
+    if ((dir = opendir(folder.c_str())) == nullptr) {
         std::cout << "Open dir(" << folder << ") error..." << std::endl;
         return filenames;
     }
 
-    while ((ptr = readdir(dir)) != nullptr)
-    {
-        if(strcmp(ptr->d_name, ".") == 0 |
-           strcmp(ptr->d_name, "..") == 0)
+    while ((ptr = readdir(dir)) != nullptr) {
+        if (strcmp(ptr->d_name, ".") == 0 |
+            strcmp(ptr->d_name, "..") == 0)
             continue;
-        if(4 == ptr->d_type) {
+        if (4 == ptr->d_type) {
             std::string dir_name = ptr->d_name;
             filenames.push_back(ptr->d_name);
         }
@@ -679,17 +737,16 @@ std::vector<std::string> TotalFlow::Listfile(const std::string &folder) {
     std::vector<std::string> filenames;
     DIR *dir;
     struct dirent *ptr;
-    if((dir = opendir(folder.c_str())) == nullptr){
+    if ((dir = opendir(folder.c_str())) == nullptr) {
         std::cout << "Open dir(" << folder << ") error..." << std::endl;
         return filenames;
     }
 
-    while ((ptr = readdir(dir)) != nullptr)
-    {
-        if(strcmp(ptr->d_name, ".") == 0 |
-           strcmp(ptr->d_name, "..") == 0)
+    while ((ptr = readdir(dir)) != nullptr) {
+        if (strcmp(ptr->d_name, ".") == 0 |
+            strcmp(ptr->d_name, "..") == 0)
             continue;
-        if(8 == ptr->d_type) {
+        if (8 == ptr->d_type) {
             std::string dir_name = ptr->d_name;
             filenames.push_back(ptr->d_name);
         }
@@ -719,8 +776,8 @@ std::vector<std::string> TotalFlow::Listfile(const std::string &folder) {
 //    }
 //}
 
-bool TotalFlow::FaceIDRun(const std::string& registName) {
-    if(feature_name_path_.empty()) {
+bool TotalFlow::FaceIDRun(const std::string &registName) {
+    if (feature_name_path_.empty()) {
         feature_name_path_ = path_root_ + "/feature/" + registName;
 
         try {
@@ -733,17 +790,17 @@ bool TotalFlow::FaceIDRun(const std::string& registName) {
 
     }
     std::string feature_path = feature_name_path_ + "/" + to_string(current_regist_num_) + ".bin";
-    if(!Regist(feature_path)) return false;
-    if(++current_regist_num_>REGISTNUM) regist_over_flag_ = true;
+    if (!Regist(feature_path)) return false;
+    if (++current_regist_num_ > REGISTNUM) regist_over_flag_ = true;
 
     return true;
 }
 
-bool TotalFlow::WriteFeature(const cv::Mat& feature, const std::string& path) {
+bool TotalFlow::WriteFeature(const cv::Mat &feature, const std::string &path) {
     fstream fs;
     try {
-        fs.open(path, ios::out|ios::binary|ios::trunc);
-        fs.write(reinterpret_cast<char*>(feature.data), TotalFlow::FEATURE_LENGTH * sizeof(float));
+        fs.open(path, ios::out | ios::binary | ios::trunc);
+        fs.write(reinterpret_cast<char *>(feature.data), TotalFlow::FEATURE_LENGTH * sizeof(float));
     }
     catch (...) {
         std::cout << "[ERROR]: Write feature failed! " << path << std::endl;
@@ -756,10 +813,10 @@ bool TotalFlow::WriteFeature(const cv::Mat& feature, const std::string& path) {
 }
 
 bool TotalFlow::ReadFeature(cv::Mat &feaure, const std::string &path) {
-    cv::Mat fea(1,TotalFlow::FEATURE_LENGTH, CV_32FC1);
+    cv::Mat fea(1, TotalFlow::FEATURE_LENGTH, CV_32FC1);
     fstream fs;
     try {
-        fs.open(path, ios::in|ios::binary);
+        fs.open(path, ios::in | ios::binary);
         fs.read(reinterpret_cast<char *>(fea.data), TotalFlow::FEATURE_LENGTH * sizeof(float));
     }
     catch (...) {

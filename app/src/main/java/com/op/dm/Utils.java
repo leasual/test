@@ -2,6 +2,9 @@ package com.op.dm;
 
 import android.content.Context;
 import android.content.res.AssetManager;
+import android.os.StatFs;
+import android.os.storage.StorageManager;
+import android.support.v4.content.ContextCompat;
 import android.util.Log;
 
 import java.io.File;
@@ -10,14 +13,98 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
 
 /**
  * Created by chris on 12/10/18.
  */
 
 public class Utils {
+
+    public static class Volume {
+        protected String path;
+        protected boolean removable;
+        protected String state;
+
+        public String getPath() {
+            return path;
+        }
+
+        public void setPath(String path) {
+            this.path = path;
+        }
+
+        public boolean isRemovable() {
+            return removable;
+        }
+
+        public void setRemovable(boolean removable) {
+            this.removable = removable;
+        }
+
+        public String getState() {
+            return state;
+        }
+
+        public void setState(String state) {
+            this.state = state;
+        }
+    }
+
+
+    public static ArrayList<Volume> getVolume(Context context) {
+        ArrayList<Volume> list_storagevolume = new ArrayList<Volume>();
+
+        StorageManager storageManager = (StorageManager) context.getSystemService(Context.STORAGE_SERVICE);
+
+        try {
+            Method method_volumeList = StorageManager.class.getMethod("getVolumeList");
+
+            method_volumeList.setAccessible(true);
+
+            Object[] volumeList = (Object[]) method_volumeList.invoke(storageManager);
+            if (volumeList != null) {
+                Volume volume;
+                for (int i = 0; i < volumeList.length; i++) {
+                    try {
+                        volume = new Volume();
+                        volume.setPath((String) volumeList[i].getClass().getMethod("getPath").invoke(volumeList[i]));
+                        volume.setRemovable((boolean) volumeList[i].getClass().getMethod("isRemovable").invoke(volumeList[i]));
+                        volume.setState((String) volumeList[i].getClass().getMethod("getState").invoke(volumeList[i]));
+                        list_storagevolume.add(volume);
+                    } catch (IllegalAccessException e) {
+                        e.printStackTrace();
+                    } catch (InvocationTargetException e) {
+                        e.printStackTrace();
+                    } catch (NoSuchMethodException e) {
+                        e.printStackTrace();
+                    }
+
+                }
+            } else {
+                Log.e("null", "null-------------------------------------");
+            }
+        } catch (Exception e1) {
+            e1.printStackTrace();
+        }
+
+        return list_storagevolume;
+    }
+
+
+
     public  static void addModeles(Context context){
         try {
+
+//            long size = getSDAvailableSize(context);
+//            if(size!= 0){
+//                File images = new File("/storage/sdcard1/images");
+//                if(!images.exists()){
+//                    images.mkdir();
+//                }
+//            }
             String [] files = context.getAssets().list("");
             String storePathRoot =  context.getExternalFilesDir(null).getAbsolutePath() == null? context.getFilesDir().getAbsolutePath() : context.getExternalFilesDir(null).getAbsolutePath();
             for (String dir :
@@ -34,6 +121,31 @@ public class Utils {
             e.printStackTrace();
         }
 
+    }
+
+    public static long getSDAvailableSize(Context context) {
+        ArrayList<Volume> list = getVolume(context);
+        for (Volume v: list){
+            if(v.path.contains("sdcard1")&& !v.state.contains("mounted")){
+                return 0;
+            }
+//            Log.e("存储 ------ ", v.path);
+//            Log.e("state ------ ", v.state);
+//            Log.e("remove ------ ", v.removable+ "");
+        }
+//        File file = new File("/storage/sdcard1");
+//        if(!file.exists()){
+//            Log.e("File  storage/sdcard1) ", " not exist " );
+//            return 0;
+//        }
+
+        StatFs stat = new StatFs("/storage/sdcard1");
+        long blockSize = stat.getBlockSize();
+        long availableBlocks = (stat.getAvailableBlocks() * blockSize)/(1024*1024);
+
+
+        Log.e(" path size  ", " <> " + availableBlocks);
+        return availableBlocks;
     }
     /**
      *  从assets目录中复制整个文件夹内容
