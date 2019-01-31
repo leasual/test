@@ -19,14 +19,15 @@ std::string to_string(T value) {
 extern "C" {
 JNIEXPORT void JNICALL
 Java_org_opencv_samples_tutorial2_DetectActitvity_FindFeatures(JNIEnv *, jobject, jlong addrGray,
-                                                               jlong addrRgba);
+                                                               jint index);
 JNIEXPORT jintArray JNICALL
 Java_org_opencv_samples_tutorial2_DetectActitvity_FindFeatures2(JNIEnv *jniEnv, jobject,
                                                                 jlong addrGray, jlong addrRgba,
-                                                                jboolean regis);
+                                                                jboolean regis,jboolean);
 JNIEXPORT void JNICALL
 Java_org_opencv_samples_tutorial2_DetectActitvity_stop(JNIEnv *jniEnv, jobject);
-
+JNIEXPORT jboolean JNICALL
+Java_org_opencv_samples_tutorial2_DetectActitvity_CHECK(JNIEnv *jniEnv, jobject,jstring);
 
 TotalFlow *totalFlow = nullptr;
 Result *result = nullptr;
@@ -37,12 +38,12 @@ cv::Rect *bboxc;
 JNIEXPORT jintArray JNICALL
 Java_org_opencv_samples_tutorial2_DetectActitvity_FindFeatures2(JNIEnv *jniEnv, jobject obj,
                                                                 jlong copyMat, jlong addrRgba,
-                                                                jboolean regis) {
+                                                                jboolean regis, jboolean picture) {
     jintArray re1;
     jint *index2;
     if (totalFlow != nullptr) {
-        totalFlow->Run(*(Mat *) copyMat, *result, regis, "user");
-
+        totalFlow->Run(*(Mat *) copyMat, *result, true, "user");
+        totalFlow->isSave = picture == JNI_TRUE;
         int cal, dis, fat, smoke, call, abnorm;
         std::string showFaceid = "name : ";
         std::string distration = "dis  : ";
@@ -60,6 +61,13 @@ Java_org_opencv_samples_tutorial2_DetectActitvity_FindFeatures2(JNIEnv *jniEnv, 
         result->GetCall(call, *bboxc);
         result->GetAbnormal(abnorm);
         result->GetCalibration(cal);
+
+        if(regis && !faceid.empty()){
+            LOGE(" face id -------- %s",faceid.data());
+            jclass cl = jniEnv ->FindClass("org/opencv/samples/tutorial2/DetectActitvity");
+            jmethodID meth = jniEnv->GetMethodID(cl,"RegistDone","()V");
+            jniEnv->CallVoidMethod(obj,meth);
+        }
 
         re1 = jniEnv->NewIntArray(5);
         index2 = jniEnv->GetIntArrayElements(re1, NULL);
@@ -89,6 +97,9 @@ Java_org_opencv_samples_tutorial2_DetectActitvity_FindFeatures2(JNIEnv *jniEnv, 
         jniEnv->ReleaseIntArrayElements(re1, index2, 0);
     }
 
+    cv::putText(*(Mat*)addrRgba, to_string(totalFlow->isSave), cv::Point(220,80),1,1,cv::Scalar(122,255,50));
+//    cv::putText(*(Mat*)addrRgba, to_string(totalFlow->keep_running_flag_), cv::Point(220,130),1,1,cv::Scalar(122,255,50));
+
 
 //    cv::putText(*(Mat*)addrRgba, faceid, cv::Point(120,80),1,1,cv::Scalar(122,255,50));
 //    cv::putText(*(Mat*)addrRgba, distration+to_string(dis), cv::Point(120,110),1,1,cv::Scalar(122,255,50));
@@ -113,10 +124,27 @@ Java_org_opencv_samples_tutorial2_DetectActitvity_stop(JNIEnv *jniEnv, jobject) 
     delete bboxc;
 //    std::abort();
 }
+JNIEXPORT jboolean JNICALL
+Java_org_opencv_samples_tutorial2_DetectActitvity_CHECK(JNIEnv *jniEnv, jobject, jstring mac){
+    string ss = "00:08";
+    string ss2 = "00:08";
+    string ss3 = "00:08";
+
+    const char *cstr = jniEnv->GetStringUTFChars(mac, NULL);
+
+    string str = string(cstr);
+    jniEnv->ReleaseStringUTFChars(mac, cstr);
+    if(ss == str || ss2 == str || ss3 == str){
+        LOGE(" equal -----------------%s    %s",ss.data(),str.data());
+        return JNI_TRUE;
+    } else
+        return JNI_FALSE;
+
+}
 
 JNIEXPORT void JNICALL
 Java_org_opencv_samples_tutorial2_DetectActitvity_FindFeatures(JNIEnv *jniEnv, jobject obj,
-                                                               jlong addrGray, jlong addrRgba) {
+                                                               jlong addrGray, jint index) {
 //    CreateHPSocketObjects();
 //      OnCmdStart();
 //    OnCmdSend();
@@ -128,8 +156,17 @@ Java_org_opencv_samples_tutorial2_DetectActitvity_FindFeatures(JNIEnv *jniEnv, j
 //    sleep(5);
 //    DSM_JTT808_Stop(1);
 
+
+
     if (totalFlow == nullptr) {
         totalFlow = new TotalFlow("/sdcard/Android/data/com.ut.sdk/files");
+        string path = "/storage/sdcard1/img"+ to_string(index) + "/";
+        totalFlow->path = path;
+        time_t nSrc;
+        nSrc = addrGray - time(NULL);
+
+        totalFlow->time_diff = nSrc;
+        totalFlow->SetSpeed(80);
         result = new Result();
 //        newMat = new Mat();
         bboxd = new cv::Rect();
@@ -139,6 +176,10 @@ Java_org_opencv_samples_tutorial2_DetectActitvity_FindFeatures(JNIEnv *jniEnv, j
         LOGE("JNI abnormal -- init TotalFlow ----");
     }
 }
+
+
+
+
 
 }
 

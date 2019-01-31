@@ -1,7 +1,7 @@
 //
 // Created by untouch on 18-11-30.
 //
-
+#include <exception>
 #include "cameras.h"
 
 CameraOnLine::CameraOnLine(int index) :
@@ -22,24 +22,32 @@ std::string CameraOnLine::Read(cv::Mat &frame) {
 
 CameraOffLine::CameraOffLine(const std::string &path) :
     Camera::Camera(),index_(0){
+#if 0
     std::vector<std::string> actions = Listdir(path);
     for(auto& action: actions){
         std::string imgPath = action + "/cam";
         auto imgs = Listfile(imgPath);
         files_.insert(files_.end(), imgs.begin(),imgs.end());
     }
+#endif
+    std::vector<std::string> actions = Listdir(path);
+    for(size_t i = 1; i != 3; ++i){
+//        std::string imgPath = path + std::to_string(i) + "/data/cam0/data";
+//        auto imgs = Listfile(imgPath);
+//        files_.insert(files_.end(), imgs.begin(),imgs.end());
+    }
     std::cout << "files size : " << files_.size() << std::endl;
 }
 
 std::string CameraOffLine::Read(cv::Mat &frame) {
-    std::string path = files_.at(index_++);
+    std::string path;
     try {
+        path = files_.at(index_++);
         frame = cv::imread(path);
     }
     catch (...){
         if(index_ >= files_.size()){
-            std::cout << "No files." <<std::endl;
-            std::abort();
+            throw std::out_of_range("No files");
         }
         std::cerr << "img read failed!" << std::endl;
         return path;
@@ -93,6 +101,9 @@ std::vector<std::string> CameraOffLine::Listfile(const std::string &folder) {
     }
     closedir(dir);
 
-    std::sort(filenames.begin(), filenames.end(), [&](std::string& s1, std::string& s2){return s1 < s2;});
+    std::sort(filenames.begin(), filenames.end(), [&](std::string& s1, std::string& s2){
+        auto a = s1.substr(s1.find_last_of("_")+1,19);
+        auto b = s2.substr(s2.find_last_of("_")+1,19);
+        return a < b;});
     return filenames;
 }
