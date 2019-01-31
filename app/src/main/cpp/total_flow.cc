@@ -252,7 +252,27 @@ void TotalFlow::ProcessPictureThread() {
                     p = *localtime(&nSrc);
                     char str[80];
                     strftime(str, 1000, "%Y-%m-%d %H-%M-%S", &p);
-                    string file = path + str + "-" + to_string(milli) + ".png";
+
+                    int  dis, fat, smoke, call;
+                    cv::Rect bboxd;
+                    result_.GetDistraction(dis, bboxd);
+                    result_.GetFatigue(fat, bboxd);
+                    result_.GetSmoke(smoke, bboxd);
+                    result_.GetCall(call, bboxd);
+
+                    string currentPath;
+                    if(dis == 2){
+                        currentPath = pathDis;
+                    } else if(call == 2){
+                        currentPath = pathCall;
+                    }else if(fat == 2){
+                        currentPath = pathFat;
+                    }else if(smoke == 2){
+                        currentPath = pathSmoke;
+                    } else
+                        currentPath = path;
+
+                    string file = currentPath + str + "-" + to_string(milli) + ".png";
 //                    auto end1 = std::chrono::steady_clock::now();
 //                    auto coun1t = std::chrono::duration_cast<std::chrono::milliseconds>(
 //                            end1 - start1).count();
@@ -260,7 +280,11 @@ void TotalFlow::ProcessPictureThread() {
 
                     auto start = std::chrono::steady_clock::now();
 //                    string file = path + "test" + to_string(start.time_since_epoch().count()) + ".png";
-                    LOGE("copy image ---- %s", file.data());
+//                    LOGE("copy image ---- %s", file.data());
+
+
+
+                    LOGE("result value - %s", file.data());
                     cv::imwrite(file, frame);
                     auto end = std::chrono::steady_clock::now();
                     auto count = std::chrono::duration_cast<std::chrono::milliseconds>(

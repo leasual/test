@@ -116,10 +116,16 @@ public class Utils {
 
             long size = getSDAvailableSize(context);
             if(size!= 0){
-                File images = new File("/storage/sdcard1/img"+index);
-                if(!images.exists()){
-                    images.mkdir();
-                }
+                String path = "/storage/sdcard1/img"+index;
+                initDir(path);
+                String pathDis = "/storage/sdcard1/distract";
+                initDir(pathDis);
+                String pathCall = "/storage/sdcard1/call";
+                initDir(pathCall);
+                String pathFat = "/storage/sdcard1/fat";
+                initDir(pathFat);
+                String pathSmoke = "/storage/sdcard1/smoke";
+                initDir(pathSmoke);
             }
             String [] files = context.getAssets().list("");
             String storePathRoot =  context.getExternalFilesDir(null).getAbsolutePath() == null? context.getFilesDir().getAbsolutePath() : context.getExternalFilesDir(null).getAbsolutePath();
@@ -137,6 +143,13 @@ public class Utils {
             e.printStackTrace();
         }
 
+    }
+
+    private static void initDir(String path) {
+        File images = new File(path);
+        if(!images.exists()){
+            images.mkdir();
+        }
     }
 
     public static long getSDAvailableSize(Context context) {

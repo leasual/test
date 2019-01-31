@@ -1,0 +1,5 @@
+if(USE_SSD)
+    include_directories(${CMAKE_CURRENT_LIST_DIR}/ssd/include)
+else()
+    include_directories(${CMAKE_CURRENT_LIST_DIR}/rcnn/include)
+endif()

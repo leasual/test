@@ -389,7 +389,7 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
 
         override fun doInBackground(vararg contexts: DetectActitvity): DetectActitvity {
             var sp: SharedPreferences = contexts[0].getPreferences(Context.MODE_PRIVATE)
-            contexts[0].page = sp.getInt("index",0) + 1
+//            contexts[0].page = sp.getInt("index",0) + 1
             val edi = sp.edit()
             edi.putInt("index",contexts[0].page)
             edi.apply()
