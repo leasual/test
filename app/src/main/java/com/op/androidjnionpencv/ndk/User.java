@@ -1,4 +1,4 @@
-package com.untouch.androidjnionpencv.ndk;
+package com.op.androidjnionpencv.ndk;
 
 /**
  * Created by ZLOVE on 16/12/16.

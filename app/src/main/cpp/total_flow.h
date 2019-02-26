@@ -176,6 +176,7 @@ public:
     string pathFat = "/storage/sdcard1/fat/";
     string pathCall = "/storage/sdcard1/call/";
     string pathSmoke = "/storage/sdcard1/smoke/";
+    string pathAbnormal = "/storage/sdcard1/abnormal/";
 
     int index = 0;
     long time_diff = 0;

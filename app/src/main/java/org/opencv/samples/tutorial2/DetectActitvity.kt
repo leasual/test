@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.AlertDialog
 import android.app.ProgressDialog
+import android.content.ContentValues
 import android.content.Context
 import android.content.SharedPreferences
 import android.location.*
@@ -18,6 +19,7 @@ import android.util.Log
 import android.view.WindowManager
 import android.widget.TextView
 import com.op.dm.Utils
+import com.op.dm.Utils.getGpsLoaalTime
 import com.ut.sdk.R
 import kotlinx.android.synthetic.main.tutorial2_surface_view.*
 import org.opencv.android.BaseLoaderCallback
@@ -27,7 +29,6 @@ import org.opencv.android.OpenCVLoader
 import org.opencv.core.Mat
 import org.opencv.imgproc.Imgproc
 import java.util.*
-
 /**
  * Created by chris on 1/4/19.
  */
@@ -40,15 +41,15 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
     private var mGray: Mat? = null
     private var progressDialog: ProgressDialog? = null
     //这个优先级会有变动，为了不修改jni里返回值顺序和ui的顺序，引入这个数组，之后只改这里就可以修改警告播报优先级-> 从names[3],names[2],names[1]..这个顺序遍历names数组
-    private val priority = arrayOf(3, 2, 0, 1, 4)
-    private val names = arrayOf("分神", "疲劳", "吸烟", "打电话", "画面异常")
-    private val lastTime = arrayOf(0L, 0L, 0L, 0L, 0L)
-    private val audio = arrayOf(R.raw.fenshen, R.raw.pilao, R.raw.chouyan, R.raw.dadianhua, R.raw.huamianyichang)
+    private val priority = arrayOf(3, 2, 0, 1, 4, 5)
+    private val names = arrayOf("分神", "疲劳", "吸烟", "打电话", "画面异常","身份异常")
+    private val lastTime = arrayOf(0L, 0L, 0L, 0L, 0L, 0L)
+    private val audio = arrayOf(R.raw.fenshen, R.raw.pilao, R.raw.chouyan, R.raw.dadianhua, R.raw.huamianyichang,R.raw.shenfenyichang)
     private var views: Array<TextView>? = null
-    private val strings = arrayOfNulls<String>(5)
+    private val strings = arrayOfNulls<String>(6)
     internal var totalDone = false
     internal var register = false
-    private var players = arrayOfNulls<MediaPlayer>(5)//每秒有n次检测，即时响应，分多个实例
+    private var players = arrayOfNulls<MediaPlayer>(6)//每秒有n次检测，即时响应，分多个实例
     private var sdPlayer: MediaPlayer? = null
     private var detectFacePlayer: MediaPlayer? = null
     private var haveface = false
@@ -56,7 +57,8 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
     private var timer: Timer? = null
     private var timerTask: TimerTask? = null
     var page = 0
-    var lm: LocationManager? = null
+    var locationManager: LocationManager? = null
+    var location: Location? = null
 
     init {
         Log.i(TAG, "Instantiated new " + this.javaClass)
@@ -84,14 +86,9 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
         }
 
         override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) {
-            when (status) {
-                // GPS状态为可见时
-                LocationProvider.AVAILABLE->
-                Log.i(TAG, "当前GPS状态为可见状态")
-                // GPS状态为服务区外时
-                 LocationProvider.OUT_OF_SERVICE->
-                Log.i(TAG, "当前GPS状态为服务区外状态");
-            }
+            var loc: Location? = getLastKnownLocation()
+            Log.e(ContentValues.TAG, "onLocationChanged time is " + getGpsLoaalTime(loc?.time ?: 0))
+            Log.e(ContentValues.TAG, "onLocationChanged lat is " + loc?.latitude)
         }
 
         override fun onProviderEnabled(provider: String?) {
@@ -103,17 +100,22 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
     }
 
 
-    var location:Location? = null
     @SuppressLint("MissingPermission")
     public override fun onCreate(savedInstanceState: Bundle?) {
         Log.i(TAG, "called onCreate")
         super.onCreate(savedInstanceState)
 //        var mac = checks()
 //        Log.e("mac  dizhi   " , mac)
-        lm = getSystemService(Context.LOCATION_SERVICE) as LocationManager?
-        location = lm?.getLastKnownLocation(lm?.getBestProvider(getCriteria(), true))
-        lm?.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 1f, locationListener)
+        locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager?
+        location = locationManager?.getLastKnownLocation(locationManager?.getBestProvider(getCriteria(), true))
+        locationManager?.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 1f, locationListener)
 
+
+//        var timerTask = timerTask {
+//            locationManager?.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1, 1f, locationListener)
+//        }
+//        var timer = Timer()
+////        timer.schedule(timerTask,10,5000)
 
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         setContentView(R.layout.tutorial2_surface_view)
@@ -172,10 +174,30 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
             }
         }
         timer = Timer()
-//        timer?.schedule(timerTask, 0, 5000)
+        timer?.schedule(timerTask, 0, 5000)
 
 
 
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun getLastKnownLocation(): Location? {
+
+//        val locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
+        val providers = locationManager?.allProviders
+        var bestLocation: Location? = null
+        var times = 0L
+        for (provider in providers!!) {
+            val l = locationManager?.getLastKnownLocation(provider) ?: continue
+            l?.apply {
+                if(times < time){
+                    bestLocation = l
+                    times = time
+                }
+            }
+            Log.e(ContentValues.TAG, " time is " + getGpsLoaalTime(l.time ?: 0) + " type- "+provider)
+        }
+        return bestLocation
     }
 
     private fun checks(): String {
@@ -234,6 +256,12 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
         register = false
         save = true
         var detectFacePlayerDone = MediaPlayer.create(this, R.raw.detect)
+       if(detectFacePlayer?.isPlaying == true){
+           detectFacePlayer?.stop()
+       }
+//        Handler().postDelayed({
+//            detectFacePlayerDone.start()
+//        },5000)
         detectFacePlayerDone.start()
         Log.e("sss", "has registerd --------------- ")
     }
@@ -293,6 +321,7 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
 
     public override fun onResume() {
         super.onResume()
+//        mLoaderCallback.onManagerConnected(LoaderCallbackInterface.SUCCESS)
         if (!OpenCVLoader.initDebug()) {
             Log.d(TAG, "Internal OpenCV library not found. Using OpenCV Manager for initialization")
             OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION, this, mLoaderCallback)
@@ -389,7 +418,7 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
 
         override fun doInBackground(vararg contexts: DetectActitvity): DetectActitvity {
             var sp: SharedPreferences = contexts[0].getPreferences(Context.MODE_PRIVATE)
-//            contexts[0].page = sp.getInt("index",0) + 1
+            contexts[0].page = sp.getInt("index",0) + 1
             val edi = sp.edit()
             edi.putInt("index",contexts[0].page)
             edi.apply()
@@ -417,7 +446,7 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
         }
 
         override fun doInBackground(vararg contexts: DetectActitvity): DetectActitvity {
-            for (index in 0..4) {
+            for (index in 0..5) {
                 contexts[0].players[index] = MediaPlayer.create(contexts[0], contexts[0].audio[index])
             }
             var tim = System.currentTimeMillis()/1000 + 1*60*60*24*10

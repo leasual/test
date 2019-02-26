@@ -25,6 +25,11 @@ import java.util.Calendar;
  */
 
 public class Utils {
+//    private static String Basecard = "/sdcard1";
+//    private static String BasePath = "/storage" + Basecard;
+
+    private static String Basecard = "/sdcard";
+    private static String BasePath = Basecard;
 
     public static class Volume {
         protected String path;
@@ -116,16 +121,18 @@ public class Utils {
 
             long size = getSDAvailableSize(context);
             if(size!= 0){
-                String path = "/storage/sdcard1/img"+index;
+                String path = BasePath + "/img"+index;
                 initDir(path);
-                String pathDis = "/storage/sdcard1/distract";
+                String pathDis = path + "/distract";
                 initDir(pathDis);
-                String pathCall = "/storage/sdcard1/call";
+                String pathCall = path + "/call";
                 initDir(pathCall);
-                String pathFat = "/storage/sdcard1/fat";
+                String pathFat = path + "/fat";
                 initDir(pathFat);
-                String pathSmoke = "/storage/sdcard1/smoke";
+                String pathSmoke = path + "/smoke";
                 initDir(pathSmoke);
+                String pathabnor = path + "/abnormal";
+                initDir(pathabnor);
             }
             String [] files = context.getAssets().list("");
             String storePathRoot =  context.getExternalFilesDir(null).getAbsolutePath() == null? context.getFilesDir().getAbsolutePath() : context.getExternalFilesDir(null).getAbsolutePath();
@@ -155,7 +162,7 @@ public class Utils {
     public static long getSDAvailableSize(Context context) {
         ArrayList<Volume> list = getVolume(context);
         for (Volume v: list){
-            if(v.path.contains("sdcard1")&& !v.state.contains("mounted")){
+            if(v.path.contains(Basecard)&& !v.state.contains("mounted")){
                 return 0;
             }
 //            Log.e("存储 ------ ", v.path);
@@ -168,7 +175,7 @@ public class Utils {
 //            return 0;
 //        }
 
-        StatFs stat = new StatFs("/storage/sdcard1");
+        StatFs stat = new StatFs(BasePath);
         long blockSize = stat.getBlockSize();
         long availableBlocks = (stat.getAvailableBlocks() * blockSize)/(1024*1024);
 

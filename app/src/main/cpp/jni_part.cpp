@@ -44,7 +44,7 @@ Java_org_opencv_samples_tutorial2_DetectActitvity_FindFeatures2(JNIEnv *jniEnv, 
     if (totalFlow != nullptr) {
         totalFlow->Run(*(Mat *) copyMat, *result, true, "user");
         totalFlow->isSave = picture == JNI_TRUE;
-        int cal, dis, fat, smoke, call, abnorm;
+        int cal, dis, fat, smoke, call, abnorm, unknown;
         std::string showFaceid = "name : ";
         std::string distration = "dis  : ";
         std::string fatigue = "fat  : ";
@@ -55,6 +55,8 @@ Java_org_opencv_samples_tutorial2_DetectActitvity_FindFeatures2(JNIEnv *jniEnv, 
         std::string faceid;
 
         result->GetFaceId(faceid);
+        if(faceid == "UnknowFace")
+            unknown = 2;
         result->GetDistraction(dis, *bboxd);
         result->GetFatigue(fat, *bboxf);
         result->GetSmoke(smoke, *bboxs);
@@ -69,13 +71,14 @@ Java_org_opencv_samples_tutorial2_DetectActitvity_FindFeatures2(JNIEnv *jniEnv, 
             jniEnv->CallVoidMethod(obj,meth);
         }
 
-        re1 = jniEnv->NewIntArray(5);
+        re1 = jniEnv->NewIntArray(6);
         index2 = jniEnv->GetIntArrayElements(re1, NULL);
         index2[0] = dis;
         index2[1] = fat;
         index2[2] = smoke;
         index2[3] = call;
         index2[4] = abnorm;
+        index2[5] = unknown;
         if(smoke != 0 ){
             cv::rectangle(*(Mat*)addrRgba,*bboxs,cv::Scalar(255,0,0),2);
         }
@@ -160,12 +163,20 @@ Java_org_opencv_samples_tutorial2_DetectActitvity_FindFeatures(JNIEnv *jniEnv, j
 
     if (totalFlow == nullptr) {
         totalFlow = new TotalFlow("/sdcard/Android/data/com.ut.sdk/files");
-        string path = "/storage/sdcard1/img"+ to_string(index) + "/";
-        totalFlow->path = path;
-        time_t nSrc;
-        nSrc = addrGray - time(NULL);
+//        string path = "/storage/sdcard1/img"+ to_string(index) + "/";
 
-        totalFlow->time_diff = nSrc;
+        string path = "/sdcard/img"+ to_string(index) + "/";
+        totalFlow->path = path;
+        totalFlow-> pathDis = path + "distract/";
+        totalFlow-> pathFat = path +"fat/";
+        totalFlow-> pathCall = path +"call/";
+        totalFlow-> pathSmoke =path + "smoke/";
+        totalFlow-> pathAbnormal =path + "abnormal/";
+
+//        time_t nSrc;
+//        nSrc = addrGray - time(NULL);
+//        totalFlow->time_diff = nSrc;
+
         totalFlow->SetSpeed(80);
         result = new Result();
 //        newMat = new Mat();
