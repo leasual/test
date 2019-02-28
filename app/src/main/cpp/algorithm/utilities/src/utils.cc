@@ -33,9 +33,9 @@ void read_points(const std::string& points_path, std::vector<rectangle> &bboxes,
             std::istringstream ss(line);
             ss >> x >> y;
         }
-        points.emplace_back(std::make_pair(round(istod(x)) + offset, round(istod(y)) + offset));
-        x_vec.emplace_back(round(istod(x)));
-        y_vec.emplace_back(round(istod(x)));
+//        points.emplace_back(std::make_pair(round(istod(x)) + offset, round(istod(y)) + offset));
+//        x_vec.emplace_back(round(istod(x)));
+//        y_vec.emplace_back(round(istod(x)));
     }
     std::sort(x_vec.begin(), x_vec.end());
     std::sort(y_vec.begin(), y_vec.end());

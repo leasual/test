@@ -206,10 +206,6 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
     }
 
     private fun getStringResult(result: IntArray?) {
-
-//        var ts = Utils.getGpsLoaalTime( GetTime())
-//        Log.e("Location ______ ", ts)
-
         result?.let { array ->
             priority.forEach {
                 // access the uiText and Jni result by the order of 'priority'
@@ -239,6 +235,8 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
     }
 
     private fun playWarnning(index: Int) {//每种提示音分开计算，4秒内不重复播放同一种
+        if(index == 5)
+            return
         var time = System.currentTimeMillis() - lastTime[0]
         if (time > 4000) {
             players[index]?.apply {

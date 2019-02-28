@@ -25,11 +25,11 @@ import java.util.Calendar;
  */
 
 public class Utils {
-//    private static String Basecard = "/sdcard1";
-//    private static String BasePath = "/storage" + Basecard;
+    private static String Basecard = "/sdcard1";
+    private static String BasePath = "/storage" + Basecard;
 
-    private static String Basecard = "/sdcard";
-    private static String BasePath = Basecard;
+//    private static String Basecard = "/sdcard";
+//    private static String BasePath = Basecard;
 
     public static class Volume {
         protected String path;

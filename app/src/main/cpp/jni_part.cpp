@@ -55,8 +55,12 @@ Java_org_opencv_samples_tutorial2_DetectActitvity_FindFeatures2(JNIEnv *jniEnv, 
         std::string faceid;
 
         result->GetFaceId(faceid);
+        LOGE(" face id -------- %s",faceid.data());
+        unknown = 0;
         if(faceid == "UnknowFace")
             unknown = 2;
+        else
+            unknown = 0;
         result->GetDistraction(dis, *bboxd);
         result->GetFatigue(fat, *bboxf);
         result->GetSmoke(smoke, *bboxs);
@@ -163,9 +167,9 @@ Java_org_opencv_samples_tutorial2_DetectActitvity_FindFeatures(JNIEnv *jniEnv, j
 
     if (totalFlow == nullptr) {
         totalFlow = new TotalFlow("/sdcard/Android/data/com.ut.sdk/files");
-//        string path = "/storage/sdcard1/img"+ to_string(index) + "/";
+        string path = "/storage/sdcard1/img"+ to_string(index) + "/";
 
-        string path = "/sdcard/img"+ to_string(index) + "/";
+//        string path = "/sdcard/img"+ to_string(index) + "/";
         totalFlow->path = path;
         totalFlow-> pathDis = path + "distract/";
         totalFlow-> pathFat = path +"fat/";
