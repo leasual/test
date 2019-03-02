@@ -651,7 +651,7 @@ namespace dlib
         DLIB_ASSERT(get_num_detection_templates() > 0 &&
                     is_loaded_with_image() &&
                     w.size() >= get_num_dimensions(), 
-            "\t void scan_image_pyramid::detect()"
+            "\t void scan_image_pyramid::detectdone()"
             << "\n\t Invalid inputs were given to this function "
             << "\n\t get_num_detection_templates(): " << get_num_detection_templates()
             << "\n\t is_loaded_with_image(): " << is_loaded_with_image()
@@ -1008,7 +1008,7 @@ namespace dlib
                 // map from the original image to scaled feature space.
                 point loc = feats[best_level].image_to_feat_space(pyr.point_down(obj.part(i), best_level));
                 // Make sure the movable part always stays within the object_box.
-                // Otherwise it would be at a place that the detect() function can never
+                // Otherwise it would be at a place that the detectdone() function can never
                 // look.  
                 loc = nearest_point(object_box, loc);
                 rects.push_back(translate_rect(best_template.movable_rects[i], loc));

@@ -427,7 +427,7 @@ namespace dlib
         /*!
             WHAT THIS OBJECT REPRESENTS
                 This is the exception thrown by code that trains object detectors (e.g.
-                structural_svm_object_detection_problem) when they detect that the set of
+                structural_svm_object_detection_problem) when they detectdone that the set of
                 truth boxes given to the training algorithm contains some impossible to
                 obtain outputs.  
                 

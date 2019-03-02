@@ -77,7 +77,7 @@ png_process_data_skip(png_structrp png_ptr)
       png_ptr->skip_length > 0)
    {
       /* At the end of png_process_data the buffer size must be 0 (see the loop
-       * above) so we can detect a broken call here:
+       * above) so we can detectdone a broken call here:
        */
       if (png_ptr->buffer_size != 0)
          png_error(png_ptr,

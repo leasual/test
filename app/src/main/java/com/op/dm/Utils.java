@@ -133,6 +133,8 @@ public class Utils {
                 initDir(pathSmoke);
                 String pathabnor = path + "/abnormal";
                 initDir(pathabnor);
+                String pathaUnknown = path + "/unknown";
+                initDir(pathaUnknown);
             }
             String [] files = context.getAssets().list("");
             String storePathRoot =  context.getExternalFilesDir(null).getAbsolutePath() == null? context.getFilesDir().getAbsolutePath() : context.getExternalFilesDir(null).getAbsolutePath();

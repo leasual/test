@@ -274,8 +274,8 @@ namespace dlib
                   (i.e. pixel_traits<typename image_type::type> is defined)
             ensures
                 - #is_loaded_with_image() == true
-                - This object is ready to run a classifier over img to detect object
-                  locations.  Call detect() to do this.
+                - This object is ready to run a classifier over img to detectdone object
+                  locations.  Call detectdone() to do this.
         !*/
 
         const feature_extractor_type& get_feature_extractor(
@@ -316,9 +316,9 @@ namespace dlib
                 - window_width > 0
                 - window_height > 0
             ensures
-                - When detect() is called, this object scans a window that is of the given
+                - When detectdone() is called, this object scans a window that is of the given
                   width and height (in pixels) over each layer in an image pyramid.  This
-                  means that the rectangle detections which come out of detect() will have
+                  means that the rectangle detections which come out of detectdone() will have
                   a width to height ratio approximately equal to window_width/window_height
                   and will be approximately window_width*window_height pixels in area or
                   larger.  Therefore, the smallest object that can be detected is roughly
@@ -346,7 +346,7 @@ namespace dlib
         /*!
             ensures
                 - returns the width, in pixels, of the detection window that is scanned
-                  over the image when detect() is called.    
+                  over the image when detectdone() is called.
         !*/
 
         inline unsigned long get_detection_window_height (
@@ -354,7 +354,7 @@ namespace dlib
         /*!
             ensures
                 - returns the height, in pixels, of the detection window that is scanned
-                  over the image when detect() is called.  
+                  over the image when detectdone() is called.
         !*/
 
         unsigned long get_fhog_window_width (
@@ -398,7 +398,7 @@ namespace dlib
                   cells outside the detection window.  This can help add context and
                   improve detection accuracy.  This function returns the number of extra
                   HOG cells added onto the border of the HOG windows which are scanned by
-                  detect().
+                  detectdone().
         !*/
 
         unsigned long get_cell_size (
@@ -435,7 +435,7 @@ namespace dlib
             ensures
                 - returns 1.  Note that this function is here only for compatibility with 
                   the scan_image_pyramid object.  Notionally, its return value indicates 
-                  that a scan_fhog_pyramid object is always ready to detect objects once
+                  that a scan_fhog_pyramid object is always ready to detectdone objects once
                   an image has been loaded.
         !*/
 
@@ -549,7 +549,7 @@ namespace dlib
             !*/
         };
 
-        void detect (
+        void detectdone (
             const fhog_filterbank& w,
             std::vector<std::pair<double, rectangle> >& dets,
             const double thresh
@@ -578,7 +578,7 @@ namespace dlib
                   then it is reported in #dets.
         !*/
 
-        void detect (
+        void detectdone (
             const feature_vector_type& w,
             std::vector<std::pair<double, rectangle> >& dets,
             const double thresh
@@ -588,7 +588,7 @@ namespace dlib
                 - w.size() >= get_num_dimensions()
                 - is_loaded_with_image() == true
             ensures
-                - performs: detect(build_fhog_filterbank(w), dets, thresh)
+                - performs: detectdone(build_fhog_filterbank(w), dets, thresh)
         !*/
 
         void get_feature_vector (
@@ -603,14 +603,14 @@ namespace dlib
                   (i.e. psi must have preallocated its memory before this function is called)
             ensures
                 - This function allows you to determine the feature vector used for an
-                  object detection output from detect().  Note that this vector is
+                  object detection output from detectdone().  Note that this vector is
                   added to psi.  Note also that you can use get_full_object_detection() to
-                  convert a rectangle from detect() into the needed full_object_detection.
+                  convert a rectangle from detectdone() into the needed full_object_detection.
                 - The dimensionality of the vector added to psi is get_num_dimensions().  This
                   means that elements of psi after psi(get_num_dimensions()-1) are not modified.
                 - Since scan_fhog_pyramid only searches a limited set of object locations,
-                  not all possible rectangles can be output by detect().  So in the case
-                  where obj.get_rect() could not arise from a call to detect(), this
+                  not all possible rectangles can be output by detectdone().  So in the case
+                  where obj.get_rect() could not arise from a call to detectdone(), this
                   function will map obj.get_rect() to the nearest possible rectangle and
                   then add the feature vector for the mapped rectangle into #psi.
                 - get_best_matching_rect(obj.get_rect()) == the rectangle obj.get_rect()

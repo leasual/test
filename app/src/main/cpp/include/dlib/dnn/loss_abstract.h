@@ -623,7 +623,7 @@ namespace dlib
         // window is.  It also determines the output label applied to each detection
         // identified by each window.  Since you will usually use the MMOD loss with an
         // image pyramid, the detector sizes also determine the size of the smallest object
-        // you can detect.
+        // you can detectdone.
         std::vector<detector_window_details> detector_windows;
 
         // These parameters control how we penalize different kinds of mistakes.  See 
@@ -644,7 +644,7 @@ namespace dlib
         // an "ignore zone" in an image.  Any detection from that area is totally ignored
         // by the optimizer.  Therefore, this overlaps_ignore field defines how we decide
         // if a box falls into an ignore zone.  You use these ignore zones if there are
-        // objects in your dataset that you are unsure if you want to detect or otherwise
+        // objects in your dataset that you are unsure if you want to detectdone or otherwise
         // don't care if the detector gets them or not.  
         test_box_overlap overlaps_ignore;
 
@@ -683,7 +683,7 @@ namespace dlib
                   input_rgb_image_pyramid is therefore used as the input layer.
                 - This function tries to automatically set the MMOD options to reasonable
                   values, assuming you have a training dataset of boxes.size() images, where
-                  the ith image contains objects boxes[i] you want to detect.
+                  the ith image contains objects boxes[i] you want to detectdone.
                 - The most important thing this function does is decide what detector
                   windows should be used.  This is done by finding a set of detector
                   windows that are sized such that:
@@ -705,7 +705,7 @@ namespace dlib
                   This means that target_size and min_target_size control the size of the
                   detector windows, while the aspect ratios of the detector windows are
                   automatically determined by the contents of boxes.  It should also be
-                  emphasized that the detector isn't going to be able to detect objects
+                  emphasized that the detector isn't going to be able to detectdone objects
                   smaller than any of the detector windows.  So consider that when setting
                   these sizes.
                 - This function will also set the overlaps_nms tester to the most
@@ -726,7 +726,7 @@ namespace dlib
                   there is no intention to apply an image pyramid.
                 - This function tries to automatically set the MMOD options to reasonable
                   values, assuming you have a training dataset of boxes.size() images, where
-                  the ith image contains objects boxes[i] you want to detect.
+                  the ith image contains objects boxes[i] you want to detectdone.
                 - The most important thing this function does is decide what detector
                   windows should be used.  This is done by finding a set of detector
                   windows that are sized such that:
@@ -754,7 +754,7 @@ namespace dlib
                 Detection loss defined in the paper:
                     Max-Margin Object Detection by Davis E. King (http://arxiv.org/abs/1502.00046).
                
-                This means you use this loss if you want to detect the locations of objects
+                This means you use this loss if you want to detectdone the locations of objects
                 in images.
 
                 It should also be noted that this loss layer requires an input layer that

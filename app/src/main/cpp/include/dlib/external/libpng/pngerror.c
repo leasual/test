@@ -619,7 +619,7 @@ png_set_longjmp_fn(png_structrp png_ptr, png_longjmp_ptr longjmp_fn,
             /* This is an internal error in libpng: somehow we have been left
              * with a stack allocated jmp_buf when the application regained
              * control.  It's always possible to fix this up, but for the moment
-             * this is a png_error because that makes it easy to detect.
+             * this is a png_error because that makes it easy to detectdone.
              */
             png_error(png_ptr, "Libpng jmp_buf still allocated");
             /* png_ptr->jmp_buf_ptr = &png_ptr->jmp_buf_local; */

@@ -98,8 +98,8 @@ namespace dlib
 
             A note about aliasing (see the examples/matrix_expressions_ex.cpp example program
             for a discussion of what aliasing is in the context of the dlib::matrix): 
-                kernel_matrix() expressions can detect aliasing of an argument if that 
-                argument is of type kernel_type::sample_type.  However, it can't detect
+                kernel_matrix() expressions can detectdone aliasing of an argument if that
+                argument is of type kernel_type::sample_type.  However, it can't detectdone
                 aliasing though std::vectors or other "list of sample type" container class
                 arguments.  This means that it is safe to assign a kernel_matrix() expression
                 to a sample_type if V1 or V2 are of sample_type but not safe otherwise.  However,

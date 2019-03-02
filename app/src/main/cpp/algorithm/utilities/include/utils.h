@@ -25,6 +25,5 @@ void detect_shape(cv::Mat &cv_img, shape_predictor &sp, std::vector<rectangle> &
 
 float calc_iou(const cv::Rect2i &bbox1, const cv::Rect2i &bbox2) ;
 // ----------------------------------------------------------------------------------------
-//double istod(const std::string& __str, size_t* __idx = 0)
-//{ return 1.1; }
+
 #endif //ALIGN_DLIB_MTCNN_UTILS_H

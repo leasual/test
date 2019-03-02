@@ -1276,7 +1276,7 @@ png_handle_sRGB(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
    if (png_ptr->colorspace.flags & PNG_COLORSPACE_INVALID)
       return;
 
-   /* Only one sRGB or iCCP chunk is allowed, use the HAVE_INTENT flag to detect
+   /* Only one sRGB or iCCP chunk is allowed, use the HAVE_INTENT flag to detectdone
     * this.
     */
    if (png_ptr->colorspace.flags & PNG_COLORSPACE_HAVE_INTENT)
@@ -1334,7 +1334,7 @@ png_handle_iCCP(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
       return;
    }
 
-   /* Only one sRGB or iCCP chunk is allowed, use the HAVE_INTENT flag to detect
+   /* Only one sRGB or iCCP chunk is allowed, use the HAVE_INTENT flag to detectdone
     * this.
     */
    if ((png_ptr->colorspace.flags & PNG_COLORSPACE_HAVE_INTENT) == 0)

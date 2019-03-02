@@ -17,6 +17,15 @@ std::string to_string(T value) {
 }
 
 extern "C" {
+
+
+JNIEXPORT void JNICALL
+Java_org_opencv_samples_tutorial2_DetectActitvity_Cali(JNIEnv *, jobject, jlong addrGray,
+                                                               jint index);
+JNIEXPORT void JNICALL
+Java_org_opencv_samples_tutorial2_DetectActitvity_Detect(JNIEnv *, jobject, jlong addrGray,
+                                                       jint index);
+
 JNIEXPORT void JNICALL
 Java_org_opencv_samples_tutorial2_DetectActitvity_FindFeatures(JNIEnv *, jobject, jlong addrGray,
                                                                jint index);
@@ -35,14 +44,57 @@ cv::Rect *bboxd;
 cv::Rect *bboxf;
 cv::Rect *bboxs;
 cv::Rect *bboxc;
+bool * caliDone;
+int * featureNum;
+
+JNIEXPORT void JNICALL
+Java_org_opencv_samples_tutorial2_DetectActitvity_Cali(JNIEnv * jniEnv, jobject obj, jlong copyMat,
+                                                       jint index){
+    LOGE("before Calibration is %d",*caliDone);
+    bool done = *caliDone;
+    if(totalFlow != nullptr && !done){
+        LOGE(" Calibration");
+        if(totalFlow->Calibration(*(Mat *) copyMat)){
+            *caliDone = true;
+            jclass cl = jniEnv ->FindClass("org/opencv/samples/tutorial2/DetectActitvity");
+            jmethodID meth = jniEnv->GetMethodID(cl,"caliDone","()V");
+            jniEnv->CallVoidMethod(obj,meth);
+            LOGE(" Calibration is %d",*caliDone);
+        }
+    }
+}
+
+JNIEXPORT void JNICALL
+Java_org_opencv_samples_tutorial2_DetectActitvity_Detect(JNIEnv * jniEnv, jobject obj, jlong copyMat,
+                                                         jint index){
+    LOGE("before!!! RegistFeature is %d",*featureNum);
+    bool ndone = (*featureNum < 25);
+    if(totalFlow != nullptr && (*caliDone) && ndone){
+        LOGE(" RegistFeature");
+        if(totalFlow->RegistFeature(*(Mat *) copyMat)){
+            *featureNum = *featureNum +1;
+            LOGE(" RegistFeature is %d",*featureNum);
+            if(*featureNum >= 25){
+                jclass cl = jniEnv ->FindClass("org/opencv/samples/tutorial2/DetectActitvity");
+                jmethodID meth = jniEnv->GetMethodID(cl,"RegistDone","()V");
+                jniEnv->CallVoidMethod(obj,meth);
+            }
+        }
+
+    }
+
+}
+
+
 JNIEXPORT jintArray JNICALL
 Java_org_opencv_samples_tutorial2_DetectActitvity_FindFeatures2(JNIEnv *jniEnv, jobject obj,
                                                                 jlong copyMat, jlong addrRgba,
                                                                 jboolean regis, jboolean picture) {
     jintArray re1;
     jint *index2;
-    if (totalFlow != nullptr) {
-        totalFlow->Run(*(Mat *) copyMat, *result, true, "user");
+
+    if (totalFlow != nullptr && (*caliDone) && ((*featureNum) >= 25)) {
+        totalFlow->Run(*(Mat *) copyMat, *result);
         totalFlow->isSave = picture == JNI_TRUE;
         int cal, dis, fat, smoke, call, abnorm, unknown;
         std::string showFaceid = "name : ";
@@ -68,12 +120,12 @@ Java_org_opencv_samples_tutorial2_DetectActitvity_FindFeatures2(JNIEnv *jniEnv, 
         result->GetAbnormal(abnorm);
         result->GetCalibration(cal);
 
-        if(regis && !faceid.empty()){
-            LOGE(" face id -------- %s",faceid.data());
-            jclass cl = jniEnv ->FindClass("org/opencv/samples/tutorial2/DetectActitvity");
-            jmethodID meth = jniEnv->GetMethodID(cl,"RegistDone","()V");
-            jniEnv->CallVoidMethod(obj,meth);
-        }
+//        if(regis && !faceid.empty()){
+//            LOGE(" face id -------- %s",faceid.data());
+//            jclass cl = jniEnv ->FindClass("org/opencv/samples/tutorial2/DetectActitvity");
+//            jmethodID meth = jniEnv->GetMethodID(cl,"RegistDone","()V");
+//            jniEnv->CallVoidMethod(obj,meth);
+//        }
 
         re1 = jniEnv->NewIntArray(6);
         index2 = jniEnv->GetIntArrayElements(re1, NULL);
@@ -176,7 +228,7 @@ Java_org_opencv_samples_tutorial2_DetectActitvity_FindFeatures(JNIEnv *jniEnv, j
         totalFlow-> pathCall = path +"call/";
         totalFlow-> pathSmoke =path + "smoke/";
         totalFlow-> pathAbnormal =path + "abnormal/";
-
+        totalFlow-> pathUnknow =path + "unknown/";
 //        time_t nSrc;
 //        nSrc = addrGray - time(NULL);
 //        totalFlow->time_diff = nSrc;
@@ -188,6 +240,10 @@ Java_org_opencv_samples_tutorial2_DetectActitvity_FindFeatures(JNIEnv *jniEnv, j
         bboxf = new cv::Rect();
         bboxs = new cv::Rect();
         bboxc = new cv::Rect();
+        caliDone = new bool;
+        *caliDone = false;
+        featureNum = new int;
+        *featureNum = 0;
         LOGE("JNI abnormal -- init TotalFlow ----");
     }
 }

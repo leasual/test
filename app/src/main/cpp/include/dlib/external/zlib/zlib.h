@@ -1127,7 +1127,7 @@ ZEXTERN uLong ZEXPORT zlibCompileFlags OF((void));
     Library content (indicates missing functionality):
      16: NO_GZCOMPRESS -- gz* functions cannot compress (to avoid linking
                           deflate code when not needed)
-     17: NO_GZIP -- deflate can't write gzip streams, and inflate can't detect
+     17: NO_GZIP -- deflate can't write gzip streams, and inflate can't detectdone
                     and decode gzip streams (to avoid linking crc code)
      18-19: 0 (reserved)
 
@@ -1281,7 +1281,7 @@ ZEXTERN gzFile ZEXPORT gzdopen OF((int fd, const char *mode));
    gzFile state, if an invalid mode was specified (an 'r', 'w', or 'a' was not
    provided, or '+' was provided), or if fd is -1.  The file descriptor is not
    used until the next gz* read, write, seek, or close operation, so gzdopen
-   will not detect if fd is invalid (unless fd is -1).
+   will not detectdone if fd is invalid (unless fd is -1).
 */
 
 ZEXTERN int ZEXPORT gzbuffer OF((gzFile file, unsigned size));
@@ -1331,7 +1331,7 @@ ZEXTERN int ZEXPORT gzread OF((gzFile file, voidp buf, unsigned len));
    middle of a gzip stream.  Note that gzread does not return -1 in the event
    of an incomplete gzip stream.  This error is deferred until gzclose(), which
    will return Z_BUF_ERROR if the last gzread ended in the middle of a gzip
-   stream.  Alternatively, gzerror can be used before gzclose to detect this
+   stream.  Alternatively, gzerror can be used before gzclose to detectdone this
    case.
 
      gzread returns the number of uncompressed bytes actually read, less than

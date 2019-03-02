@@ -21,7 +21,7 @@ extern "C"
 //    vector<KeyPoint> v;
 //
 //    Ptr<FeatureDetector> detector = FastFeatureDetector::create(50);
-//    detector->detect(mGr, v);
+//    detector->detectdone(mGr, v);
 //    for( unsigned int i = 0; i < v.size(); i++ )
 //    {
 //        const KeyPoint& kp = v[i];

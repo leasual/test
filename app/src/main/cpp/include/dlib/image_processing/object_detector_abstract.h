@@ -58,10 +58,10 @@ namespace dlib
                 can also be used as a container for a set of object detectors that all use
                 the same image scanner but different weight vectors.  This is useful since
                 the object detection procedure has two parts.  A loading step where the
-                image is loaded into the scanner, then a detect step which uses the weight
+                image is loaded into the scanner, then a detectdone step which uses the weight
                 vector to locate objects in the image.  Since the loading step is independent 
                 of the weight vector it is most efficient to run multiple detectors by
-                performing one load into a scanner followed by multiple detect steps.  This
+                performing one load into a scanner followed by multiple detectdone steps.  This
                 avoids unnecessarily loading the same image into the scanner multiple times.  
         !*/
     public:
@@ -99,9 +99,9 @@ namespace dlib
                 - scanner.get_num_detection_templates() > 0
             ensures
                 - When the operator() member function is called it will
-                  invoke scanner.detect(w,dets,w(w.size()-1)), suppress
+                  invoke scanner.detectdone(w,dets,w(w.size()-1)), suppress
                   overlapping detections, and then report the results.
-                - when #*this is used to detect objects, the set of
+                - when #*this is used to detectdone objects, the set of
                   output detections will never contain any overlaps
                   with respect to overlap_tester.  That is, for all 
                   pairs of returned detections A and B, we will always
@@ -127,10 +127,10 @@ namespace dlib
                 - w.size() > 0
             ensures
                 - When the operator() member function is called it will invoke
-                  get_scanner().detect(w[i],dets,w[i](w[i].size()-1)) for all valid i.  Then it
-                  will take all the detections output by the calls to detect() and suppress
+                  get_scanner().detectdone(w[i],dets,w[i](w[i].size()-1)) for all valid i.  Then it
+                  will take all the detections output by the calls to detectdone() and suppress
                   overlapping detections, and finally report the results.
-                - when #*this is used to detect objects, the set of output detections will
+                - when #*this is used to detectdone objects, the set of output detections will
                   never contain any overlaps with respect to overlap_tester.  That is, for
                   all pairs of returned detections A and B, we will always have:
                     overlap_tester(A,B) == false
@@ -160,7 +160,7 @@ namespace dlib
                   given detectors and packs them into #*this.  That is, invoking operator()
                   on #*this will run all the detectors, perform non-max suppression, and
                   then report the results.
-                - When #*this is used to detect objects, the set of output detections will
+                - When #*this is used to detectdone objects, the set of output detections will
                   never contain any overlaps with respect to overlap_tester.  That is, for
                   all pairs of returned detections A and B, we will always have:
                     overlap_tester(A,B) == false
@@ -381,7 +381,7 @@ namespace dlib
         copy_configuration() function to get a copy of the scanner that doesn't contain any
         loaded image data and we then save just the configuration part of the scanner.
         This means that any serialized object_detectors won't remember any images they have
-        processed but will otherwise contain all their state and be able to detect objects
+        processed but will otherwise contain all their state and be able to detectdone objects
         in new images.
     !*/
 

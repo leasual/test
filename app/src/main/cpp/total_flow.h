@@ -15,7 +15,6 @@
 #include <algorithm>
 #include <thread>
 #include <opencv2/opencv.hpp>
-#include "Util.h"
 
 #include "shape_predict_untouch.h"
 #include "detector.h"
@@ -34,7 +33,7 @@
 
 #include "head_pose_states.h"
 #include "eye_mouth_plus.h"
-
+#include "Util.h"
 using namespace std;
 using namespace cv;
 
@@ -170,20 +169,24 @@ public:
     /// \brief 构造函数
     explicit TotalFlow(const std::string& path);
     ~TotalFlow();
-    bool isSave = false;
+    bool isSave = true;
     string path = "/storage/sdcard1/img/";
     string pathDis = "/storage/sdcard1/distract/";
     string pathFat = "/storage/sdcard1/fat/";
     string pathCall = "/storage/sdcard1/call/";
     string pathSmoke = "/storage/sdcard1/smoke/";
     string pathAbnormal = "/storage/sdcard1/abnormal/";
-
+    string pathUnknow = "/storage/sdcard1/unknown/";
     int index = 0;
     long time_diff = 0;
     std::thread process_picture_thread_;
 
     /// \brief 程序运行入口
-    void Run(cv::Mat& frame, Result& result, bool regist = false, const std::string& name = "");
+    void Run(cv::Mat& frame, Result& result);
+
+    bool RegistFeature(cv::Mat& frame, const std::string& name = "untouch");
+
+    bool Calibration(cv::Mat& frame);
 
     void SetSpeed(size_t speed){
         lock_guard<mutex>lock_guard(result_mutex_);
@@ -218,7 +221,7 @@ private:
     std::string faceid_path_;
     std::string gaze_tracking_path_;
 
-    std::shared_ptr<MTCNNDetector> detector_;
+//    std::shared_ptr<MTCNNDetector> detector_;
     std::shared_ptr<AlignMethod> align_method_;
     std::shared_ptr<FaceAlign> face_align_;
     std::shared_ptr<ShapePredictor> predictor_;

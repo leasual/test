@@ -4890,7 +4890,7 @@ class class_factory_type : dlib::noncopyable
 
             It also helps us deal with the problem that would otherwise arise when a mex file
             is unloaded from MATLAB when there are still active pointers to MEX_CLASS_NAME objects
-            in MATLAB, since we will be able to detect stale pointers.
+            in MATLAB, since we will be able to detectdone stale pointers.
     !*/
 public:
 

@@ -52,6 +52,7 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
     private var players = arrayOfNulls<MediaPlayer>(6)//每秒有n次检测，即时响应，分多个实例
     private var sdPlayer: MediaPlayer? = null
     private var detectFacePlayer: MediaPlayer? = null
+    private var caliPlayer: MediaPlayer? = null
     private var haveface = false
     private var save = false
     private var timer: Timer? = null
@@ -59,6 +60,7 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
     var page = 0
     var locationManager: LocationManager? = null
     var location: Location? = null
+    var beginCali = false;
 
     init {
         Log.i(TAG, "Instantiated new " + this.javaClass)
@@ -161,9 +163,12 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
             }
         }
         sdPlayer = MediaPlayer.create(this, R.raw.sdcard)
-        detectFacePlayer = MediaPlayer.create(this, R.raw.detectdone)
+
+        detectFacePlayer = MediaPlayer.create(this, R.raw.detecting)
+        caliPlayer = MediaPlayer.create(this, R.raw.cali)
 
         timerTask = kotlin.concurrent.timerTask {
+            //TODO::加上换卡创建文件夹
             var size = Utils.getSDAvailableSize(this@DetectActitvity)
             save = size > 500
             Log.e(" save  ", save.toString())
@@ -222,9 +227,9 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
         writeViews()
     }
 
-    fun playnoface() {
+    fun playDetecting() {
         var time = System.currentTimeMillis() - lastTime[1]
-        if(time > 8000){
+        if(time > 5000 && playdetect){
             detectFacePlayer?.apply {
                 if (register && !this.isPlaying) {
                     lastTime[1] = System.currentTimeMillis()
@@ -232,6 +237,7 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
                 }
             }
         }
+        Log.e("sss", "playDetecting ---")
     }
 
     private fun playWarnning(index: Int) {//每种提示音分开计算，4秒内不重复播放同一种
@@ -246,22 +252,43 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
                 }
             }
         }
+        Log.e("sss", "playWarnning ---")
+    }
+    var cali = false
+    var detectDone = false
+    fun caliDone() {
+
+        Handler(Looper.getMainLooper()).postDelayed({
+            playDetecting()
+        },3000)
+
+        Handler(Looper.getMainLooper()).postDelayed({
+            cali = true
+        },7000)
 
     }
-
+    var playdetect = true
     fun RegistDone() {
-        haveface = true
-        register = false
-        save = true
-        var detectFacePlayerDone = MediaPlayer.create(this, R.raw.detect)
-       if(detectFacePlayer?.isPlaying == true){
-           detectFacePlayer?.stop()
-       }
-//        Handler().postDelayed({
-//            detectFacePlayerDone.start()
-//        },5000)
-        detectFacePlayerDone.start()
-        Log.e("sss", "has registerd --------------- ")
+        var detectFacePlayerDone = MediaPlayer.create(this, R.raw.detectdone)
+
+        Handler(Looper.getMainLooper()).postDelayed({
+            if(detectFacePlayer?.isPlaying == true){
+                detectFacePlayer?.stop()
+            }
+            detectFacePlayerDone.start()
+            playdetect = false
+            Log.e("sss", "detectFacePlayerDone --------------- ")
+        },1000)
+
+        Handler(Looper.getMainLooper()).postDelayed({
+            haveface = true
+            register = false
+            detectDone = true
+            save = true
+            Log.e("sss", "regist done --------------- ")
+        },9000)
+
+
     }
 
     private fun getCriteria(): Criteria {
@@ -359,28 +386,47 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
         if (rgb != null)
             rgb?.release()
     }
-
+    var lastdetect = 0L
     override fun onCameraFrame(inputFrame: CameraBridgeViewBase.CvCameraViewFrame): Mat {
+
 
         mRgba = inputFrame.rgba()
         mGray = inputFrame.gray()
         rgb?.let { it1 ->
             Imgproc.cvtColor(mRgba, it1, Imgproc.COLOR_RGBA2RGB)
-            if (totalDone)
+            if (totalDone){
                 mRgba?.let {
-//                    Log.e("------- onc ----", "" +haveface + " -- " + detectFacePlayer!!.isPlaying)
-                    if (!haveface && !(detectFacePlayer!!.isPlaying)) {
-                        playnoface()
+
+                    if(!cali && beginCali){
+                        Cali(it1.nativeObjAddr,0)
                     }
-                    //                    if(index % 2 == 0){//每两帧调用一次算法
-//                    Log.e("save is --", save.toString())
-                    if (index % 3 == 0)//减少uitext更新频率，没必要每帧都改变
-                        getStringResult(FindFeatures2(it1.nativeObjAddr, it.nativeObjAddr, register, save))
-                    else
-                        FindFeatures2(it1.nativeObjAddr, it.nativeObjAddr, register, save)
-//                    }
+
+                    if(cali && !detectDone){
+                        playDetecting()
+                        var now = System.currentTimeMillis()
+                        var diff = now - lastdetect
+                        if(diff > 200){
+                            Detect(it1.nativeObjAddr,0)
+                            lastdetect = now
+                        }
+                    }
+
+                    if (cali && detectDone){
+                        if (index % 3 == 0){
+                            var array = FindFeatures2(it1.nativeObjAddr, it.nativeObjAddr, register, save)
+                            array?.let {
+                                if(it.size > 2)
+                                    getStringResult(it)
+                            }
+                        }//减少uitext更新频率，没必要每帧都改变
+                        else{
+                            FindFeatures2(it1.nativeObjAddr, it.nativeObjAddr, register, save)
+                        }
+                    }
 
                 }
+            }
+
         }
         if (index >= 10000)
             index = 0
@@ -424,7 +470,6 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
             return contexts[0]
         }
     }
-
     private var alertDialog: AlertDialog? = null
 
     internal class AsyncTaskInitTotalFlow : AsyncTask<DetectActitvity, Int, DetectActitvity>() {
@@ -440,6 +485,15 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
 //            integer.alertDialog?.show()
             integer.register = true
             integer.totalDone = true
+            var handler = Handler(Looper.getMainLooper())
+            handler.postDelayed({
+                integer.caliPlayer?.start()
+                Log.e(TAG, "play cali ---  ")
+            }, 100)
+
+            Handler(Looper.getMainLooper()).postDelayed({
+                integer.beginCali = true
+            },8000)
             Log.e(TAG, "AsyncTaskInitTotalFlow  successfully")
         }
 
@@ -450,11 +504,7 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
             var tim = System.currentTimeMillis()/1000 + 1*60*60*24*10
             contexts[0].FindFeatures(tim, contexts[0].page)
 
-            var handler = Handler(Looper.getMainLooper())
-            handler.postDelayed({
-                contexts[0].playnoface()
-                Log.e(TAG, "play warning ---  ")
-            }, 10000)
+
 //            if(contexts[0].CHECK(contexts[0].checks()))
 //                contexts[0].FindFeatures(0, 0)
 //            else
@@ -467,7 +517,8 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
     external fun CHECK(mac: String): Boolean
     //    external fun CHECK(mac:String)
     external fun FindFeatures(matAddrGr: Long, index: Int)
-
+    external fun Cali(matAddrGr: Long, index: Int)
+    external fun Detect(matAddrGr: Long, index: Int)
     external fun FindFeatures2(matAddrGr: Long, matAddrRgba: Long, time: Boolean, save: Boolean): IntArray
 
     companion object {

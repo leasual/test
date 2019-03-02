@@ -139,7 +139,7 @@ namespace dlib
             ensures
                 - #is_loaded_with_image() == true
                 - This object is ready to run sliding window classifiers over img.  Call
-                  detect() to do this.
+                  detectdone() to do this.
         !*/
 
         bool is_loaded_with_image (
@@ -210,7 +210,7 @@ namespace dlib
                   movable_feature_extraction_regions matters.  Recall that each rectangle
                   gets its own set of features.  So given two different templates, their
                   i-th rectangles will both share the same part of the weight vector (i.e. the w
-                  supplied to detect()).  So there should be some reasonable correspondence
+                  supplied to detectdone()).  So there should be some reasonable correspondence
                   between the rectangle ordering in different detection templates.  For,
                   example, different detection templates should place corresponding feature
                   extraction regions in roughly the same part of the object_box.
@@ -345,7 +345,7 @@ namespace dlib
                   window classifier over an image and produces a number of detections.  This
                   function returns a number which defines a hard upper limit on the number of
                   detections allowed by a single scan.  This means that the total number of
-                  possible detections produced by detect() is get_max_detections_per_template()*
+                  possible detections produced by detectdone() is get_max_detections_per_template()*
                   get_num_detection_templates()*(number of image pyramid layers).  Additionally, 
                   if the maximum number of detections is reached during a scan then this object 
                   will return a random subsample of all detections which are above the detection 
@@ -362,7 +362,7 @@ namespace dlib
                 - #get_max_detections_per_template() == max_dets
         !*/
 
-        void detect (
+        void detectdone (
             const feature_vector_type& w,
             std::vector<std::pair<double, rectangle> >& dets,
             const double thresh
@@ -421,12 +421,12 @@ namespace dlib
                 - This function allows you to determine the feature vector used for a
                   sliding window location.  Note that this vector is added to psi.  Note
                   also that you must use get_full_object_detection() to convert a rect from
-                  detect() into the needed full_object_detection.
+                  detectdone() into the needed full_object_detection.
                 - The dimensionality of the vector added to psi is get_num_dimensions().  This
                   means that elements of psi after psi(get_num_dimensions()-1) are not modified.
                 - Since scan_image_pyramid is a sliding window classifier system, not all
-                  possible rectangles can be output by detect().  So in the case where
-                  obj.get_rect() could not arise from a call to detect(), this function
+                  possible rectangles can be output by detectdone().  So in the case where
+                  obj.get_rect() could not arise from a call to detectdone(), this function
                   will map obj.get_rect() to the nearest possible object box and then add
                   the feature vector for the mapped rectangle into #psi.
                 - get_best_matching_rect(obj.get_rect()) == the rectangle obj.get_rect()
@@ -444,7 +444,7 @@ namespace dlib
                 - get_num_detection_templates() > 0
             ensures
                 - This function allows you to determine the full_object_detection
-                  corresponding to a sliding window location.  Note that the detect()
+                  corresponding to a sliding window location.  Note that the detectdone()
                   routine doesn't return the locations of the movable parts in a detected
                   object.  Therefore, if you are using any movable parts in your model you
                   must use get_full_object_detection() to find out where the movable parts

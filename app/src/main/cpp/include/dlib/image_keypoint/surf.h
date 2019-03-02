@@ -264,7 +264,7 @@ namespace dlib
         get_interest_points(pyr, detection_threshold, points);
         std::vector<surf_point> spoints;
 
-        // sort all the points by how strong their detect is
+        // sort all the points by how strong their detectdone is
         std::sort(points.rbegin(), points.rend());
 
         // now extract SURF descriptors for the points

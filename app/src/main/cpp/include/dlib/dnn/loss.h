@@ -1194,7 +1194,7 @@ namespace dlib
                     // if hit truth rect
                     if (truth_match > options.truth_match_iou_threshold)
                     {
-                        // if this is the first time we have seen a detect which hit (*truth)[hittruth.second]
+                        // if this is the first time we have seen a detectdone which hit (*truth)[hittruth.second]
                         const double score = dets[i].detection_confidence;
                         if (hit_truth_table[hittruth.second] == false)
                         {

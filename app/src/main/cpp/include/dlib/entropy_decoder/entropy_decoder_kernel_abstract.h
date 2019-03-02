@@ -31,7 +31,7 @@ namespace dlib
                 WHERE IS EOF?
                 It is important to note that this object will not give any indication
                 that is has hit the end of the input stream when it occurs.  It is
-                up to you to use some kind of coding scheme to detect this in the
+                up to you to use some kind of coding scheme to detectdone this in the
                 compressed data stream.
 
                 Another important thing to know is that decode() must be called

@@ -53,12 +53,12 @@ namespace dlib
                   scan_fhog_pyramid object uses an overload that causes
                   get_detect_argument() to return the special fhog_filterbank object
                   instead of a feature_vector_type.  This avoids needing to construct the
-                  fhog_filterbank during each call to detect and therefore speeds up
+                  fhog_filterbank during each call to detectdone and therefore speeds up
                   detection.
         !*/
         {}
 
-        // return the first argument to image_scanner_type::detect()
+        // return the first argument to image_scanner_type::detectdone()
         const feature_vector_type& get_detect_argument() const { return w; }
 
         feature_vector_type w;

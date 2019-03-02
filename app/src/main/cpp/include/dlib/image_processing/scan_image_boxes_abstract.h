@@ -165,8 +165,8 @@ namespace dlib
                       Box_generator::operator()
             ensures
                 - #is_loaded_with_image() == true
-                - This object is ready to run a classifier over img to detect object
-                  locations.  Call detect() to do this.
+                - This object is ready to run a classifier over img to detectdone object
+                  locations.  Call detectdone() to do this.
         !*/
 
         bool is_loaded_with_image (
@@ -264,7 +264,7 @@ namespace dlib
                 - #get_num_spatial_pyramid_levels() == levels
         !*/
 
-        void detect (
+        void detectdone (
             const feature_vector_type& w,
             std::vector<std::pair<double, rectangle> >& dets,
             const double thresh
@@ -302,14 +302,14 @@ namespace dlib
                   (i.e. psi must have preallocated its memory before this function is called)
             ensures
                 - This function allows you to determine the feature vector used for a
-                  candidate object location output from detect().  Note that this vector is
+                  candidate object location output from detectdone().  Note that this vector is
                   added to psi.  Note also that you must use get_full_object_detection() to
-                  convert a rectangle from detect() into the needed full_object_detection.
+                  convert a rectangle from detectdone() into the needed full_object_detection.
                 - The dimensionality of the vector added to psi is get_num_dimensions().  This
                   means that elements of psi after psi(get_num_dimensions()-1) are not modified.
                 - Since scan_image_boxes only searches a limited set of object locations,
-                  not all possible rectangles can be output by detect().  So in the case
-                  where obj.get_rect() could not arise from a call to detect(), this
+                  not all possible rectangles can be output by detectdone().  So in the case
+                  where obj.get_rect() could not arise from a call to detectdone(), this
                   function will map obj.get_rect() to the nearest possible rectangle and
                   then add the feature vector for the mapped rectangle into #psi.
                 - get_best_matching_rect(obj.get_rect()) == the rectangle obj.get_rect()
@@ -346,7 +346,7 @@ namespace dlib
             ensures
                 - returns 1.  Note that this function is here only for compatibility with 
                   the scan_image_pyramid object.  Notionally, its return value indicates 
-                  that a scan_image_boxes object is always ready to detect objects once
+                  that a scan_image_boxes object is always ready to detectdone objects once
                   an image has been loaded.
         !*/
 

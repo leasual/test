@@ -214,8 +214,8 @@ namespace dlib
         ) const;
         /*!
             ensures
-                - returns the amount of loss incurred for failing to detect a segment.  The
-                  larger the loss the more important it is to detect all the segments.
+                - returns the amount of loss incurred for failing to detectdone a segment.  The
+                  larger the loss the more important it is to detectdone all the segments.
         !*/
 
 

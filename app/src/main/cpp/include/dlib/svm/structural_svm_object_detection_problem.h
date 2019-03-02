@@ -338,7 +338,7 @@ namespace dlib
                 // if hit truth rect
                 if (truth_match > match_eps)
                 {
-                    // if this is the first time we have seen a detect which hit truth_object_detections[idx][truth.second]
+                    // if this is the first time we have seen a detectdone which hit truth_object_detections[idx][truth.second]
                     const double score = dets[i].first - thresh;
                     if (hit_truth_table[truth.second] == false)
                     {
@@ -412,7 +412,7 @@ namespace dlib
 #ifdef ENABLE_ASSERTS
             const double psi_score = dot(psi, current_solution);
             DLIB_CASSERT(std::abs(psi_score-total_score) <= 1e-4 * std::max(1.0,std::max(std::abs(psi_score),std::abs(total_score))),
-                        "\t The get_feature_vector() and detect() methods of image_scanner_type are not in sync." 
+                        "\t The get_feature_vector() and detectdone() methods of image_scanner_type are not in sync."
                         << "\n\t The relative error is too large to be attributed to rounding error."
                         << "\n\t error:       " << std::abs(psi_score-total_score)
                         << "\n\t psi_score:   " << psi_score

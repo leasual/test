@@ -21,7 +21,7 @@ TotalFlow::TotalFlow(const std::string &path) :
         head_pose_model_path_(path_root_ + "/3D_model/model.txt"),
         faceid_path_(path_root_ + "/faceid"),
         gaze_tracking_path_(path_root_ + "/gaze_tracking"),
-        detector_(std::make_shared<MTCNNDetector>(mtcnn_path_)),
+//        detector_(std::make_shared<MTCNNDetector>(mtcnn_path_)),
         align_method_(std::make_shared<FivePtsAlign>(96, 96)),
         face_align_(std::make_shared<FaceAlign>(align_method_.get())),
         predictor_(std::make_shared<ShapePredictor>(sp_model_path_)),
@@ -63,7 +63,7 @@ bool TotalFlow::DetectFrame(const cv::Mat &image) {
         std::lock_guard<std::mutex> lock_guard(landmark_mutex_);
         landmarks_.clear();
         face_bbox_ = cv::Rect();
-        cerr << "[Error]:detect frame failed to find face" << endl;
+        cerr << "[Error]:detectdone frame failed to find face" << endl;
         if (mark_no_face_) no_face_time_ = chrono::steady_clock::now();
         if (chrono::duration_cast<chrono::milliseconds>(
                 chrono::steady_clock::now() - no_face_time_).count() > 3000) {
@@ -105,25 +105,44 @@ bool TotalFlow::DetectFrame(const cv::Mat &image) {
     angles_[0] = static_cast<float>(angles[0] * 180 / M_PI);
     angles_[1] = static_cast<float>(angles[1] * 180 / M_PI);
     angles_[2] = static_cast<float>(angles[2] * 180 / M_PI);
-    angles_[2] = angles_[2] > 0 ? angles_[2] - 180 : angles_[2] + 180;
+    angles_[2] = angles_[2] > 0 ? 180 - angles_[2] : angles_[2];
     uniqueLockAngles.unlock();
 
-    if (calib_flag_) {
-        calib_flag_ = false;
-        float left, right, up, down;
-        left = config_.distraction_left_angle_ + angles_[1];
-        right = config_.distraction_right_angle_ + angles_[1];
-        up = config_.distraction_up_angle_ + angles_[0];
-        down = config_.distraction_down_angle_ + angles_[0];
-
-        std::cout << "left ： " << left << "  right: " << right << std::endl;
-        std::cout << "up： " << up << "  down: " << down << std::endl;
-        head_pose_detector_.SetParam(left, right, up, down);
-    }
+//    if(calib_flag_){
+//        calib_flag_ = false;
+//        float left, right, up, down;
+//        left = config_.distraction_left_angle_ + angles_[1];
+//        right = config_.distraction_right_angle_ + angles_[1];
+//        up = config_.distraction_up_angle_ + angles_[0];
+//        down = config_.distraction_down_angle_ + angles_[0];
+//
+//        std::cout << "left ： " << left << "  right: " << right <<std::endl;
+//        std::cout << "up： " << up<< "  down: " << down<<std::endl;
+//        head_pose_detector_.SetParam(left, right, up, down);
+//    }
     call_state_ = obj_result->call();
     call_bbox_ = obj_result->call_bbox();
     smoke_state_ = obj_result->smoke();
     smoke_bbox_ = obj_result->smoke_bbox();
+
+    std::vector<cv::Point2f> mouth_vec;
+    for (size_t index = 60; index != 73; ++index) {
+        mouth_vec.push_back(shape[index]);
+    }
+    auto mouth_bbox = cv::boundingRect(mouth_vec);
+
+    if (mouth_bbox.area() > 10) {
+        mouth_bbox.x = mouth_bbox.x - 0.5f * mouth_bbox.width;
+        mouth_bbox.y = mouth_bbox.y - 0.5f * mouth_bbox.height;
+        mouth_bbox.width = mouth_bbox.width * 2;
+        mouth_bbox.height = mouth_bbox.height * 2;
+        if (smoke_state_) {
+            auto i = smoke_bbox_ & mouth_bbox;
+            float iou = static_cast<float>(i.area()) /
+                        (smoke_bbox_.area() + mouth_bbox.area() - i.area());
+            if (iou == 0.f) smoke_state_ = false;
+        }
+    }
 
     landmark_mutex_.lock();
     eye_mouth_detector_.Feed(landmarks_);
@@ -174,18 +193,12 @@ void CropAndResize(cv::Mat &src) {
 /**
  * 程序运行入口
  */
-void TotalFlow::Run(cv::Mat &frame, Result &result, bool regist, const std::string &registName) {
+void TotalFlow::Run(cv::Mat &frame, Result &result) {
     frame_mutex_.lock();
     frame_ = frame.clone();
     CropAndResize(frame_);
     frame_mutex_.unlock();
-    if (regist and not regist_over_flag_) {
-        FaceIDRun(registName);
-        if (not regist_over_flag_) {
-            result.SetCalibration(-1);
-            return;
-        }
-    }
+
     if (first_time_flage_) {
         first_time_flage_ = false;
         LoadFeature();
@@ -230,13 +243,14 @@ void TotalFlow::ProcessPictureThread() {
     cv::Rect bboxf;
     cv::Rect bboxs;
     cv::Rect bboxc;
-    std::string showFaceid = "name : ";
-    std::string distration = "dis  : ";
-    std::string fatigue = "fat  : ";
+    std::string showFaceid = "name: ";
+    std::string distration = "dis: ";
+    std::string fatigue = "fat: ";
     std::string showSmoke = "smoke: ";
-    std::string showCall = "call : ";
-    std::string showAbnorm = "abnm : ";
+    std::string showCall = "call: ";
+    std::string showAbnorm = "abnm: ";
     std::string faceid;
+    int unknown = 0;
     while (true) {
         if (!keep_running_flag_) {
             break;
@@ -271,6 +285,11 @@ void TotalFlow::ProcessPictureThread() {
                     result_.GetAbnormal(abnorm);
                     result_.GetFaceId(faceid);
 
+                    if (faceid == "UnknowFace")
+                        unknown = 2;
+                    else
+                        unknown = 0;
+
                     string currentPath;
                     if (dis == 2) {
                         currentPath = pathDis;
@@ -282,21 +301,23 @@ void TotalFlow::ProcessPictureThread() {
                         currentPath = pathSmoke;
                     } else if (abnorm == 2) {
                         currentPath = pathAbnormal;
+                    } else if (unknown == 2) {
+                        currentPath = pathUnknow;
                     } else
                         currentPath = path;
 
-                    cv::putText(frame, distration + to_string(dis), cv::Point(120, 110),
+                    cv::putText(frame, distration + to_string(dis), cv::Point(10, 10),
                                 1, 1, cv::Scalar(122, 255, 50));
-                    cv::putText(frame, fatigue + to_string(fat), cv::Point(120, 140), 1,
+                    cv::putText(frame, fatigue + to_string(fat), cv::Point(10, 25), 1,
                                 1, cv::Scalar(122, 255, 50));
                     cv::putText(frame, showSmoke + to_string(smoke),
-                                cv::Point(120, 170), 1, 1, cv::Scalar(122, 255, 50));
-                    cv::putText(frame, showCall + to_string(call), cv::Point(120, 200),
+                                cv::Point(10, 40), 1, 1, cv::Scalar(122, 255, 50));
+                    cv::putText(frame, showCall + to_string(call), cv::Point(10, 55),
                                 1, 1, cv::Scalar(122, 255, 50));
                     cv::putText(frame, showAbnorm + to_string(abnorm),
-                                cv::Point(120, 230), 1, 1, cv::Scalar(122, 255, 50));
+                                cv::Point(10, 70), 1, 1, cv::Scalar(122, 255, 50));
                     cv::putText(frame, "id :" + faceid,
-                                cv::Point(120, 260), 1, 1, cv::Scalar(122, 255, 50));
+                                cv::Point(10, 85), 1, 1, cv::Scalar(122, 255, 50));
 
                     if (fat != 0) {
                         cv::rectangle(frame, bboxf, cv::Scalar(255, 0, 0), 2);
@@ -344,11 +365,7 @@ void TotalFlow::ProcessImageThread() {
         if (!keep_running_flag_) {
             break;
         }
-        chrono::steady_clock::time_point old = std::chrono::steady_clock::now();
         RunProcess();
-        auto diff = chrono::duration_cast<std::chrono::milliseconds>(
-                std::chrono::steady_clock::now() - old);
-//        LOGE("  RunProcess(); is -- %ld", diff.count());
     }
     std::cout << "keep_running_flag_ : " << keep_running_flag_ << std::endl;
     std::abort();
@@ -415,7 +432,7 @@ bool TotalFlow::Regist(const std::string &feature_path) {
 
     auto obj_result = object_detect_->Detect(frame);
     if (!obj_result->face()) {
-        std::cout << "no face detect in current image!" << std::endl;
+        std::cout << "no face detectdone in current image!" << std::endl;
         return false;
     }
 
@@ -556,11 +573,11 @@ bool TotalFlow::FaceIDRun(const std::string &registName) {
         }
 
     }
-    std::string feature_path = feature_name_path_ + "/" + to_string(current_regist_num_) + ".bin";
-    if (!Regist(feature_path)) return false;
-    if (++current_regist_num_ > REGISTNUM) regist_over_flag_ = true;
-
-    return true;
+    std::string feature_path = feature_name_path_ + "/" + to_string(current_regist_num_++) + ".bin";
+//    if(!Regist(feature_path)) return false;
+//    if(++current_regist_num_>REGISTNUM) regist_over_flag_ = true;
+//    return true;
+    return Regist(feature_path);
 }
 
 bool TotalFlow::WriteFeature(const cv::Mat &feature, const std::string &path) {
@@ -601,4 +618,36 @@ TotalFlow::~TotalFlow() {
     keep_running_flag_ = false;
 }
 
+bool TotalFlow::Calibration(cv::Mat &frame) {
+    auto obj_result = object_detect_->Detect(frame);
+    if (!obj_result->face()) return false;
+
+    std::vector<cv::Point2f> shape = predictor_->predict(frame, obj_result->face_bbox());
+    cv::Vec3f angles = head_pose_estimator_->estimate_pose(shape);
+    angles[0] = static_cast<float>(angles[0] * 180 / M_PI);
+    angles[1] = static_cast<float>(angles[1] * 180 / M_PI);
+    angles[2] = static_cast<float>(angles[2] * 180 / M_PI);
+    angles[2] = angles[2] > 0 ? 180 - angles[2] : angles[2];
+
+    float left, right, up, down;
+    left = config_.distraction_left_angle_ + angles[1];
+    right = config_.distraction_right_angle_ + angles[1];
+    up = config_.distraction_up_angle_ + angles[0];
+    down = config_.distraction_down_angle_ + angles[0];
+
+    std::cout << "left ： " << left << "  right: " << right << std::endl;
+    std::cout << "up： " << up << "  down: " << down << std::endl;
+    head_pose_detector_.SetParam(left, right, up, down);
+//    process_picture_thread_ = thread(mem_fn(&TotalFlow::ProcessPictureThread), this);
+//    process_picture_thread_.detach();
+    return true;
+}
+
+bool TotalFlow::RegistFeature(cv::Mat &frame, const string &name) {
+    frame_mutex_.lock();
+    frame_ = frame.clone();
+    CropAndResize(frame_);
+    frame_mutex_.unlock();
+    return FaceIDRun(name);
+}
 

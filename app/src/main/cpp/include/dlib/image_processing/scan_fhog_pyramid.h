@@ -191,7 +191,7 @@ namespace dlib
             // make sure requires clause is not broken
             DLIB_ASSERT(is_loaded_with_image() &&
                         w.size() >= get_num_dimensions(), 
-                "\t void scan_fhog_pyramid::detect()"
+                "\t void scan_fhog_pyramid::detectdone()"
                 << "\n\t Invalid inputs were given to this function "
                 << "\n\t is_loaded_with_image(): " << is_loaded_with_image()
                 << "\n\t w.size():               " << w.size()
@@ -840,7 +840,7 @@ namespace dlib
         // make sure requires clause is not broken
         DLIB_ASSERT(is_loaded_with_image() &&
                     w.get_num_dimensions() == get_num_dimensions(), 
-            "\t void scan_fhog_pyramid::detect()"
+            "\t void scan_fhog_pyramid::detectdone()"
             << "\n\t Invalid inputs were given to this function "
             << "\n\t is_loaded_with_image(): " << is_loaded_with_image()
             << "\n\t w.get_num_dimensions(): " << w.get_num_dimensions()

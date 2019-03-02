@@ -441,7 +441,7 @@ namespace dlib
         // make sure requires clause is not broken
         DLIB_ASSERT(is_loaded_with_image() &&
                     w.size() >= get_num_dimensions(), 
-            "\t void scan_image_boxes::detect()"
+            "\t void scan_image_boxes::detectdone()"
             << "\n\t Invalid inputs were given to this function "
             << "\n\t is_loaded_with_image(): " << is_loaded_with_image()
             << "\n\t w.size():               " << w.size()

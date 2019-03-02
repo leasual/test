@@ -69,7 +69,7 @@ endif()
 
 # According to http://stackoverflow.com/questions/646518/python-how-to-detect-debug-interpreter
 # testing whether sys has the gettotalrefcount function is a reliable, cross-platform
-# way to detect a CPython debug interpreter.
+# way to detectdone a CPython debug interpreter.
 #
 # The library suffix is from the config var LDVERSION sometimes, otherwise
 # VERSION. VERSION will typically be like "2.7" on unix, and "27" on windows.

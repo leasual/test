@@ -96,7 +96,7 @@ namespace dlib
                       the optimizer doesn't care if the detector outputs a detection that
                       matches any of the ignore rectangles or if it fails to output a
                       detection for an ignore rectangle.  Therefore, if there are objects
-                      in your dataset that you are unsure you want to detect or otherwise
+                      in your dataset that you are unsure you want to detectdone or otherwise
                       don't care if the detector gets or doesn't then you can mark them
                       with ignore rectangles and the optimizer will simply ignore them. 
         !*/
@@ -133,7 +133,7 @@ namespace dlib
         ) const;
         /*!
             ensures
-                - returns the amount of loss experienced for failing to detect one of the
+                - returns the amount of loss experienced for failing to detectdone one of the
                   targets.
         !*/
 

@@ -133,7 +133,7 @@ post_process_1pass (j_decompress_ptr cinfo,
   JDIMENSION num_rows, max_rows;
 
   /* Fill the buffer, but not more than what we can dump out in one go. */
-  /* Note we rely on the upsampler to detect bottom of image. */
+  /* Note we rely on the upsampler to detectdone bottom of image. */
   max_rows = out_rows_avail - *out_row_ctr;
   if (max_rows > post->strip_height)
     max_rows = post->strip_height;

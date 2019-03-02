@@ -128,7 +128,7 @@ typedef struct {
   int whichptr;			/* indicates which pointer set is now in use */
   int context_state;		/* process_data state machine status */
   JDIMENSION rowgroups_avail;	/* row groups available to postprocessor */
-  JDIMENSION iMCU_row_ctr;	/* counts iMCU rows to detect image top/bot */
+  JDIMENSION iMCU_row_ctr;	/* counts iMCU rows to detectdone image top/bot */
 } my_main_controller;
 
 typedef my_main_controller * my_main_ptr;

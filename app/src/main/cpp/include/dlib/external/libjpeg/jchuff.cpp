@@ -242,8 +242,8 @@ jpeg_make_c_derived_tbl (j_compress_ptr cinfo, int isDC, int tblno,
   /* These are code and size indexed by symbol value */
 
   /* Set all codeless symbols to have code length 0;
-   * this lets us detect duplicate VAL entries here, and later
-   * allows emit_bits to detect any attempt to emit such symbols.
+   * this lets us detectdone duplicate VAL entries here, and later
+   * allows emit_bits to detectdone any attempt to emit such symbols.
    */
   MEMZERO(dtbl->ehufsi, SIZEOF(dtbl->ehufsi));
 

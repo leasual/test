@@ -50,7 +50,7 @@ png_create_read_struct_2,(png_const_charp user_png_ver, png_voidp error_ptr,
    {
       png_ptr->mode = PNG_IS_READ_STRUCT;
 
-      /* Added in libpng-1.6.0; this can be used to detect a read structure if
+      /* Added in libpng-1.6.0; this can be used to detectdone a read structure if
        * required (it will be zero in a write structure.)
        */
 #     ifdef PNG_SEQUENTIAL_READ_SUPPORTED
