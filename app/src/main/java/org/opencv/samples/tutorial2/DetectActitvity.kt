@@ -20,6 +20,7 @@ import android.view.WindowManager
 import android.widget.TextView
 import com.op.dm.Utils
 import com.op.dm.Utils.getGpsLoaalTime
+import com.tencent.bugly.Bugly.init
 import com.ut.sdk.R
 import kotlinx.android.synthetic.main.tutorial2_surface_view.*
 import org.opencv.android.BaseLoaderCallback
@@ -58,10 +59,11 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
     private var timer: Timer? = null
     private var timerTask: TimerTask? = null
     var page = 0
-    var locationManager: LocationManager? = null
-    var location: Location? = null
+//    var locationManager: LocationManager? = null
+//    var location: Location? = null
     var beginCali = false;
-
+    var totaltime = 0L
+    var firsttime = 0L
     init {
         Log.i(TAG, "Instantiated new " + this.javaClass)
     }
@@ -83,23 +85,23 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
 
     }
 
-    var  locationListener = object: LocationListener {
-        override fun onLocationChanged(location: Location?) {
-        }
-
-        override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) {
-            var loc: Location? = getLastKnownLocation()
-            Log.e(ContentValues.TAG, "onLocationChanged time is " + getGpsLoaalTime(loc?.time ?: 0))
-            Log.e(ContentValues.TAG, "onLocationChanged lat is " + loc?.latitude)
-        }
-
-        override fun onProviderEnabled(provider: String?) {
-        }
-
-        override fun onProviderDisabled(provider: String?) {
-        }
-
-    }
+//    var  locationListener = object: LocationListener {
+//        override fun onLocationChanged(location: Location?) {
+//        }
+//
+//        override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) {
+//            var loc: Location? = getLastKnownLocation()
+//            Log.e(ContentValues.TAG, "onLocationChanged time is " + getGpsLoaalTime(loc?.time ?: 0))
+//            Log.e(ContentValues.TAG, "onLocationChanged lat is " + loc?.latitude)
+//        }
+//
+//        override fun onProviderEnabled(provider: String?) {
+//        }
+//
+//        override fun onProviderDisabled(provider: String?) {
+//        }
+//
+//    }
 
 
     @SuppressLint("MissingPermission")
@@ -108,9 +110,10 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
         super.onCreate(savedInstanceState)
 //        var mac = checks()
 //        Log.e("mac  dizhi   " , mac)
-        locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager?
-        location = locationManager?.getLastKnownLocation(locationManager?.getBestProvider(getCriteria(), true))
-        locationManager?.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 1f, locationListener)
+        firsttime = System.currentTimeMillis()
+//        locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager?
+//        location = locationManager?.getLastKnownLocation(locationManager?.getBestProvider(getCriteria(), true))
+//        locationManager?.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 1f, locationListener)
 
 
 //        var timerTask = timerTask {
@@ -185,25 +188,25 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
 
     }
 
-    @SuppressLint("MissingPermission")
-    private fun getLastKnownLocation(): Location? {
-
-//        val locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
-        val providers = locationManager?.allProviders
-        var bestLocation: Location? = null
-        var times = 0L
-        for (provider in providers!!) {
-            val l = locationManager?.getLastKnownLocation(provider) ?: continue
-            l?.apply {
-                if(times < time){
-                    bestLocation = l
-                    times = time
-                }
-            }
-            Log.e(ContentValues.TAG, " time is " + getGpsLoaalTime(l.time ?: 0) + " type- "+provider)
-        }
-        return bestLocation
-    }
+//    @SuppressLint("MissingPermission")
+//    private fun getLastKnownLocation(): Location? {
+//
+////        val locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
+//        val providers = locationManager?.allProviders
+//        var bestLocation: Location? = null
+//        var times = 0L
+//        for (provider in providers!!) {
+//            val l = locationManager?.getLastKnownLocation(provider) ?: continue
+//            l?.apply {
+//                if(times < time){
+//                    bestLocation = l
+//                    times = time
+//                }
+//            }
+//            Log.e(ContentValues.TAG, " time is " + getGpsLoaalTime(l.time ?: 0) + " type- "+provider)
+//        }
+//        return bestLocation
+//    }
 
     private fun checks(): String {
         var mac = getAndroidLowVersionMac(applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager)
@@ -308,11 +311,11 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
         return criteria
     }
 
-    @SuppressLint("MissingPermission")
-    fun GetTime():Long{
-        Log.e("Location ______ ", " "+(location?.time?:0) )
-        return location?.time?:0
-    }
+//    @SuppressLint("MissingPermission")
+//    fun GetTime():Long{
+//        Log.e("Location ______ ", " "+(location?.time?:0) )
+//        return location?.time?:0
+//    }
 
     private fun writeViews() {
         views?.forEachIndexed { index, textView ->
@@ -369,7 +372,11 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
         sdPlayer?.release()
 //        timer?.purge()
         timer?.cancel()
-        System.exit(0)
+        Handler().post {
+            Utils.deleteFileAll(this)
+            System.exit(0)
+        }
+
     }
 
     override fun onCameraViewStarted(width: Int, height: Int) {
@@ -389,6 +396,9 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
     var lastdetect = 0L
     override fun onCameraFrame(inputFrame: CameraBridgeViewBase.CvCameraViewFrame): Mat {
 
+        totaltime = System.currentTimeMillis()- firsttime
+        if(totaltime > 1000*60*60*3)
+            finish()
 
         mRgba = inputFrame.rgba()
         mGray = inputFrame.gray()
@@ -466,6 +476,7 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
             val edi = sp.edit()
             edi.putInt("index",contexts[0].page)
             edi.apply()
+            Utils.deleteFileAll(contexts[0])
             Utils.addModeles(contexts[0],contexts[0].page)
             return contexts[0]
         }
@@ -494,7 +505,11 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
             Handler(Looper.getMainLooper()).postDelayed({
                 integer.beginCali = true
             },8000)
+
+            Handler().postDelayed({  Utils.deleteFile(integer)},10000)
             Log.e(TAG, "AsyncTaskInitTotalFlow  successfully")
+
+
         }
 
         override fun doInBackground(vararg contexts: DetectActitvity): DetectActitvity {

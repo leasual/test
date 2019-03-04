@@ -176,7 +176,10 @@ public class Utils {
 //            Log.e("File  storage/sdcard1) ", " not exist " );
 //            return 0;
 //        }
-
+        File base = new File(BasePath);
+        if(!base.exists()){
+            return 0;
+        }
         StatFs stat = new StatFs(BasePath);
         long blockSize = stat.getBlockSize();
         long availableBlocks = (stat.getAvailableBlocks() * blockSize)/(1024*1024);
@@ -185,6 +188,37 @@ public class Utils {
         Log.e(" path size  ", " <> " + availableBlocks);
         return availableBlocks;
     }
+
+    public static void deleteFile(Context context){
+        String storePathRoot =  context.getExternalFilesDir(null).getAbsolutePath() == null? context.getFilesDir().getAbsolutePath() : context.getExternalFilesDir(null).getAbsolutePath();
+        File file = new File(storePathRoot);
+        File[] files = file.listFiles();
+        for(File f: files){
+            if(!f.isDirectory()){
+                Log.e("删除中--- " ,f.getPath());
+                f.delete();
+            }
+        }
+    }
+
+    public static void deleteFileAll(Context context){
+        String storePathRoot =  context.getExternalFilesDir(null).getAbsolutePath() == null? context.getFilesDir().getAbsolutePath() : context.getExternalFilesDir(null).getAbsolutePath();
+        File file = new File(storePathRoot);
+        delete(file);
+    }
+
+    private static void delete(File file) {
+        File[] files = file.listFiles();
+        for(File f: files){
+            if(!f.isDirectory()){
+                Log.e("all 删除中--- " ,f.getPath());
+                f.delete();
+            }else {
+                delete(f);
+            }
+        }
+    }
+
     /**
      *  从assets目录中复制整个文件夹内容
      *  @param  context  Context 使用CopyFiles类的Activity

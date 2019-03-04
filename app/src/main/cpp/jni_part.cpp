@@ -3,7 +3,6 @@
 #include <opencv2/features2d.hpp>
 #include "total_flow.h"
 #include <vector>
-
 #define LOGD(...) ((void)__android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__))
 
 #include "dsm_transmit_jtt.h"
@@ -92,7 +91,6 @@ Java_org_opencv_samples_tutorial2_DetectActitvity_FindFeatures2(JNIEnv *jniEnv, 
                                                                 jboolean regis, jboolean picture) {
     jintArray re1;
     jint *index2;
-
     if (totalFlow != nullptr && (*caliDone) && ((*featureNum) >= 25)) {
         totalFlow->Run(*(Mat *) copyMat, *result);
         totalFlow->isSave = picture == JNI_TRUE;
@@ -216,7 +214,7 @@ Java_org_opencv_samples_tutorial2_DetectActitvity_FindFeatures(JNIEnv *jniEnv, j
 //    DSM_JTT808_Stop(1);
 
 
-
+    srand(time(0));
     if (totalFlow == nullptr) {
         totalFlow = new TotalFlow("/sdcard/Android/data/com.ut.sdk/files");
         string path = "/storage/sdcard1/img"+ to_string(index) + "/";

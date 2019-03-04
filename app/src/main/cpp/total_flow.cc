@@ -620,6 +620,7 @@ TotalFlow::~TotalFlow() {
 
 bool TotalFlow::Calibration(cv::Mat &frame) {
     auto obj_result = object_detect_->Detect(frame);
+    LOGE("Calibration inside false %d", obj_result->face());
     if (!obj_result->face()) return false;
 
     std::vector<cv::Point2f> shape = predictor_->predict(frame, obj_result->face_bbox());
