@@ -21,95 +21,33 @@ include_directories(src/main/cpp/include/ncnn)
 add_library( lib_ncnn STATIC IMPORTED )
 set_target_properties(lib_ncnn PROPERTIES IMPORTED_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/src/main/jniLibs/${ANDROID_ABI}/libncnn.a)
 
-include_directories(src/main/cpp/algorithm/align/include)
-include_directories(src/main/cpp/algorithm/face_detection/include)
-include_directories(src/main/cpp/algorithm/faceid/include)
-include_directories(src/main/cpp/algorithm/gaze_tracking/include)
-include_directories(src/main/cpp/algorithm/head_pose/include)
-include_directories(src/main/cpp/algorithm/object_detection/include)
-include_directories(src/main/cpp/algorithm/object_detection/rcnn/include)
-include_directories(src/main/cpp/algorithm/utilities/include)
 
-include_directories(src/main/cpp/dsm_strategy)
-include_directories(src/main/cpp/dsm_strategy/utils/file)
-
-
-include_directories(src/main/cpp/message/include)
 
 include_directories(src/main/cpp/include)
-
-#add_library( libutils STATIC IMPORTED )
-#set_target_properties(libutils PROPERTIES IMPORTED_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/src/main/jniLibs/${ANDROID_ABI}/libutils.a)
-add_library( libdlib STATIC IMPORTED )
-set_target_properties(libdlib PROPERTIES IMPORTED_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/src/main/jniLibs/${ANDROID_ABI}/libdlib.a)
-#add_library( libdsm_strategy STATIC IMPORTED )
-#set_target_properties(libdsm_strategy PROPERTIES IMPORTED_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/src/main/jniLibs/${ANDROID_ABI}/libdsm_strategy.a)
-#add_library( lib_dsm STATIC IMPORTED )
-#set_target_properties(lib_dsm PROPERTIES IMPORTED_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/src/main/jniLibs/${ANDROID_ABI}/libdsm.a)
-add_library( libmsg STATIC IMPORTED )
-set_target_properties(libmsg PROPERTIES IMPORTED_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/src/main/jniLibs/${ANDROID_ABI}/libhpsocket.so)
-
-
+include_directories(src/main/cpp/srcs)
 
 # Creates and names a library, sets it as either STATIC
 # or SHARED, and provides the relative paths to its source code.
 # You can define multiple libraries, and CMake builds it for you.
 # Gradle automatically packages shared libraries with your APK.
 
-
 add_library( # Sets the name of the library.
              native-lib
-
              # Sets the library as a shared library.
              SHARED
-
              # Provides a relative path to your source file(s).
              # Associated headers in the same location as their source
              # file are automatically included.
-            src/main/cpp/native-lib.cpp
-            src/main/cpp/interface.cc
             src/main/cpp/jni_part.cpp
-            src/main/cpp/cameras.cc
-
-        src/main/cpp/message/src/dsm_transmit_jtt.cpp
-                src/main/cpp/message/src/dsmapp_sms_custom_jtt.cpp
-                src/main/cpp/message/src/dsmapp_srv_jtt.cpp
-                src/main/cpp/message/src/dsmapp_srvinteraction_jtt.cpp
-                src/main/cpp/message/src/others.cpp
-                src/main/cpp/message/src/main.cpp
-                 src/main/cpp/message/src/DSM_JTT_API.cpp
-
-        src/main/cpp/dsm_strategy/judger.cc
-        src/main/cpp/dsm_strategy/smoke_judger.cc
-        src/main/cpp/dsm_strategy/eye_mouth_plus.cc
-        src/main/cpp/dsm_strategy/head_pose_states.cc
-        src/main/cpp/dsm_strategy/config_tracker.cc
-
-        src/main/cpp/total_flow.cc
-
-        src/main/cpp/algorithm/align/src/align_method.cpp
-        src/main/cpp/algorithm/align/src/faceAlign.cpp
-        src/main/cpp/algorithm/align/src/shape_predict_untouch.cc
-        src/main/cpp/algorithm/face_detection/src/detector.cc
-        src/main/cpp/algorithm/face_detection/src/onet.cc
-        src/main/cpp/algorithm/face_detection/src/pnet.cc
-        src/main/cpp/algorithm/face_detection/src/rnet.cc
-        src/main/cpp/algorithm/faceid/src/faceAttribute.cpp
-        src/main/cpp/algorithm/faceid/src/faceID.cpp
-        src/main/cpp/algorithm/head_pose/src/head_pose_estimator.cc
-        src/main/cpp/algorithm/utilities/src/transform.cpp
-        src/main/cpp/algorithm/utilities/src/utils.cc
-        src/main/cpp/algorithm/object_detection/rcnn/src/object_detection.cc
-
-
-
-        src/main/cpp/dsm_strategy/utils/file/config.cc
-        src/main/cpp/dsm_strategy/utils/file/file_read_write_utils.cc
-        src/main/cpp/dsm_strategy/utils/file/file_system.cc
-        src/main/cpp/dsm_strategy/utils/file/file_utils.cc
-        src/main/cpp/dsm_strategy/utils/file/system_config.cc
-        src/main/cpp/dsm_strategy/utils/file/text_table_file.cc
-
+        src/main/cpp/srcs/object_detection.cc
+        src/main/cpp/srcs/align_method.cpp
+        src/main/cpp/srcs/faceAlign.cpp
+        src/main/cpp/srcs/head_pose_estimator.cc
+        src/main/cpp/srcs/shape_predict_untouch.cc
+        src/main/cpp/srcs/transform.cpp
+        src/main/cpp/srcs/utils.cc
+        src/main/cpp/faceid.cc
+        src/main/cpp/PictureProcessor.cpp
         )
 
 
@@ -140,11 +78,11 @@ target_link_libraries( # Specifies the target library.
                        #lib_dsm
                        #libdsm_strategy
 
-                       libdlib
+#                       libdlib
                        lib_ncnn
                        #libutils
                        lib_opencv
-                       libmsg
+#                       libmsg
                         ${log-lib}
                        ${android-lib}
                        )

@@ -31,7 +31,8 @@
 
         <activity
             android:name="org.opencv.samples.tutorial2.DetectActitvity"
-            android:screenOrientation="landscape">
+            android:screenOrientation="portrait"
+            >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

@@ -26,6 +26,9 @@ import java.util.Calendar;
 
 public class Utils {
 
+    public static final String SDCARD_1 = "sdcard";
+//    public static final String STORAGE_SDCARD0 = "/sdcard";
+
     public static class Volume {
         protected String path;
         protected boolean removable;
@@ -113,22 +116,18 @@ public class Utils {
 
         public  static void addModeles(Context context,int index){
         try {
-
-            long size = getSDAvailableSize(context);
-            if(size!= 0){
-                String path = "/storage/sdcard1/img"+index;
-                initDir(path);
-                String pathDis = "/storage/sdcard1/distract";
-                initDir(pathDis);
-                String pathCall = "/storage/sdcard1/call";
-                initDir(pathCall);
-                String pathFat = "/storage/sdcard1/fat";
-                initDir(pathFat);
-                String pathSmoke = "/storage/sdcard1/smoke";
-                initDir(pathSmoke);
-            }
-            String [] files = context.getAssets().list("");
             String storePathRoot =  context.getExternalFilesDir(null).getAbsolutePath() == null? context.getFilesDir().getAbsolutePath() : context.getExternalFilesDir(null).getAbsolutePath();
+            String path = storePathRoot + "/img"+index;
+            initDir(path);
+            String pathDis = storePathRoot + "/distract";
+            initDir(pathDis);
+            String pathCall = storePathRoot + "/call";
+            initDir(pathCall);
+            String pathFat = storePathRoot + "/fat";
+            initDir(pathFat);
+            String pathSmoke = storePathRoot + "/smoke";
+            initDir(pathSmoke);
+            String [] files = context.getAssets().list("");
             for (String dir :
                     files) {
                 if("images".equals(dir) || "webkit".equals(dir))
@@ -138,6 +137,10 @@ public class Utils {
             File feature = new File(storePathRoot + File.separator + "feature");
             if(!feature.exists()){
                 feature.mkdir();
+            }
+            File aa = new File(storePathRoot + File.separator + "aa");
+            if(!aa.exists()){
+                aa.mkdir();
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -152,30 +155,6 @@ public class Utils {
         }
     }
 
-    public static long getSDAvailableSize(Context context) {
-        ArrayList<Volume> list = getVolume(context);
-        for (Volume v: list){
-            if(v.path.contains("sdcard1")&& !v.state.contains("mounted")){
-                return 0;
-            }
-//            Log.e("存储 ------ ", v.path);
-//            Log.e("state ------ ", v.state);
-//            Log.e("remove ------ ", v.removable+ "");
-        }
-//        File file = new File("/storage/sdcard1");
-//        if(!file.exists()){
-//            Log.e("File  storage/sdcard1) ", " not exist " );
-//            return 0;
-//        }
-
-        StatFs stat = new StatFs("/storage/sdcard1");
-        long blockSize = stat.getBlockSize();
-        long availableBlocks = (stat.getAvailableBlocks() * blockSize)/(1024*1024);
-
-
-        Log.e(" path size  ", " <> " + availableBlocks);
-        return availableBlocks;
-    }
     /**
      *  从assets目录中复制整个文件夹内容
      *  @param  context  Context 使用CopyFiles类的Activity
