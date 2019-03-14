@@ -1,26 +1,23 @@
-package org.opencv.samples.tutorial2
+package com.op.dm.ui
 
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.AlertDialog
 import android.app.ProgressDialog
-import android.content.ContentValues
 import android.content.Context
+import android.content.Intent
 import android.content.SharedPreferences
+import android.hardware.Camera
+import android.hardware.camera2.CameraManager
 import android.location.*
 import android.media.MediaPlayer
 import android.net.wifi.WifiManager
-import android.os.AsyncTask
-import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
+import android.os.*
 import android.text.TextUtils
 import android.util.Log
 import android.view.WindowManager
 import android.widget.TextView
 import com.op.dm.Utils
-import com.op.dm.Utils.getGpsLoaalTime
-import com.tencent.bugly.Bugly.init
 import com.ut.sdk.R
 import kotlinx.android.synthetic.main.tutorial2_surface_view.*
 import org.opencv.android.BaseLoaderCallback
@@ -125,18 +122,23 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         setContentView(R.layout.tutorial2_surface_view)
         views = arrayOf(dis, fat, smoke, call, abnm)
+        var index = Camera.getNumberOfCameras()
+        Log.e("  camera  inex size ", "------" + index)
+       if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+           val cameraManager = getSystemService(Context.CAMERA_SERVICE) as CameraManager
+           Log.e("  camera  size ", "------" + cameraManager.cameraIdList.size )
+           cameraManager.cameraIdList.forEach {
+               Log.e("  camera  inex ", it)
+           }
+        } else {
+        }
 
-//        val cameraManager = getSystemService(Context.CAMERA_SERVICE) as CameraManager
-//        val cameraId = cameraManager.cameraIdList[0]
-//        cameraManager.cameraIdList.forEach {
-//            Log.e("  camera  inex ", it)
-//        }
 
 
         with(tutorial2_activity_surface_view) {
             visibility = CameraBridgeViewBase.VISIBLE
             setCvCameraViewListener(this@DetectActitvity)
-            setCameraIndex(1)
+            setCameraIndex(33)
 
 //            setMaxFrameSize(1280, 720)
             setMaxFrameSize(640, 480)
@@ -147,24 +149,6 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
         progressDialog?.setTitle("加载中,请稍后")
         progressDialog?.show()
 
-        var builder: AlertDialog.Builder? = AlertDialog.Builder(this)
-        builder?.let {
-            with(it) {
-                setTitle("是否进行注册?")
-                setMessage("注册时请保持摄像头能清晰照到脸部")
-                setPositiveButton("注册") { _, _ ->
-                    register = true
-                    totalDone = true
-                }
-                setNegativeButton("直接进入") { _, _ ->
-                    register = false
-                    totalDone = true
-                }
-                setCancelable(false)
-                alertDialog = it.create()
-                alertDialog?.setCanceledOnTouchOutside(false)
-            }
-        }
         sdPlayer = MediaPlayer.create(this, R.raw.sdcard)
 
         detectFacePlayer = MediaPlayer.create(this, R.raw.detecting)
@@ -184,7 +168,9 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
         timer = Timer()
         timer?.schedule(timerTask, 0, 5000)
 
-
+        setting.setOnClickListener {
+            startActivity(Intent(this@DetectActitvity,SettingActivity::class.java))
+        }
 
     }
 
@@ -393,12 +379,13 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
         if (rgb != null)
             rgb?.release()
     }
+
     var lastdetect = 0L
     override fun onCameraFrame(inputFrame: CameraBridgeViewBase.CvCameraViewFrame): Mat {
 
         totaltime = System.currentTimeMillis()- firsttime
-        if(totaltime > 1000*60*60*3)
-            finish()
+//        if(totaltime > 1000*60*60*3)
+//            finish()
 
         mRgba = inputFrame.rgba()
         mGray = inputFrame.gray()
@@ -463,7 +450,7 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
         }
     }
 
-    internal class AsyncTaskInitFile : AsyncTask<DetectActitvity, Int, DetectActitvity>() {
+    internal  class AsyncTaskInitFile : AsyncTask<DetectActitvity, Int, DetectActitvity>() {
         override fun onPostExecute(integer: DetectActitvity) {
             super.onPostExecute(integer)
             Log.e(TAG, "AsyncTaskInitFile  successfully")
@@ -471,13 +458,13 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
         }
 
         override fun doInBackground(vararg contexts: DetectActitvity): DetectActitvity {
-            var sp: SharedPreferences = contexts[0].getPreferences(Context.MODE_PRIVATE)
+            val sp: SharedPreferences = contexts[0].getPreferences(Context.MODE_PRIVATE)
             contexts[0].page = sp.getInt("index",0) + 1
             val edi = sp.edit()
             edi.putInt("index",contexts[0].page)
             edi.apply()
             Utils.deleteFileAll(contexts[0])
-            Utils.addModeles(contexts[0],contexts[0].page)
+            Utils.addModeles(contexts[0], contexts[0].page)
             return contexts[0]
         }
     }
@@ -486,14 +473,10 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
     internal class AsyncTaskInitTotalFlow : AsyncTask<DetectActitvity, Int, DetectActitvity>() {
         override fun onPostExecute(integer: DetectActitvity) {
             super.onPostExecute(integer)
-//            integer.totalDone = true
-
-
             integer.views?.forEachIndexed { index, textView ->
                 textView.text = integer.names[index] + " : " + "正常"
             }
             integer.progressDialog?.dismiss()
-//            integer.alertDialog?.show()
             integer.register = true
             integer.totalDone = true
             var handler = Handler(Looper.getMainLooper())
@@ -506,7 +489,7 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
                 integer.beginCali = true
             },8000)
 
-            Handler().postDelayed({  Utils.deleteFile(integer)},10000)
+            Handler().postDelayed({ Utils.deleteFile(integer) },10000)
             Log.e(TAG, "AsyncTaskInitTotalFlow  successfully")
 
 
@@ -516,14 +499,9 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
             for (index in 0..5) {
                 contexts[0].players[index] = MediaPlayer.create(contexts[0], contexts[0].audio[index])
             }
-            var tim = System.currentTimeMillis()/1000 + 1*60*60*24*10
-            contexts[0].FindFeatures(tim, contexts[0].page)
+//            var tim = System.currentTimeMillis()/1000 + 1*60*60*24*10
+            contexts[0].FindFeatures(0L, contexts[0].page)
 
-
-//            if(contexts[0].CHECK(contexts[0].checks()))
-//                contexts[0].FindFeatures(0, 0)
-//            else
-//                contexts[0].finish()
             return contexts[0]
         }
     }

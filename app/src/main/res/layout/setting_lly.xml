@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+   >
+    <RelativeLayout
+        android:id="@+id/top"
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:background="#000000"
+        >
+        <TextView
+            android:id="@+id/back"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_marginLeft="10dp"
+            android:text="返回"
+            android:textColor="#ffffff"
+            android:layout_centerVertical="true"
+            android:gravity="center"
+            />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_marginLeft="10dp"
+            android:text="设置"
+            android:textColor="#ffffff"
+            android:layout_centerInParent="true"
+            android:gravity="center"
+            android:textSize="18sp"
+            />
+    </RelativeLayout>
+    <ScrollView
+        android:layout_below="@id/top"
+        android:layout_marginTop="10dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingLeft="10dp"
+            android:orientation="vertical">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="17sp"
+                android:numeric="integer"
+                android:layout_marginBottom="10dp"
+                android:text="拍照分辨率设置:"/>
+
+            <Spinner
+                android:id="@+id/spinner_photo"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="10dp"/>
+
+            <com.op.dm.widget.SettingView
+                android:id="@+id/fatv"
+                android:focusable="true"
+                android:focusableInTouchMode="true"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="疲劳驾驶报警设置:"/>
+            <com.op.dm.widget.SettingView
+                android:id="@+id/disv"
+                android:focusable="true"
+                android:focusableInTouchMode="true"
+                android:layout_marginTop="10dp"
+                android:layout_width="match_parent"
+                android:text="分神驾驶报警设置:"
+                android:layout_height="wrap_content" />
+            <com.op.dm.widget.SettingView
+                android:id="@+id/smokev"
+                android:focusable="true"
+                android:focusableInTouchMode="true"
+                android:layout_marginTop="10dp"
+                android:layout_width="match_parent"
+                android:text="抽烟报警设置:"
+                android:layout_height="wrap_content" />
+            <com.op.dm.widget.SettingView
+                android:id="@+id/callv"
+                android:focusable="true"
+                android:focusableInTouchMode="true"
+                android:layout_marginTop="10dp"
+                android:layout_width="match_parent"
+                android:text="接打电话报警设置:"
+                android:layout_height="wrap_content" />
+            <com.op.dm.widget.SettingView
+                android:id="@+id/abnmv"
+                android:focusable="true"
+                android:focusableInTouchMode="true"
+                android:layout_marginTop="10dp"
+                android:layout_width="match_parent"
+                android:text="驾驶员异常报警设置:"
+                android:layout_height="wrap_content" />
+        </LinearLayout>
+
+    </ScrollView>
+</RelativeLayout>

@@ -58,7 +58,11 @@ TotalFlow::TotalFlow(const std::string &path) :
  * @return
  */
 bool TotalFlow::DetectFrame(const cv::Mat &image) {
+    chrono::steady_clock::time_point old = std::chrono::steady_clock::now();
     auto obj_result = object_detect_->Detect(image);
+    auto diff2 = chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - old);
+    LOGE(" last time DetectFrame -> detector_.detect(image) is %ld ",diff2.count());
+
     if (!obj_result->face()) {
         std::lock_guard<std::mutex> lock_guard(landmark_mutex_);
         landmarks_.clear();
@@ -84,7 +88,10 @@ bool TotalFlow::DetectFrame(const cv::Mat &image) {
 
     face_bbox_ = obj_result->face_bbox();
 
+    chrono::steady_clock::time_point old3 = std::chrono::steady_clock::now();
     std::vector<cv::Point2f> shape = predictor_->predict(image, face_bbox_);
+    auto diff3 = chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - old3);
+    LOGE(" last  timepredictor_->predict is %ld ",diff3.count());
 
     std::vector<cv::Point2f> six_points;
     six_points.emplace_back(shape[38]); //鼻尖

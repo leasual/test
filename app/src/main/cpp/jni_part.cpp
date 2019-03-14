@@ -19,23 +19,23 @@ extern "C" {
 
 
 JNIEXPORT void JNICALL
-Java_org_opencv_samples_tutorial2_DetectActitvity_Cali(JNIEnv *, jobject, jlong addrGray,
+Java_com_op_dm_ui_DetectActitvity_Cali(JNIEnv *, jobject, jlong addrGray,
                                                                jint index);
 JNIEXPORT void JNICALL
-Java_org_opencv_samples_tutorial2_DetectActitvity_Detect(JNIEnv *, jobject, jlong addrGray,
+Java_com_op_dm_ui_DetectActitvity_Detect(JNIEnv *, jobject, jlong addrGray,
                                                        jint index);
 
 JNIEXPORT void JNICALL
-Java_org_opencv_samples_tutorial2_DetectActitvity_FindFeatures(JNIEnv *, jobject, jlong addrGray,
+Java_com_op_dm_ui_DetectActitvity_FindFeatures(JNIEnv *, jobject, jlong addrGray,
                                                                jint index);
 JNIEXPORT jintArray JNICALL
-Java_org_opencv_samples_tutorial2_DetectActitvity_FindFeatures2(JNIEnv *jniEnv, jobject,
+Java_com_op_dm_ui_DetectActitvity_FindFeatures2(JNIEnv *jniEnv, jobject,
                                                                 jlong addrGray, jlong addrRgba,
                                                                 jboolean regis,jboolean);
 JNIEXPORT void JNICALL
-Java_org_opencv_samples_tutorial2_DetectActitvity_stop(JNIEnv *jniEnv, jobject);
+Java_com_op_dm_ui_DetectActitvity_stop(JNIEnv *jniEnv, jobject);
 JNIEXPORT jboolean JNICALL
-Java_org_opencv_samples_tutorial2_DetectActitvity_CHECK(JNIEnv *jniEnv, jobject,jstring);
+Java_com_op_dm_ui_DetectActitvity_CHECK(JNIEnv *jniEnv, jobject,jstring);
 
 TotalFlow *totalFlow = nullptr;
 Result *result = nullptr;
@@ -47,7 +47,7 @@ bool * caliDone;
 int * featureNum;
 
 JNIEXPORT void JNICALL
-Java_org_opencv_samples_tutorial2_DetectActitvity_Cali(JNIEnv * jniEnv, jobject obj, jlong copyMat,
+Java_com_op_dm_ui_DetectActitvity_Cali(JNIEnv * jniEnv, jobject obj, jlong copyMat,
                                                        jint index){
     LOGE("before Calibration is %d",*caliDone);
     bool done = *caliDone;
@@ -64,7 +64,7 @@ Java_org_opencv_samples_tutorial2_DetectActitvity_Cali(JNIEnv * jniEnv, jobject 
 }
 
 JNIEXPORT void JNICALL
-Java_org_opencv_samples_tutorial2_DetectActitvity_Detect(JNIEnv * jniEnv, jobject obj, jlong copyMat,
+Java_com_op_dm_ui_DetectActitvity_Detect(JNIEnv * jniEnv, jobject obj, jlong copyMat,
                                                          jint index){
     LOGE("before!!! RegistFeature is %d",*featureNum);
     bool ndone = (*featureNum < 25);
@@ -86,7 +86,7 @@ Java_org_opencv_samples_tutorial2_DetectActitvity_Detect(JNIEnv * jniEnv, jobjec
 
 
 JNIEXPORT jintArray JNICALL
-Java_org_opencv_samples_tutorial2_DetectActitvity_FindFeatures2(JNIEnv *jniEnv, jobject obj,
+Java_com_op_dm_ui_DetectActitvity_FindFeatures2(JNIEnv *jniEnv, jobject obj,
                                                                 jlong copyMat, jlong addrRgba,
                                                                 jboolean regis, jboolean picture) {
     jintArray re1;
@@ -170,7 +170,7 @@ Java_org_opencv_samples_tutorial2_DetectActitvity_FindFeatures2(JNIEnv *jniEnv, 
 }
 
 JNIEXPORT void JNICALL
-Java_org_opencv_samples_tutorial2_DetectActitvity_stop(JNIEnv *jniEnv, jobject) {
+Java_com_op_dm_ui_DetectActitvity_stop(JNIEnv *jniEnv, jobject) {
     if (totalFlow != nullptr) {
         delete totalFlow;
     }
@@ -182,7 +182,7 @@ Java_org_opencv_samples_tutorial2_DetectActitvity_stop(JNIEnv *jniEnv, jobject) 
 //    std::abort();
 }
 JNIEXPORT jboolean JNICALL
-Java_org_opencv_samples_tutorial2_DetectActitvity_CHECK(JNIEnv *jniEnv, jobject, jstring mac){
+Java_com_op_dm_ui_DetectActitvity_CHECK(JNIEnv *jniEnv, jobject, jstring mac){
     string ss = "00:08";
     string ss2 = "00:08";
     string ss3 = "00:08";
@@ -200,7 +200,7 @@ Java_org_opencv_samples_tutorial2_DetectActitvity_CHECK(JNIEnv *jniEnv, jobject,
 }
 
 JNIEXPORT void JNICALL
-Java_org_opencv_samples_tutorial2_DetectActitvity_FindFeatures(JNIEnv *jniEnv, jobject obj,
+Java_com_op_dm_ui_DetectActitvity_FindFeatures(JNIEnv *jniEnv, jobject obj,
                                                                jlong addrGray, jint index) {
 //    CreateHPSocketObjects();
 //      OnCmdStart();

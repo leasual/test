@@ -7,6 +7,8 @@ import android.os.StatFs;
 import android.os.storage.StorageManager;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
+import android.view.View;
+import android.widget.AdapterView;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -25,9 +27,11 @@ import java.util.Calendar;
  */
 
 public class Utils {
+
+
     private static String Basecard = "/sdcard1";
     private static String BasePath = "/storage" + Basecard;
-
+    String [] aa = {"",""};
 //    private static String Basecard = "/sdcard";
 //    private static String BasePath = Basecard;
 

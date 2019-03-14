@@ -4,13 +4,13 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 
-import org.opencv.samples.tutorial2.DetectActitvity;
+import com.op.dm.ui.DetectActitvity;
 
 public class MyReceiver extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
-        if (intent.getAction().equals(Intent.ACTION_BOOT_COMPLETED)) {
+        if (Intent.ACTION_BOOT_COMPLETED.equals(intent.getAction())) {
             Intent intent2 = new Intent(context, DetectActitvity.class);  // 要启动的Activity
             //1.如果自启动APP，参数为需要自动启动的应用包名
             //Intent intent = getPackageManager().getLaunchIntentForPackage(packageName);
