@@ -58,11 +58,13 @@ TotalFlow::TotalFlow(const std::string &path) :
  * @return
  */
 bool TotalFlow::DetectFrame(const cv::Mat &image) {
+    index2++;
     chrono::steady_clock::time_point old = std::chrono::steady_clock::now();
     auto obj_result = object_detect_->Detect(image);
     auto diff2 = chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - old);
     LOGE(" last time DetectFrame -> detector_.detect(image) is %ld ",diff2.count());
-
+    count2 += diff2.count();
+    LOGE("average DetectFrame is   %ld ",count2/index2);
     if (!obj_result->face()) {
         std::lock_guard<std::mutex> lock_guard(landmark_mutex_);
         landmarks_.clear();
@@ -92,6 +94,8 @@ bool TotalFlow::DetectFrame(const cv::Mat &image) {
     std::vector<cv::Point2f> shape = predictor_->predict(image, face_bbox_);
     auto diff3 = chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - old3);
     LOGE(" last  timepredictor_->predict is %ld ",diff3.count());
+    count1 += diff3.count();
+    LOGE("average predict is   %ld ",count1/index2);
 
     std::vector<cv::Point2f> six_points;
     six_points.emplace_back(shape[38]); //鼻尖
@@ -262,7 +266,7 @@ void TotalFlow::ProcessPictureThread() {
         if (!keep_running_flag_) {
             break;
         }
-        LOGE(" TotalFlow::ProcessPictureThread() %d", isSave);
+//        LOGE(" TotalFlow::ProcessPictureThread() %d", isSave);
         if (isSave) {
             std::unique_lock<std::mutex> uniqueLock(frame_mutex_);
             cv::Mat frame = frame_.clone();
@@ -351,7 +355,7 @@ void TotalFlow::ProcessPictureThread() {
 
 
 
-                    LOGE("result value - %s", file.data());
+//                    LOGE("result value - %s", file.data());
                     cv::imwrite(file, frame);
                     auto end = std::chrono::steady_clock::now();
                     auto count = std::chrono::duration_cast<std::chrono::milliseconds>(
@@ -627,6 +631,7 @@ TotalFlow::~TotalFlow() {
 
 bool TotalFlow::Calibration(cv::Mat &frame) {
     auto obj_result = object_detect_->Detect(frame);
+//    cv::imwrite("/sdcard/Android/data/com.ut.sdk/files/im/" + to_string(index) + ".jpg",frame);
     LOGE("Calibration inside false %d", obj_result->face());
     if (!obj_result->face()) return false;
 

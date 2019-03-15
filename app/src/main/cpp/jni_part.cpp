@@ -55,7 +55,7 @@ Java_com_op_dm_ui_DetectActitvity_Cali(JNIEnv * jniEnv, jobject obj, jlong copyM
         LOGE(" Calibration");
         if(totalFlow->Calibration(*(Mat *) copyMat)){
             *caliDone = true;
-            jclass cl = jniEnv ->FindClass("org/opencv/samples/tutorial2/DetectActitvity");
+            jclass cl = jniEnv ->FindClass("com/op/dm/ui/DetectActitvity");
             jmethodID meth = jniEnv->GetMethodID(cl,"caliDone","()V");
             jniEnv->CallVoidMethod(obj,meth);
             LOGE(" Calibration is %d",*caliDone);
@@ -74,7 +74,7 @@ Java_com_op_dm_ui_DetectActitvity_Detect(JNIEnv * jniEnv, jobject obj, jlong cop
             *featureNum = *featureNum +1;
             LOGE(" RegistFeature is %d",*featureNum);
             if(*featureNum >= 25){
-                jclass cl = jniEnv ->FindClass("org/opencv/samples/tutorial2/DetectActitvity");
+                jclass cl = jniEnv ->FindClass("com/op/dm/ui/DetectActitvity");
                 jmethodID meth = jniEnv->GetMethodID(cl,"RegistDone","()V");
                 jniEnv->CallVoidMethod(obj,meth);
             }

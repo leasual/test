@@ -178,6 +178,7 @@ public:
     string pathAbnormal = "/storage/sdcard1/abnormal/";
     string pathUnknow = "/storage/sdcard1/unknown/";
     int index = 0;
+    int index2 = 0;
     long time_diff = 0;
     std::thread process_picture_thread_;
 
@@ -220,7 +221,7 @@ private:
     std::string head_pose_model_path_;
     std::string faceid_path_;
     std::string gaze_tracking_path_;
-
+    long count1,count2;
 //    std::shared_ptr<MTCNNDetector> detector_;
     std::shared_ptr<AlignMethod> align_method_;
     std::shared_ptr<FaceAlign> face_align_;

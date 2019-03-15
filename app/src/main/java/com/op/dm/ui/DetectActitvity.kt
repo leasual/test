@@ -4,20 +4,28 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.AlertDialog
 import android.app.ProgressDialog
+import android.content.ContentValues.TAG
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.hardware.Camera
 import android.hardware.camera2.CameraManager
+import android.hardware.usb.UsbDevice
 import android.location.*
 import android.media.MediaPlayer
 import android.net.wifi.WifiManager
 import android.os.*
 import android.text.TextUtils
 import android.util.Log
+import android.view.Surface
 import android.view.WindowManager
 import android.widget.TextView
+import com.jiangdg.usbcamera.UVCCameraHelper
 import com.op.dm.Utils
+import com.serenegiant.usb.common.AbstractUVCCameraHandler
+import com.serenegiant.usb.widget.CameraViewInterface
 import com.ut.sdk.R
 import kotlinx.android.synthetic.main.tutorial2_surface_view.*
 import org.opencv.android.BaseLoaderCallback
@@ -26,13 +34,15 @@ import org.opencv.android.LoaderCallbackInterface
 import org.opencv.android.OpenCVLoader
 import org.opencv.core.Mat
 import org.opencv.imgproc.Imgproc
+import java.nio.ByteBuffer
 import java.util.*
+
 /**
  * Created by chris on 1/4/19.
  */
 
 
-class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
+class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2, CameraViewInterface.Callback {
     internal var index = 0
     var rgb: Mat? = null
     private var mRgba: Mat? = null
@@ -40,9 +50,9 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
     private var progressDialog: ProgressDialog? = null
     //这个优先级会有变动，为了不修改jni里返回值顺序和ui的顺序，引入这个数组，之后只改这里就可以修改警告播报优先级-> 从names[3],names[2],names[1]..这个顺序遍历names数组
     private val priority = arrayOf(3, 2, 0, 1, 4, 5)
-    private val names = arrayOf("分神", "疲劳", "吸烟", "打电话", "画面异常","身份异常")
+    private val names = arrayOf("分神", "疲劳", "吸烟", "打电话", "画面异常", "身份异常")
     private val lastTime = arrayOf(0L, 0L, 0L, 0L, 0L, 0L)
-    private val audio = arrayOf(R.raw.fenshen, R.raw.pilao, R.raw.chouyan, R.raw.dadianhua, R.raw.huamianyichang,R.raw.shenfenyichang)
+    private val audio = arrayOf(R.raw.fenshen, R.raw.pilao, R.raw.chouyan, R.raw.dadianhua, R.raw.huamianyichang, R.raw.shenfenyichang)
     private var views: Array<TextView>? = null
     private val strings = arrayOfNulls<String>(6)
     internal var totalDone = false
@@ -56,11 +66,89 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
     private var timer: Timer? = null
     private var timerTask: TimerTask? = null
     var page = 0
-//    var locationManager: LocationManager? = null
+    //    var locationManager: LocationManager? = null
 //    var location: Location? = null
     var beginCali = false;
     var totaltime = 0L
     var firsttime = 0L
+    private var isRequest: Boolean = false
+    private var isPreview: Boolean = false
+
+    private var mCameraHelper: UVCCameraHelper? = null
+    private var mUVCCameraView: CameraViewInterface? = null
+    private val listener = object : UVCCameraHelper.OnMyDevConnectListener {
+
+        override fun onAttachDev(device: UsbDevice) {
+            if (mCameraHelper == null || mCameraHelper!!.getUsbDeviceCount() == 0) {
+                showShortMsg("check no usb camera")
+                return
+            }
+            // request open permission
+            if (!isRequest) {
+                isRequest = true
+                if (mCameraHelper != null) {
+                    mCameraHelper!!.requestPermission(0)
+                }
+            }
+        }
+
+        override fun onDettachDev(device: UsbDevice) {
+            // close camera
+            if (isRequest) {
+                isRequest = false
+                mCameraHelper?.closeCamera()
+                showShortMsg(device.deviceName + " is out")
+            }
+        }
+
+        override fun onConnectDev(device: UsbDevice, isConnected: Boolean) {
+            if (!isConnected) {
+                showShortMsg("fail to connect,please check resolution params")
+                isPreview = false
+            } else {
+                isPreview = true
+                showShortMsg("connecting")
+                // initialize seekbar
+                // need to wait UVCCamera initialize over
+                Thread(Runnable {
+                    try {
+                        Thread.sleep(2500)
+                    } catch (e: InterruptedException) {
+                        e.printStackTrace()
+                    }
+
+                    Looper.prepare()
+                    Looper.loop()
+                }).start()
+            }
+        }
+
+        override fun onDisConnectDev(device: UsbDevice) {
+            showShortMsg("disconnecting")
+        }
+    }
+
+    private fun showShortMsg(s: String) {
+    }
+
+    override fun onSurfaceCreated(view: CameraViewInterface, surface: Surface) {
+        if (!isPreview && mCameraHelper?.isCameraOpened() ?: false) {
+            mCameraHelper?.startPreview(mUVCCameraView)
+            isPreview = true
+        }
+    }
+
+    override fun onSurfaceChanged(view: CameraViewInterface, surface: Surface, width: Int, height: Int) {
+
+    }
+
+    override fun onSurfaceDestroy(view: CameraViewInterface, surface: Surface) {
+        if (isPreview && mCameraHelper?.isCameraOpened() ?: false) {
+            mCameraHelper?.stopPreview()
+            isPreview = false
+        }
+    }
+
     init {
         Log.i(TAG, "Instantiated new " + this.javaClass)
     }
@@ -82,7 +170,7 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
 
     }
 
-//    var  locationListener = object: LocationListener {
+    //    var  locationListener = object: LocationListener {
 //        override fun onLocationChanged(location: Location?) {
 //        }
 //
@@ -99,51 +187,115 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
 //        }
 //
 //    }
+    protected override fun onStop() {
+        super.onStop()
+        // step.3 unregister USB event broadcast
+        if (mCameraHelper != null) {
+            mCameraHelper?.unregisterUSB()
+        }
+    }
 
+    override fun onStart() {
+        super.onStart()
+        // step.2 register USB event broadcast
+        mCameraHelper?.registerUSB()
+    }
 
+    var bm: Bitmap? = null
     @SuppressLint("MissingPermission")
     public override fun onCreate(savedInstanceState: Bundle?) {
         Log.i(TAG, "called onCreate")
         super.onCreate(savedInstanceState)
-//        var mac = checks()
-//        Log.e("mac  dizhi   " , mac)
+
         firsttime = System.currentTimeMillis()
-//        locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager?
-//        location = locationManager?.getLastKnownLocation(locationManager?.getBestProvider(getCriteria(), true))
-//        locationManager?.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 1f, locationListener)
-
-
-//        var timerTask = timerTask {
-//            locationManager?.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1, 1f, locationListener)
-//        }
-//        var timer = Timer()
-////        timer.schedule(timerTask,10,5000)
 
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         setContentView(R.layout.tutorial2_surface_view)
         views = arrayOf(dis, fat, smoke, call, abnm)
         var index = Camera.getNumberOfCameras()
         Log.e("  camera  inex size ", "------" + index)
-       if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-           val cameraManager = getSystemService(Context.CAMERA_SERVICE) as CameraManager
-           Log.e("  camera  size ", "------" + cameraManager.cameraIdList.size )
-           cameraManager.cameraIdList.forEach {
-               Log.e("  camera  inex ", it)
-           }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            val cameraManager = getSystemService(Context.CAMERA_SERVICE) as CameraManager
+            Log.e("  camera  size ", "------" + cameraManager.cameraIdList.size)
+            cameraManager.cameraIdList.forEach {
+                Log.e("  camera  inex ", it)
+            }
         } else {
         }
 
+        mUVCCameraView = camera_view
+        mUVCCameraView?.setCallback(this)
+        mCameraHelper = UVCCameraHelper.getInstance()
+        mCameraHelper?.setDefaultPreviewSize(640, 480)
+        mCameraHelper?.setDefaultFrameFormat(UVCCameraHelper.FRAME_FORMAT_YUYV)
+        mCameraHelper?.initUSBMonitor(this, mUVCCameraView, listener)
+        var before = System.currentTimeMillis()
+        bm = Bitmap.createBitmap(640, 480, Bitmap.Config.ARGB_8888);
+        var now = System.currentTimeMillis() - before
+        Log.e("创建bitmap ", ""+ now)
+        mCameraHelper?.setOnPreviewFrameListener(AbstractUVCCameraHandler.OnPreViewResultListener { nv21Yuv: IntArray, byteBuffer: ByteBuffer ->
+//            Thread(Runnable {
+                //                Log.e("mat size  ", "" + mRgba?.cols() + " nv21Yuv " + nv21Yuv.size)
+//                byteBuffer.clear()
+                bm?.setPixels(nv21Yuv,0,640,0,0,640,480)
+//                Log.e("mat size  ", "" + mRgba?.cols() + " bm " + bm?.byteCount)
+                if (totalDone) {
+
+                    org.opencv.android.Utils.bitmapToMat(bm, mRgba)
+//                    Log.e("mat size  ", "" + mRgba?.cols() + " byte[] " + nv21Yuv.size)
+                    rgb?.let { it1 ->
+                        Imgproc.cvtColor(mRgba, it1, Imgproc.COLOR_RGBA2RGB)
+
+                    }
+                    rgb?.let {it1->
+
+                        if (!cali && beginCali) {
+                            Cali(it1.nativeObjAddr, 0)
+                        }
+
+                        if (cali && !detectDone) {
+                            playDetecting()
+                            var now = System.currentTimeMillis()
+                            var diff = now - lastdetect
+                            if (diff > 200) {
+                                Detect(it1.nativeObjAddr, 0)
+                                lastdetect = now
+                            }
+                        }
+
+                        if (cali && detectDone) {
+                            if (index % 3 == 0) {
+                                var array = FindFeatures2(it1.nativeObjAddr, it1.nativeObjAddr, register, save)
+                                array?.let {
+                                    if (it.size > 2)
+                                        getStringResult(it)
+                                }
+                            }//减少uitext更新频率，没必要每帧都改变
+                            else {
+                                FindFeatures2(it1.nativeObjAddr, it1.nativeObjAddr, register, save)
+                            }
+                        }
+
+                    }
 
 
-        with(tutorial2_activity_surface_view) {
-            visibility = CameraBridgeViewBase.VISIBLE
-            setCvCameraViewListener(this@DetectActitvity)
-            setCameraIndex(33)
 
-//            setMaxFrameSize(1280, 720)
-            setMaxFrameSize(640, 480)
+                }
 
-        }
+
+//            }).start()
+
+
+        })
+//        with(tutorial2_activity_surface_view) {
+//            visibility = CameraBridgeViewBase.VISIBLE
+//            setCvCameraViewListener(this@DetectActitvity)
+//            setCameraIndex(33)
+//
+////            setMaxFrameSize(1280, 720)
+//            setMaxFrameSize(640, 480)
+//
+//        }
 
         progressDialog = ProgressDialog(this)
         progressDialog?.setTitle("加载中,请稍后")
@@ -169,7 +321,7 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
         timer?.schedule(timerTask, 0, 5000)
 
         setting.setOnClickListener {
-            startActivity(Intent(this@DetectActitvity,SettingActivity::class.java))
+            startActivity(Intent(this@DetectActitvity, SettingActivity::class.java))
         }
 
     }
@@ -218,7 +370,7 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
 
     fun playDetecting() {
         var time = System.currentTimeMillis() - lastTime[1]
-        if(time > 5000 && playdetect){
+        if (time > 5000 && playdetect) {
             detectFacePlayer?.apply {
                 if (register && !this.isPlaying) {
                     lastTime[1] = System.currentTimeMillis()
@@ -230,7 +382,7 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
     }
 
     private fun playWarnning(index: Int) {//每种提示音分开计算，4秒内不重复播放同一种
-        if(index == 5)
+        if (index == 5)
             return
         var time = System.currentTimeMillis() - lastTime[0]
         if (time > 4000) {
@@ -243,31 +395,33 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
         }
         Log.e("sss", "playWarnning ---")
     }
+
     var cali = false
     var detectDone = false
     fun caliDone() {
 
         Handler(Looper.getMainLooper()).postDelayed({
             playDetecting()
-        },3000)
+        }, 3000)
 
         Handler(Looper.getMainLooper()).postDelayed({
             cali = true
-        },7000)
+        }, 7000)
 
     }
+
     var playdetect = true
     fun RegistDone() {
         var detectFacePlayerDone = MediaPlayer.create(this, R.raw.detectdone)
 
         Handler(Looper.getMainLooper()).postDelayed({
-            if(detectFacePlayer?.isPlaying == true){
+            if (detectFacePlayer?.isPlaying == true) {
                 detectFacePlayer?.stop()
             }
             detectFacePlayerDone.start()
             playdetect = false
             Log.e("sss", "detectFacePlayerDone --------------- ")
-        },1000)
+        }, 1000)
 
         Handler(Looper.getMainLooper()).postDelayed({
             haveface = true
@@ -275,7 +429,7 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
             detectDone = true
             save = true
             Log.e("sss", "regist done --------------- ")
-        },9000)
+        }, 9000)
 
 
     }
@@ -348,7 +502,7 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
     public override fun onDestroy() {
         super.onDestroy()
         stop()
-        tutorial2_activity_surface_view?.disableView()
+//        tutorial2_activity_surface_view?.disableView()
 //        android.os.Process.killProcess(android.os.Process.myPid())
         players.forEach {
             it?.stop()
@@ -362,6 +516,7 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
             Utils.deleteFileAll(this)
             System.exit(0)
         }
+        mCameraHelper?.release()
 
     }
 
@@ -383,7 +538,7 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
     var lastdetect = 0L
     override fun onCameraFrame(inputFrame: CameraBridgeViewBase.CvCameraViewFrame): Mat {
 
-        totaltime = System.currentTimeMillis()- firsttime
+        totaltime = System.currentTimeMillis() - firsttime
 //        if(totaltime > 1000*60*60*3)
 //            finish()
 
@@ -391,32 +546,32 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
         mGray = inputFrame.gray()
         rgb?.let { it1 ->
             Imgproc.cvtColor(mRgba, it1, Imgproc.COLOR_RGBA2RGB)
-            if (totalDone){
+            if (totalDone) {
                 mRgba?.let {
 
-                    if(!cali && beginCali){
-                        Cali(it1.nativeObjAddr,0)
+                    if (!cali && beginCali) {
+                        Cali(it1.nativeObjAddr, 0)
                     }
 
-                    if(cali && !detectDone){
+                    if (cali && !detectDone) {
                         playDetecting()
                         var now = System.currentTimeMillis()
                         var diff = now - lastdetect
-                        if(diff > 200){
-                            Detect(it1.nativeObjAddr,0)
+                        if (diff > 200) {
+                            Detect(it1.nativeObjAddr, 0)
                             lastdetect = now
                         }
                     }
 
-                    if (cali && detectDone){
-                        if (index % 3 == 0){
+                    if (cali && detectDone) {
+                        if (index % 3 == 0) {
                             var array = FindFeatures2(it1.nativeObjAddr, it.nativeObjAddr, register, save)
                             array?.let {
-                                if(it.size > 2)
+                                if (it.size > 2)
                                     getStringResult(it)
                             }
                         }//减少uitext更新频率，没必要每帧都改变
-                        else{
+                        else {
                             FindFeatures2(it1.nativeObjAddr, it.nativeObjAddr, register, save)
                         }
                     }
@@ -437,6 +592,8 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
                 LoaderCallbackInterface.SUCCESS -> {
                     Log.e(TAG, "OpenCV loaded successfully")
                     System.loadLibrary("native-lib")
+                    mRgba = Mat()
+                    rgb = Mat()
                     tutorial2_activity_surface_view?.enableView()
                     if (!totalDone) {
                         val context = mAppContext
@@ -450,7 +607,7 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
         }
     }
 
-    internal  class AsyncTaskInitFile : AsyncTask<DetectActitvity, Int, DetectActitvity>() {
+    internal class AsyncTaskInitFile : AsyncTask<DetectActitvity, Int, DetectActitvity>() {
         override fun onPostExecute(integer: DetectActitvity) {
             super.onPostExecute(integer)
             Log.e(TAG, "AsyncTaskInitFile  successfully")
@@ -459,15 +616,16 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
 
         override fun doInBackground(vararg contexts: DetectActitvity): DetectActitvity {
             val sp: SharedPreferences = contexts[0].getPreferences(Context.MODE_PRIVATE)
-            contexts[0].page = sp.getInt("index",0) + 1
+            contexts[0].page = sp.getInt("index", 0) + 1
             val edi = sp.edit()
-            edi.putInt("index",contexts[0].page)
+            edi.putInt("index", contexts[0].page)
             edi.apply()
             Utils.deleteFileAll(contexts[0])
             Utils.addModeles(contexts[0], contexts[0].page)
             return contexts[0]
         }
     }
+
     private var alertDialog: AlertDialog? = null
 
     internal class AsyncTaskInitTotalFlow : AsyncTask<DetectActitvity, Int, DetectActitvity>() {
@@ -487,9 +645,9 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
 
             Handler(Looper.getMainLooper()).postDelayed({
                 integer.beginCali = true
-            },8000)
+            }, 8000)
 
-            Handler().postDelayed({ Utils.deleteFile(integer) },10000)
+            Handler().postDelayed({ Utils.deleteFile(integer) }, 10000)
             Log.e(TAG, "AsyncTaskInitTotalFlow  successfully")
 
 
@@ -510,6 +668,7 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
     external fun CHECK(mac: String): Boolean
     //    external fun CHECK(mac:String)
     external fun FindFeatures(matAddrGr: Long, index: Int)
+
     external fun Cali(matAddrGr: Long, index: Int)
     external fun Detect(matAddrGr: Long, index: Int)
     external fun FindFeatures2(matAddrGr: Long, matAddrRgba: Long, time: Boolean, save: Boolean): IntArray
