@@ -61,7 +61,7 @@ public class UVCCameraTextureView extends AspectRatioTextureView    // API >= 14
     private boolean mReqesutCaptureStillImage;
 	private Callback mCallback;
 	// Camera分辨率宽度
-
+	public boolean draw = true;
 
 	/** for calculation of frame rate */
 	private final FpsCounter mFpsCounter = new FpsCounter();
@@ -77,6 +77,11 @@ public class UVCCameraTextureView extends AspectRatioTextureView    // API >= 14
 	public UVCCameraTextureView(final Context context, final AttributeSet attrs, final int defStyle) {
 		super(context, attrs, defStyle);
 		setSurfaceTextureListener(this);
+	}
+
+	public void setDraw(boolean draw){
+		this.draw = draw;
+		mRenderHandler.setDraw(draw);
 	}
 
 	@Override
@@ -250,7 +255,6 @@ public class UVCCameraTextureView extends AspectRatioTextureView    // API >= 14
 		private static final int MSG_CREATE_SURFACE = 3;
 		private static final int MSG_RESIZE = 4;
 		private static final int MSG_TERMINATE = 9;
-
 		private RenderThread mThread;
 		private boolean mIsActive = true;
 		private final FpsCounter mFpsCounter;
@@ -261,6 +265,10 @@ public class UVCCameraTextureView extends AspectRatioTextureView    // API >= 14
 			final RenderThread thread = new RenderThread(counter, surface, width, height);
 			thread.start();
 			return thread.getHandler();
+		}
+
+		public void setDraw(boolean draw){
+			mThread.draw = draw;
 		}
 
 		private RenderHandler(final FpsCounter counter, final RenderThread thread) {
@@ -361,7 +369,7 @@ public class UVCCameraTextureView extends AspectRatioTextureView    // API >= 14
 			private MediaEncoder mEncoder;
 			private int mViewWidth, mViewHeight;
 			private final FpsCounter mFpsCounter;
-
+			public boolean draw = true;
 			/**
 			 * constructor
 			 * @param surface: drawing surface came from TexureView
@@ -450,6 +458,9 @@ public class UVCCameraTextureView extends AspectRatioTextureView    // API >= 14
 			 * draw a frame (and request to draw for video capturing if it is necessary)
 			 */
 			public final void onDrawFrame() {
+//                if(draw){
+//                    return;
+//                }
 				mEglSurface.makeCurrent();
 				// update texture(came from camera)
 				mPreviewSurface.updateTexImage();
@@ -464,7 +475,8 @@ public class UVCCameraTextureView extends AspectRatioTextureView    // API >= 14
 						mEncoder.frameAvailableSoon();
 				}
 				// draw to preview screen
-				mDrawer.draw(mTexId, mStMatrix, 0);
+				if(draw)
+					mDrawer.draw(mTexId, mStMatrix, 0);
 				mEglSurface.swap();
 /*				// sample code to read pixels into Buffer and save as a Bitmap (part1)
 				buffer.position(offset);

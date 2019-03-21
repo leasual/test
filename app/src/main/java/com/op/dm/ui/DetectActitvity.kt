@@ -26,6 +26,7 @@ import com.jiangdg.usbcamera.UVCCameraHelper
 import com.op.dm.Utils
 import com.serenegiant.usb.common.AbstractUVCCameraHandler
 import com.serenegiant.usb.widget.CameraViewInterface
+import com.serenegiant.usb.widget.UVCCameraTextureView
 import com.ut.sdk.R
 import kotlinx.android.synthetic.main.tutorial2_surface_view.*
 import org.opencv.android.BaseLoaderCallback
@@ -75,7 +76,7 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2, 
     private var isPreview: Boolean = false
 
     private var mCameraHelper: UVCCameraHelper? = null
-    private var mUVCCameraView: CameraViewInterface? = null
+    private var mUVCCameraView: UVCCameraTextureView? = null
     private val listener = object : UVCCameraHelper.OnMyDevConnectListener {
 
         override fun onAttachDev(device: UsbDevice) {
@@ -202,6 +203,8 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2, 
     }
 
     var bm: Bitmap? = null
+    var bmResult: Bitmap? = null
+
     @SuppressLint("MissingPermission")
     public override fun onCreate(savedInstanceState: Bundle?) {
         Log.i(TAG, "called onCreate")
@@ -230,63 +233,59 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2, 
         mCameraHelper?.setDefaultFrameFormat(UVCCameraHelper.FRAME_FORMAT_YUYV)
         mCameraHelper?.initUSBMonitor(this, mUVCCameraView, listener)
         var before = System.currentTimeMillis()
-        bm = Bitmap.createBitmap(640, 480, Bitmap.Config.ARGB_8888);
+        bm = Bitmap.createBitmap(640, 480, Bitmap.Config.ARGB_8888)
+        bmResult = Bitmap.createBitmap(640, 480, Bitmap.Config.ARGB_8888)
+
         var now = System.currentTimeMillis() - before
         Log.e("创建bitmap ", ""+ now)
-        mCameraHelper?.setOnPreviewFrameListener(AbstractUVCCameraHandler.OnPreViewResultListener { nv21Yuv: IntArray, byteBuffer: ByteBuffer ->
-//            Thread(Runnable {
-                //                Log.e("mat size  ", "" + mRgba?.cols() + " nv21Yuv " + nv21Yuv.size)
+        mCameraHelper?.setOnPreviewFrameListener { nv21Yuv: IntArray, byteBuffer: ByteBuffer ->
+            mUVCCameraView?.setDraw(true)
+            //            Thread(Runnable {
+            //                Log.e("mat size  ", "" + mRgba?.cols() + " nv21Yuv " + nv21Yuv.size)
 //                byteBuffer.clear()
-                bm?.setPixels(nv21Yuv,0,640,0,0,640,480)
+            bm?.setPixels(nv21Yuv,0,640,0,0,640,480)
 //                Log.e("mat size  ", "" + mRgba?.cols() + " bm " + bm?.byteCount)
-                if (totalDone) {
+            if (totalDone) {
 
-                    org.opencv.android.Utils.bitmapToMat(bm, mRgba)
+                org.opencv.android.Utils.bitmapToMat(bm, mRgba)
 //                    Log.e("mat size  ", "" + mRgba?.cols() + " byte[] " + nv21Yuv.size)
-                    rgb?.let { it1 ->
-                        Imgproc.cvtColor(mRgba, it1, Imgproc.COLOR_RGBA2RGB)
-
-                    }
-                    rgb?.let {it1->
-
-                        if (!cali && beginCali) {
-                            Cali(it1.nativeObjAddr, 0)
-                        }
-
-                        if (cali && !detectDone) {
-                            playDetecting()
-                            var now = System.currentTimeMillis()
-                            var diff = now - lastdetect
-                            if (diff > 200) {
-                                Detect(it1.nativeObjAddr, 0)
-                                lastdetect = now
-                            }
-                        }
-
-                        if (cali && detectDone) {
-                            if (index % 3 == 0) {
-                                var array = FindFeatures2(it1.nativeObjAddr, it1.nativeObjAddr, register, save)
-                                array?.let {
-                                    if (it.size > 2)
-                                        getStringResult(it)
-                                }
-                            }//减少uitext更新频率，没必要每帧都改变
-                            else {
-                                FindFeatures2(it1.nativeObjAddr, it1.nativeObjAddr, register, save)
-                            }
-                        }
-
-                    }
-
-
+                rgb?.let { it1 ->
+                    Imgproc.cvtColor(mRgba, it1, Imgproc.COLOR_RGBA2RGB)
 
                 }
+                rgb?.let {it1->
 
+                    if (!cali && beginCali) {
+                        Cali(it1.nativeObjAddr, 0)
+                    }
 
-//            }).start()
+                    if (cali && !detectDone) {
+                        playDetecting()
+                        var now = System.currentTimeMillis()
+                        var diff = now - lastdetect
+                        if (diff > 200) {
+                            Detect(it1.nativeObjAddr, 0)
+                            lastdetect = now
+                        }
+                    }
 
+                    if (cali && detectDone) {
+                        if (index % 3 == 0) {
+                            var array = FindFeatures2(it1.nativeObjAddr, it1.nativeObjAddr, register, save)
+                            array?.let {
+                                if (it.size > 2)
+                                    getStringResult(it)
+                            }
+                        }//减少uitext更新频率，没必要每帧都改变
+                        else {
+                            FindFeatures2(it1.nativeObjAddr, it1.nativeObjAddr, register, save)
+                        }
+                    }
+                }
 
-        })
+                org.opencv.android.Utils.matToBitmap(rgb,bmResult)
+            }
+        }
 //        with(tutorial2_activity_surface_view) {
 //            visibility = CameraBridgeViewBase.VISIBLE
 //            setCvCameraViewListener(this@DetectActitvity)
@@ -377,23 +376,24 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2, 
                     start()
                 }
             }
+            Log.e("sss", "playDetecting ---")
         }
-        Log.e("sss", "playDetecting ---")
+
     }
 
     private fun playWarnning(index: Int) {//每种提示音分开计算，4秒内不重复播放同一种
         if (index == 5)
             return
         var time = System.currentTimeMillis() - lastTime[0]
-        if (time > 4000) {
+        if (time > 5000) {
             players[index]?.apply {
                 if (!this.isPlaying) {
                     lastTime[0] = System.currentTimeMillis()
                     start()
+                    Log.e("sss", "playWarnning ---type " + index)
                 }
             }
         }
-        Log.e("sss", "playWarnning ---")
     }
 
     var cali = false
