@@ -805,7 +805,7 @@ public abstract class AbstractUVCCameraHandler extends Handler {
                 frame.get(yuv);
                 ImageUtils.convertYUV420SPToARGB8888(yuv,mWidth,mHeight,rgb);
                 long now = System.currentTimeMillis() - before;
-                Log.e("转化格式 ",""+ now);
+//                Log.e("转化格式 ",""+ now);
                 // nv21 yuv data callback
                 if (mPreviewListener != null) {
                     mPreviewListener.onPreviewResult(rgb,frame);

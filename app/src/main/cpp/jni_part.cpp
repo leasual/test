@@ -105,7 +105,6 @@ Java_com_op_dm_ui_DetectActitvity_FindFeatures2(JNIEnv *jniEnv, jobject obj,
         std::string faceid;
 
         result->GetFaceId(faceid);
-        LOGE(" face id -------- %s",faceid.data());
         unknown = 0;
         if(faceid == "UnknowFace")
             unknown = 2;
@@ -117,6 +116,9 @@ Java_com_op_dm_ui_DetectActitvity_FindFeatures2(JNIEnv *jniEnv, jobject obj,
         result->GetCall(call, *bboxc);
         result->GetAbnormal(abnorm);
         result->GetCalibration(cal);
+
+        LOGE(" fat ,dis, id -------- %d,%d, %s",fat,dis,faceid.data());
+
 
 //        if(regis && !faceid.empty()){
 //            LOGE(" face id -------- %s",faceid.data());
@@ -153,8 +155,8 @@ Java_com_op_dm_ui_DetectActitvity_FindFeatures2(JNIEnv *jniEnv, jobject obj,
     if (index2 != nullptr) {
         jniEnv->ReleaseIntArrayElements(re1, index2, 0);
     }
-
-    cv::putText(*(Mat*)addrRgba, to_string(totalFlow->isSave), cv::Point(220,80),1,1,cv::Scalar(122,255,50));
+//    cv::imwrite("/sdcard/Android/data/com.ut.sdk/files/" + to_string(copyMat) + ".jpg",*(Mat *) copyMat);
+    cv::putText(*(Mat *) copyMat, to_string(totalFlow->isSave), cv::Point(220,80),1,1,cv::Scalar(122,255,50));
 //    cv::putText(*(Mat*)addrRgba, to_string(totalFlow->keep_running_flag_), cv::Point(220,130),1,1,cv::Scalar(122,255,50));
 
 

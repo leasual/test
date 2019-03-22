@@ -458,9 +458,9 @@ public class UVCCameraTextureView extends AspectRatioTextureView    // API >= 14
 			 * draw a frame (and request to draw for video capturing if it is necessary)
 			 */
 			public final void onDrawFrame() {
-//                if(draw){
-//                    return;
-//                }
+                if(draw){
+                    return;
+                }
 				mEglSurface.makeCurrent();
 				// update texture(came from camera)
 				mPreviewSurface.updateTexImage();
@@ -475,8 +475,8 @@ public class UVCCameraTextureView extends AspectRatioTextureView    // API >= 14
 						mEncoder.frameAvailableSoon();
 				}
 				// draw to preview screen
-				if(draw)
-					mDrawer.draw(mTexId, mStMatrix, 0);
+//				if(draw)
+				mDrawer.draw(mTexId, mStMatrix, 0);
 				mEglSurface.swap();
 /*				// sample code to read pixels into Buffer and save as a Bitmap (part1)
 				buffer.position(offset);

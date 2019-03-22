@@ -16,6 +16,7 @@ import android.hardware.usb.UsbDevice
 import android.location.*
 import android.media.MediaPlayer
 import android.net.wifi.WifiManager
+import android.opengl.GLSurfaceView
 import android.os.*
 import android.text.TextUtils
 import android.util.Log
@@ -24,6 +25,7 @@ import android.view.WindowManager
 import android.widget.TextView
 import com.jiangdg.usbcamera.UVCCameraHelper
 import com.op.dm.Utils
+import com.op.dm.widget.BitmapRenderer
 import com.serenegiant.usb.common.AbstractUVCCameraHandler
 import com.serenegiant.usb.widget.CameraViewInterface
 import com.serenegiant.usb.widget.UVCCameraTextureView
@@ -239,7 +241,7 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2, 
         var now = System.currentTimeMillis() - before
         Log.e("创建bitmap ", ""+ now)
         mCameraHelper?.setOnPreviewFrameListener { nv21Yuv: IntArray, byteBuffer: ByteBuffer ->
-            mUVCCameraView?.setDraw(true)
+//            mUVCCameraView?.setDraw(true)
             //            Thread(Runnable {
             //                Log.e("mat size  ", "" + mRgba?.cols() + " nv21Yuv " + nv21Yuv.size)
 //                byteBuffer.clear()
@@ -283,7 +285,7 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2, 
                     }
                 }
 
-                org.opencv.android.Utils.matToBitmap(rgb,bmResult)
+//                org.opencv.android.Utils.matToBitmap(rgb,bmResult)
             }
         }
 //        with(tutorial2_activity_surface_view) {
@@ -322,6 +324,10 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2, 
         setting.setOnClickListener {
             startActivity(Intent(this@DetectActitvity, SettingActivity::class.java))
         }
+
+        surface_view.setEGLContextClientVersion(1)
+        surface_view.setRenderer( BitmapRenderer(resources))
+        surface_view.renderMode = GLSurfaceView.RENDERMODE_WHEN_DIRTY
 
     }
 
@@ -385,7 +391,7 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2, 
         if (index == 5)
             return
         var time = System.currentTimeMillis() - lastTime[0]
-        if (time > 5000) {
+        if (time > 4000) {
             players[index]?.apply {
                 if (!this.isPlaying) {
                     lastTime[0] = System.currentTimeMillis()
