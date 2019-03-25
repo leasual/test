@@ -23,6 +23,8 @@ import android.util.Log
 import android.view.Surface
 import android.view.WindowManager
 import android.widget.TextView
+import com.horzon.parameters.HorzonParameters
+import com.horzon.parameters.RGBDataCallback
 import com.jiangdg.usbcamera.UVCCameraHelper
 import com.op.dm.Utils
 import com.op.dm.widget.BitmapRenderer
@@ -227,6 +229,12 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2, 
             }
         } else {
         }
+
+        var horzon = HorzonParameters(this)
+        horzon.startGetRGB {
+            Log.e("  RGB __ ", "" + it.size )
+        }
+
 
         mUVCCameraView = camera_view
         mUVCCameraView?.setCallback(this)
