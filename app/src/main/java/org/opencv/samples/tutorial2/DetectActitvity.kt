@@ -18,6 +18,7 @@ import android.text.TextUtils
 import android.util.Log
 import android.view.WindowManager
 import android.widget.TextView
+import com.horzon.parameters.HorzonParameters
 import com.op.dm.Utils
 import com.op.dm.Utils.getGpsLoaalTime
 import com.tencent.bugly.Bugly.init
@@ -134,12 +135,12 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
 
 
         with(tutorial2_activity_surface_view) {
-            visibility = CameraBridgeViewBase.VISIBLE
-            setCvCameraViewListener(this@DetectActitvity)
-            setCameraIndex(1)
+            visibility = CameraBridgeViewBase.INVISIBLE
+//            setCvCameraViewListener(this@DetectActitvity)
+//            setCameraIndex(1)
 
 //            setMaxFrameSize(1280, 720)
-            setMaxFrameSize(640, 480)
+//            setMaxFrameSize(640, 480)
 
         }
 
@@ -450,7 +451,7 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
                 LoaderCallbackInterface.SUCCESS -> {
                     Log.e(TAG, "OpenCV loaded successfully")
                     System.loadLibrary("native-lib")
-                    tutorial2_activity_surface_view?.enableView()
+//                    tutorial2_activity_surface_view?.enableView()
                     if (!totalDone) {
                         val context = mAppContext
                         AsyncTaskInitFile().execute(context as DetectActitvity)
@@ -509,6 +510,14 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
             Handler().postDelayed({  Utils.deleteFile(integer)},10000)
             Log.e(TAG, "AsyncTaskInitTotalFlow  successfully")
 
+            var horzon = HorzonParameters(integer)
+            horzon.setRecordMode(HorzonParameters.RecordMode.BOOT_RECORDING)
+            horzon.setResolution(HorzonParameters.CameraType.CVBS,HorzonParameters.VideoType.SUB_STREAM,HorzonParameters.VideoResolution.RES_480P)
+            horzon.setVideoFrameRate(HorzonParameters.CameraType.CVBS,HorzonParameters.VideoType.SUB_STREAM,10)
+            horzon.startGetRGB {
+                Log.e(" rgb %^&&** " ,""+ it.size)
+
+            }
 
         }
 
