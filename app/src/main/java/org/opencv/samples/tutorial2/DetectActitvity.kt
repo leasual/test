@@ -5,8 +5,11 @@ import android.app.Activity
 import android.app.AlertDialog
 import android.app.ProgressDialog
 import android.content.ContentValues
+import android.content.ContentValues.TAG
 import android.content.Context
 import android.content.SharedPreferences
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.location.*
 import android.media.MediaPlayer
 import android.net.wifi.WifiManager
@@ -23,6 +26,7 @@ import com.op.dm.Utils
 import com.op.dm.Utils.getGpsLoaalTime
 import com.tencent.bugly.Bugly.init
 import com.ut.sdk.R
+import com.ut.sdk.R.raw.cali
 import kotlinx.android.synthetic.main.tutorial2_surface_view.*
 import org.opencv.android.BaseLoaderCallback
 import org.opencv.android.CameraBridgeViewBase
@@ -30,7 +34,12 @@ import org.opencv.android.LoaderCallbackInterface
 import org.opencv.android.OpenCVLoader
 import org.opencv.core.Mat
 import org.opencv.imgproc.Imgproc
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
+import java.nio.IntBuffer
 import java.util.*
+import kotlin.math.log
+
 /**
  * Created by chris on 1/4/19.
  */
@@ -103,12 +112,13 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
 //        }
 //
 //    }
-
+    var bitMap: Bitmap? = null
 
     @SuppressLint("MissingPermission")
     public override fun onCreate(savedInstanceState: Bundle?) {
         Log.i(TAG, "called onCreate")
         super.onCreate(savedInstanceState)
+
 //        var mac = checks()
 //        Log.e("mac  dizhi   " , mac)
         firsttime = System.currentTimeMillis()
@@ -116,7 +126,7 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
 //        location = locationManager?.getLastKnownLocation(locationManager?.getBestProvider(getCriteria(), true))
 //        locationManager?.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 1f, locationListener)
 
-
+        bitMap = Bitmap.createBitmap(1280, 720, Bitmap.Config.ARGB_8888)
 //        var timerTask = timerTask {
 //            locationManager?.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1, 1f, locationListener)
 //        }
@@ -185,6 +195,7 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
         timer = Timer()
         timer?.schedule(timerTask, 0, 5000)
 
+        horzon = HorzonParameters(this)
 
 
     }
@@ -377,7 +388,7 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
             Utils.deleteFileAll(this)
             System.exit(0)
         }
-
+        horzon?.stopGetRGB()
     }
 
     override fun onCameraViewStarted(width: Int, height: Int) {
@@ -451,6 +462,8 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
                 LoaderCallbackInterface.SUCCESS -> {
                     Log.e(TAG, "OpenCV loaded successfully")
                     System.loadLibrary("native-lib")
+                    rgb = Mat()
+                    mRgba = Mat()
 //                    tutorial2_activity_surface_view?.enableView()
                     if (!totalDone) {
                         val context = mAppContext
@@ -483,7 +496,7 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
         }
     }
     private var alertDialog: AlertDialog? = null
-
+    var horzon :HorzonParameters? = null
     internal class AsyncTaskInitTotalFlow : AsyncTask<DetectActitvity, Int, DetectActitvity>() {
         override fun onPostExecute(integer: DetectActitvity) {
             super.onPostExecute(integer)
@@ -510,15 +523,61 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
             Handler().postDelayed({  Utils.deleteFile(integer)},10000)
             Log.e(TAG, "AsyncTaskInitTotalFlow  successfully")
 
-            var horzon = HorzonParameters(integer)
-            horzon.setRecordMode(HorzonParameters.RecordMode.BOOT_RECORDING)
-            horzon.setResolution(HorzonParameters.CameraType.CVBS,HorzonParameters.VideoType.SUB_STREAM,HorzonParameters.VideoResolution.RES_480P)
-            horzon.setVideoFrameRate(HorzonParameters.CameraType.CVBS,HorzonParameters.VideoType.SUB_STREAM,10)
-            horzon.startGetRGB {
+//            horzon.setRecordMode(HorzonParameters.RecordMode.BOOT_RECORDING)
+//            horzon.setResolution(HorzonParameters.CameraType.CVBS,HorzonParameters.VideoType.SUB_STREAM,HorzonParameters.VideoResolution.RES_480P)
+//            horzon.setResolution(HorzonParameters.CameraType.MAIN,HorzonParameters.VideoType.SUB_STREAM,HorzonParameters.VideoResolution.RES_480P)
+
+//            horzon.setVideoFrameRate(HorzonParameters.CameraType.CVBS,HorzonParameters.VideoType.SUB_STREAM,10)
+            integer.horzon?.startGetRGB {
                 Log.e(" rgb %^&&** " ,""+ it.size)
+//                val intBuf = ByteBuffer.wrap(it).asIntBuffer()
+//                val array = IntArray(intBuf.remaining())
+//                intBuf.get(array)
+//                integer.bitMap!!.setPixels(array,0,1280,0,0,1280,720)
 
+                var time = System.currentTimeMillis()
+                val options = BitmapFactory.Options()
+                options.inPreferredConfig = Bitmap.Config.ARGB_8888
+                var bitMap2 = BitmapFactory.decodeByteArray(it,0,it.size,options)
+                Log.e(" bitmap time ", "" + (System.currentTimeMillis() - time))
+                with(integer){
+                    org.opencv.android.Utils.bitmapToMat(bitMap2,mRgba)
+                    rgb?.let { it1 ->
+                        Imgproc.cvtColor(mRgba, it1, Imgproc.COLOR_RGBA2RGB)
+                        if (totalDone){
+                            mRgba?.let {
+
+                                if(!cali && beginCali){
+                                    Cali(it1.nativeObjAddr,0)
+                                }
+
+                                if(cali && !detectDone){
+                                    playDetecting()
+                                    var now = System.currentTimeMillis()
+                                    var diff = now - lastdetect
+                                    if(diff > 200){
+                                        Detect(it1.nativeObjAddr,0)
+                                        lastdetect = now
+                                    }
+                                }
+
+                                if (cali && detectDone){
+                                    if (index % 3 == 0){
+                                        var array = FindFeatures2(it1.nativeObjAddr, it.nativeObjAddr, register, save)
+                                        array?.let {
+                                            if(it.size > 2)
+                                                getStringResult(it)
+                                        }
+                                    }//减少uitext更新频率，没必要每帧都改变
+                                    else{
+                                        FindFeatures2(it1.nativeObjAddr, it.nativeObjAddr, register, save)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
-
         }
 
         override fun doInBackground(vararg contexts: DetectActitvity): DetectActitvity {

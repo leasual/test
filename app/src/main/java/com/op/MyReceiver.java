@@ -6,6 +6,10 @@ import android.content.Intent;
 
 import org.opencv.samples.tutorial2.DetectActitvity;
 
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.IntBuffer;
+
 public class MyReceiver extends BroadcastReceiver {
 
     @Override
@@ -20,6 +24,7 @@ public class MyReceiver extends BroadcastReceiver {
             //context.startActivity(intent);
             //3.如果自启动服务
             context.startActivity(intent2);
+
         }
     }
 }
