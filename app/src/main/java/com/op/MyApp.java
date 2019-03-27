@@ -10,6 +10,7 @@ public class MyApp extends Application {
     public void onCreate() {
         super.onCreate();
         CrashReport.initCrashReport(getApplicationContext(), "50cd1cb403", true);
+        //tag
     }
 
     @Override
