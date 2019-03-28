@@ -37,15 +37,12 @@ include_directories(src/main/cpp/dsm_strategy/utils/file)
 include_directories(src/main/cpp/message/include)
 
 include_directories(src/main/cpp/include)
+include_directories(src/main/cpp/msg)
+include_directories(src/main/cpp/msg/base)
 
-#add_library( libutils STATIC IMPORTED )
-#set_target_properties(libutils PROPERTIES IMPORTED_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/src/main/jniLibs/${ANDROID_ABI}/libutils.a)
 add_library( libdlib STATIC IMPORTED )
 set_target_properties(libdlib PROPERTIES IMPORTED_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/src/main/jniLibs/${ANDROID_ABI}/libdlib.a)
-#add_library( libdsm_strategy STATIC IMPORTED )
-#set_target_properties(libdsm_strategy PROPERTIES IMPORTED_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/src/main/jniLibs/${ANDROID_ABI}/libdsm_strategy.a)
-#add_library( lib_dsm STATIC IMPORTED )
-#set_target_properties(lib_dsm PROPERTIES IMPORTED_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/src/main/jniLibs/${ANDROID_ABI}/libdsm.a)
+
 add_library( libmsg STATIC IMPORTED )
 set_target_properties(libmsg PROPERTIES IMPORTED_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/src/main/jniLibs/${ANDROID_ABI}/libhpsocket.so)
 
@@ -71,13 +68,23 @@ add_library( # Sets the name of the library.
             src/main/cpp/jni_part.cpp
             src/main/cpp/cameras.cc
 
-        src/main/cpp/message/src/dsm_transmit_jtt.cpp
-                src/main/cpp/message/src/dsmapp_sms_custom_jtt.cpp
-                src/main/cpp/message/src/dsmapp_srv_jtt.cpp
-                src/main/cpp/message/src/dsmapp_srvinteraction_jtt.cpp
-                src/main/cpp/message/src/others.cpp
-                src/main/cpp/message/src/main.cpp
-                 src/main/cpp/message/src/DSM_JTT_API.cpp
+#        src/main/cpp/message/src/dsm_transmit_jtt.cpp
+#        src/main/cpp/message/src/dsmapp_sms_custom_jtt.cpp
+#        src/main/cpp/message/src/dsmapp_srv_jtt.cpp
+#        src/main/cpp/message/src/dsmapp_srvinteraction_jtt.cpp
+#        src/main/cpp/message/src/others.cpp
+#        src/main/cpp/message/src/main.cpp
+#        src/main/cpp/message/src/DSM_JTT_API.cpp
+
+#        src/main/cpp/msg/client_conn.cpp
+#        src/main/cpp/msg/client_conn_manager.cpp
+        src/main/cpp/msg/hp_socket_helper.cpp
+#        src/main/cpp/msg/msg_process.cpp
+        src/main/cpp/msg/base/config_file.cpp
+#        src/main/cpp/msg/base/jtt808_base.cpp
+        src/main/cpp/msg/base/log4z.cpp
+        src/main/cpp/msg/base/util.cpp
+
 
         src/main/cpp/dsm_strategy/judger.cc
         src/main/cpp/dsm_strategy/smoke_judger.cc
@@ -100,8 +107,6 @@ add_library( # Sets the name of the library.
         src/main/cpp/algorithm/utilities/src/transform.cpp
         src/main/cpp/algorithm/utilities/src/utils.cc
         src/main/cpp/algorithm/object_detection/rcnn/src/object_detection.cc
-
-
 
         src/main/cpp/dsm_strategy/utils/file/config.cc
         src/main/cpp/dsm_strategy/utils/file/file_read_write_utils.cc

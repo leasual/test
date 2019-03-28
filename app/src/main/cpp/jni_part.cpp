@@ -3,10 +3,14 @@
 #include <opencv2/features2d.hpp>
 #include "total_flow.h"
 #include <vector>
-#define LOGD(...) ((void)__android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__))
+//#include <dsm_transmit_jtt.h>
+//#include <DSM_JTT_API.h>
+//#include "dsm_jtt808_api.h"
+#include "base/config_file.h"
+//#include "client_conn.h"
+//#include "client_conn_manager.h"
+#include "hp_socket_helper.h"
 
-#include "dsm_transmit_jtt.h"
-#include "DSM_JTT_API.h"
 
 template<typename T>
 std::string to_string(T value) {
@@ -45,6 +49,9 @@ cv::Rect *bboxs;
 cv::Rect *bboxc;
 bool * caliDone;
 int * featureNum;
+
+//CClientConn *g_objClientConn = nullptr;
+//unsigned int *g_nClientFd = nullptr;
 
 JNIEXPORT void JNICALL
 Java_org_opencv_samples_tutorial2_DetectActitvity_Cali(JNIEnv * jniEnv, jobject obj, jlong copyMat,
@@ -199,6 +206,9 @@ Java_org_opencv_samples_tutorial2_DetectActitvity_CHECK(JNIEnv *jniEnv, jobject,
 
 }
 
+
+
+
 JNIEXPORT void JNICALL
 Java_org_opencv_samples_tutorial2_DetectActitvity_FindFeatures(JNIEnv *jniEnv, jobject obj,
                                                                jlong addrGray, jint index) {
@@ -207,43 +217,89 @@ Java_org_opencv_samples_tutorial2_DetectActitvity_FindFeatures(JNIEnv *jniEnv, j
 //    OnCmdSend();
 //    OnCmdStop();
 //    DestroyHPSocketObjects();
-
+//
 //    DSM_JTT808_Start("112.64.116.41",20005,0);
 //    DSM_JTT808_Event_Callback(1,1,"http://220.194.43.233:8080/1.jpeg");
 //    sleep(5);
 //    DSM_JTT808_Stop(1);
 
+    string path = "/sdcard/Android/data/com.ut.sdk/files";
 
-    srand(time(0));
-    if (totalFlow == nullptr) {
-        totalFlow = new TotalFlow("/sdcard/Android/data/com.ut.sdk/files");
-        string path = "/storage/sdcard1/img"+ to_string(index) + "/";
+//    srand(time(0));
+//    if (totalFlow == nullptr) {
+//        totalFlow = new TotalFlow("/sdcard/Android/data/com.ut.sdk/files");
+//        string path = "/storage/sdcard1/img"+ to_string(index) + "/";
+//
+////        string path = "/sdcard/img"+ to_string(index) + "/";
+//        totalFlow->path = path;
+//        totalFlow-> pathDis = path + "distract/";
+//        totalFlow-> pathFat = path +"fat/";
+//        totalFlow-> pathCall = path +"call/";
+//        totalFlow-> pathSmoke =path + "smoke/";
+//        totalFlow-> pathAbnormal =path + "abnormal/";
+//        totalFlow-> pathUnknow =path + "unknown/";
+////        time_t nSrc;
+////        nSrc = addrGray - time(NULL);
+////        totalFlow->time_diff = nSrc;
+//
+//        totalFlow->SetSpeed(80);
+//        result = new Result();
+////        newMat = new Mat();
+//        bboxd = new cv::Rect();
+//        bboxf = new cv::Rect();
+//        bboxs = new cv::Rect();
+//        bboxc = new cv::Rect();
+//        caliDone = new bool;
+//        *caliDone = false;
+//        featureNum = new int;
+//        *featureNum = 0;
+//        LOGE("JNI abnormal -- init TotalFlow ----");
+//    }
 
-//        string path = "/sdcard/img"+ to_string(index) + "/";
-        totalFlow->path = path;
-        totalFlow-> pathDis = path + "distract/";
-        totalFlow-> pathFat = path +"fat/";
-        totalFlow-> pathCall = path +"call/";
-        totalFlow-> pathSmoke =path + "smoke/";
-        totalFlow-> pathAbnormal =path + "abnormal/";
-        totalFlow-> pathUnknow =path + "unknown/";
-//        time_t nSrc;
-//        nSrc = addrGray - time(NULL);
-//        totalFlow->time_diff = nSrc;
 
-        totalFlow->SetSpeed(80);
-        result = new Result();
-//        newMat = new Mat();
-        bboxd = new cv::Rect();
-        bboxf = new cv::Rect();
-        bboxs = new cv::Rect();
-        bboxc = new cv::Rect();
-        caliDone = new bool;
-        *caliDone = false;
-        featureNum = new int;
-        *featureNum = 0;
-        LOGE("JNI abnormal -- init TotalFlow ----");
-    }
+//    if (g_objClientConn == nullptr)
+//        g_objClientConn = new CClientConn();
+//    if (g_nClientFd == nullptr)
+//        g_nClientFd = new unsigned int;
+//    *g_nClientFd = 1;
+
+    //HPSocketHelper::CreateHPSocketObjects();
+    CConfigFileReader::GetInstance()->LoadFromFile((path + "/dsm_jtt808.cfg").data());
+    char *szServerIp = CConfigFileReader::GetInstance()->GetConfigName("server_ip");
+    char *szServerPort = CConfigFileReader::GetInstance()->GetConfigName("server_port");
+    CDSMLog::GetInstance()->InitialiseLog4z(path + "/dsm_log.cfg");
+    CDSMLog::Trace("Server IP[%s] Port[%s]", szServerIp, szServerPort);
+
+    // 初始化socket
+  CreateHPSocketObjects();
+//    s_listener      = Create_HP_TcpPullClientListener();
+//    s_client        = Create_HP_TcpPullClient(s_listener);
+//
+//    HP_Set_FN_Client_OnConnect(s_listener, OnConnect);
+//    HP_Set_FN_Client_OnSend(s_listener, OnSend);
+//    HP_Set_FN_Client_OnPullReceive(s_listener, OnReceive);
+//    HP_Set_FN_Client_OnClose(s_listener, OnClose);
+//
+//    HP_Client_SetExtra(s_client, &s_pkgInfo);
+//    HP_TcpClient_SetKeepAliveTime(s_client, 0 );
+
+    StartTcpClient("106.14.186.44",7000);
+
+    LOGE("JNI before conn server --  %s, %s",szServerIp,szServerPort);
+    //g_objClientConn->Inialise(szServerIp, atoi(szServerPort));
+//     g_objClientConn->Inialise("", 1);
+    LOGE("JNI after conn server -- message ----");
+
+//    *g_nClientFd = g_objClientConn->Connect();
+
+//    if (*g_nClientFd != -1) {
+//        CClientConnManager::GetInstance()->RegisterClientConn(*g_nClientFd, g_objClientConn);
+//        return;
+//    }
+
+
+
+
 }
 
 

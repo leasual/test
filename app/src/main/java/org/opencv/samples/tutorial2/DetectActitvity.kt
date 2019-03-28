@@ -485,13 +485,13 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
         }
 
         override fun doInBackground(vararg contexts: DetectActitvity): DetectActitvity {
-            var sp: SharedPreferences = contexts[0].getPreferences(Context.MODE_PRIVATE)
-            contexts[0].page = sp.getInt("index",0) + 1
-            val edi = sp.edit()
-            edi.putInt("index",contexts[0].page)
-            edi.apply()
-            Utils.deleteFileAll(contexts[0])
-            Utils.addModeles(contexts[0],contexts[0].page)
+//            var sp: SharedPreferences = contexts[0].getPreferences(Context.MODE_PRIVATE)
+//            contexts[0].page = sp.getInt("index",0) + 1
+//            val edi = sp.edit()
+//            edi.putInt("index",contexts[0].page)
+//            edi.apply()
+//            Utils.deleteFileAll(contexts[0])
+//            Utils.addModeles(contexts[0],contexts[0].page)
             return contexts[0]
         }
     }
@@ -534,6 +534,7 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
 //                val array = IntArray(intBuf.remaining())
 //                intBuf.get(array)
 //                integer.bitMap!!.setPixels(array,0,1280,0,0,1280,720)
+                return@startGetRGB
 
                 var time = System.currentTimeMillis()
                 val options = BitmapFactory.Options()
