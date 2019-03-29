@@ -407,6 +407,8 @@ public:
     virtual bool stop();
     virtual bool prePushLog(LoggerId id, int level);
     virtual bool pushLog(LogData * pLog, const char * file, int line);
+    virtual bool pushLog(LogData* pLog, const char* file, const char* func, int line);
+
     //! 查找ID
     virtual LoggerId findLogger(const char*  key);
     bool hotChange(LoggerId id, LogDataType ldt, int num, const std::string & text);
@@ -1616,6 +1618,87 @@ bool LogerManager::pushLog(LogData * pLog, const char * file, int line)
     return true;
 }
 
+
+bool LogerManager::pushLog(LogData* pLog, const char* file, const char* func, int line)
+{
+    // discard log
+    if (pLog->_id < 0 || pLog->_id > _lastId || !_runing || !_loggers[pLog->_id]._enable)
+    {
+        freeLogData(pLog);
+        return false;
+    }
+
+    //filter log
+    if (pLog->_level < _loggers[pLog->_id]._level)
+    {
+        freeLogData(pLog);
+        return false;
+    }
+    if (_loggers[pLog->_id]._fileLine && file && func)
+    {
+        const char * pNameEnd = file + strlen(file);
+        const char * pNameBegin = pNameEnd;
+        do
+        {
+            if (*pNameBegin == '\\' || *pNameBegin == '/') { pNameBegin++; break; }
+            if (pNameBegin == file) { break; }
+            pNameBegin--;
+        } while (true);
+        zsummer::log4z::Log4zStream ss(pLog->_content + pLog->_contentLen, LOG4Z_LOG_BUF_SIZE - pLog->_contentLen);
+        ss.writeChar(' ');
+        ss.writeString(pNameBegin, pNameEnd - pNameBegin);
+        ss.writeChar(':');
+        ss.writeString(func, strlen(func));
+        ss.writeChar(':');
+        ss.writeULongLong((unsigned long long)line);
+        pLog->_contentLen += ss.getCurrentLen();
+    }
+
+    if (pLog->_contentLen +3 > LOG4Z_LOG_BUF_SIZE ) pLog->_contentLen = LOG4Z_LOG_BUF_SIZE - 3;
+    pLog->_content[pLog->_contentLen + 0] = '\r';
+    pLog->_content[pLog->_contentLen + 1] = '\n';
+    pLog->_content[pLog->_contentLen + 2] = '\0';
+    pLog->_contentLen += 2;
+
+
+    if (_loggers[pLog->_id]._display && LOG4Z_ALL_SYNCHRONOUS_OUTPUT)
+    {
+        showColorText(pLog->_content, pLog->_level);
+    }
+
+    if (LOG4Z_ALL_DEBUGOUTPUT_DISPLAY && LOG4Z_ALL_SYNCHRONOUS_OUTPUT)
+    {
+#ifdef WIN32
+        OutputDebugStringA(pLog->_content);
+#endif
+    }
+
+    if (_loggers[pLog->_id]._outfile && LOG4Z_ALL_SYNCHRONOUS_OUTPUT)
+    {
+        AutoLock l(_logLock);
+        if (openLogger(pLog))
+        {
+            _loggers[pLog->_id]._handle.write(pLog->_content, pLog->_contentLen);
+            _loggers[pLog->_id]._curWriteLen += (unsigned int)pLog->_contentLen;
+            closeLogger(pLog->_id);
+            _ullStatusTotalWriteFileCount++;
+            _ullStatusTotalWriteFileBytes += pLog->_contentLen;
+        }
+    }
+
+    if (LOG4Z_ALL_SYNCHRONOUS_OUTPUT)
+    {
+        freeLogData(pLog);
+        return true;
+    }
+
+    AutoLock l(_logLock);
+    _logs.push_back(pLog);
+    _ullStatusTotalPushLog ++;
+    return true;
+
+}
+
 //! 查找ID
 LoggerId LogerManager::findLogger(const char * key)
 {
@@ -1920,12 +2003,12 @@ bool LogerManager::popLog(LogData *& log)
 void LogerManager::run()
 {
     _runing = true;
-    LOGA("-----------------  log4z thread started!   ----------------------------");
+    LOG_ALARM(LOG4Z_MAIN_LOGGER_ID,"-----------------  log4z thread started!   ----------------------------");
     for (int i = 0; i <= _lastId; i++)
     {
         if (_loggers[i]._enable)
         {
-            LOGA("logger id=" << i
+            LOG_ALARM(LOG4Z_MAIN_LOGGER_ID,"logger id=" << i
                 << " key=" << _loggers[i]._key
                 << " name=" << _loggers[i]._name
                 << " path=" << _loggers[i]._path

@@ -2,9 +2,14 @@
 // Created by public on 19-3-19.
 //
 
-#include "client_conn.h"
+#include <stdio.h>
+#include <stdlib.h>
 
-//using namespace HPSocketHelper;
+#include "client_conn.h"
+#include "base/dsm_log.h"
+#include "base/type_def.h"
+#include "api/dsm_jtt808_api.h"
+#include "msg_process.h"
 
 CClientConn::CClientConn() :m_nClientFd(0),
                             m_nServerPort(0),
@@ -27,50 +32,64 @@ CClientConn::~CClientConn()
 }
 
 
-int CClientConn::Connect()
+//int CClientConn::Connect()
+//{
+//    if (!m_bInialised) {
+//        UT_FATAL("Inialised failed before connect.");
+//        return -1;
+//    }
+//
+//    if ((m_nClientFd = ::StartTcpClient(m_strServerIp.c_str(),m_nServerPort)) != -1) {
+//        // 连接成功
+//        UpdateConnStatus(NET_CONNECTED);
+//        return m_nClientFd;
+//    } else {
+//        //连接失败
+//        UpdateConnStatus(NET_DISCONNECTED);
+//        return -1;
+//    }
+//}
+
+
+int CClientConn::Inialise(std::string strServerIp, unsigned int nPort)
 {
+    m_nServerPort = nPort;
+    m_strServerIp = strServerIp;
 
-
-    if (!m_bInialised) {
-        CDSMLog::Fatal("Inialised failed before connect.");
-        return -1;
-    }
-
-    if ((m_nClientFd = StartTcpClient(m_strServerIp.c_str(),m_nServerPort)) != -1) {
+    if ((m_nClientFd = CDsmJTT808_API::GetInstance()->StartTcpClient_API(m_strServerIp.c_str(),m_nServerPort)) != -1) {
+    //if ((m_nClientFd = ::StartTcpClient(refClient,m_strServerIp.c_str(),m_nServerPort)) != -1) {
         // 连接成功
-        LOGE(" 连接成功 ----");
-        //UpdateConnStatus(NET_CONNECTED);
+        UpdateConnStatus(NET_CONNECTED);
         return m_nClientFd;
     } else {
         //连接失败
-        LOGE(" 连接失败 ----");
-        //UpdateConnStatus(NET_DISCONNECTED);
+        UpdateConnStatus(NET_DISCONNECTED);
         return -1;
     }
 }
 
-
-bool CClientConn::Inialise(std::string strServerIp, unsigned int nPort)
+int CClientConn::Inialise(std::string strServerIp, unsigned int nPort,unsigned int nClientFd)
 {
-    LOGE("JNI inside Inialise -- call ----");
     m_nServerPort = nPort;
-    LOGE("JNI inside Inialise -- nPort ----");
-
     m_strServerIp = strServerIp;
-    LOGE("JNI inside Inialise -- strServerIp ----");
 
-    m_bInialised = true;
-    LOGE("JNI inside Inialise -- m_bInialised ----");
+    if (nClientFd != -1) {
+        m_nClientFd = nClientFd;
+        UpdateConnStatus(NET_CONNECTED);
+    }else {
+        UpdateConnStatus(NET_DISCONNECTED);
+        m_nClientFd = -1;
+    }
 
-    return m_bInialised;
+    return m_nClientFd;
 }
 
 //int CClientConn::StartTcpClient(const char *svr_ip, unsigned short int port)
 //{
-//    CDSMLog::Trace("StartTcpClient server ip addr %s port %d ...\n", svr_ip, port);
+//    UT_TRACE("StartTcpClient server ip addr %s port %d ...\n", svr_ip, port);
 //    ut_uint16 conn_fd = 0;
 //    if(HP_Client_Start(m_client, svr_ip, port, 0)){
-//        CDSMLog::Info("Start serverip ....ok\n");
+//        UT_INFO("Start serverip ....ok\n");
 //
 //        /* set heart break time, default 20 second now */
 //        //dsmapp_srv_heart_set(20);
@@ -95,7 +114,7 @@ bool CClientConn::Inialise(std::string strServerIp, unsigned int nPort)
 //        ut_uint16 conn_fd = 0;
 //        conn_fd = (ut_uint16)HP_Client_GetConnectionID(m_client);
 //
-//        CDSMLog::Trace("Shutdown the connect socketFD %d !\n", conn_fd);
+//        UT_TRACE("Shutdown the connect socketFD %d !\n", conn_fd);
 //        //dsmapp_srv_ind(conn_fd, DSM_TCP_EVT_PIPE_CLOSED);
 //
 //        return 1;
@@ -152,26 +171,25 @@ void CClientConn::OnTimer(uint64_t curr_tick)
     if (curr_tick < m_next_timer_tick)
         return;
 
-    CDSMLog::Trace("OnTimer");
+    UT_TRACE("OnTimer");
     if (curr_tick > m_last_keepAlive_send_tick + SERVER_HEARTBEAT_INTERVAL) {
         // 超时发送保活报文
-        CDSMLog::Trace("Send HeartBeat pkt.");
+        UT_TRACE("Send HeartBeat pkt.");
         CMsgProcess::GetInstance()->DevHeartBeat(); // 发保活报文
         UpdateKeepAliveTick(CUtil::GetInstance()->get_tick_count());// 更新發包的時間
     }
 
     //通过更新收到包的时间来确定服务端是否掉线.
     if ((curr_tick > m_last_recv_tick + SERVER_TIMEOUT) && GetConnStatus() != NET_DISCONNECTED) {
-        CDSMLog::Error("connect to  server timeout");
+        UT_ERROR("connect to  server timeout");
         UpdateConnStatus(NET_DISCONNECTED);
-        StopTcpClient();  // 关闭socket连接
+        CDsmJTT808_API::GetInstance()->StopTcpClient_API();// 关闭socket连接
         UpdateRecvPktTick(CUtil::GetInstance()->get_tick_count());
     }
 
     if (GetConnStatus() >= NET_AUTHENTICATED) {
         if ((curr_tick > m_last_send_loc_tick + LOC_UP_TIMER) ) {
-            CDSMLog::Trace("Send device location pkt.");
-            //CMsgProcess::GetInstance()->DevLocationUp();
+            UT_TRACE("Send device location pkt.");
             this->DoLocationUp();
             m_last_send_loc_tick = CUtil::GetInstance()->get_tick_count();
         }
@@ -204,7 +222,7 @@ void CClientConn::UpdateRecvPktTick(uint64_t recvPktTick)
  */
 void CClientConn::UpdateConnStatus(enNetStatus status)
 {
-    CDSMLog::Trace("%x Update connect status[%d]",this,status);
+    //UT_TRACE("%x Update connect status[%d]",this,status);
     m_conn_status = status;
 }
 
@@ -220,27 +238,27 @@ enNetStatus CClientConn::GetConnStatus()
 
 void CClientConn::DoRegister()
 {
-    CDSMLog::Trace("Start DoRegister");
+    UT_TRACE("Start DoRegister");
     CMsgProcess::GetInstance()->DevRegister();
 }
 
 void CClientConn::DoAuth()
 {
-    CDSMLog::Trace("Start DoAuth");
+    UT_TRACE("Start DoAuth");
     CMsgProcess::GetInstance()->DevAuthentication();
 }
 
 void CClientConn::DoHeartBeat()
 {
-    CDSMLog::Trace("Start DoHeartBeat");
+    UT_TRACE("Start DoHeartBeat");
     CMsgProcess::GetInstance()->DevHeartBeat();
 }
 
 void CClientConn::DoLocationUp()
 {
-    CDSMLog::Trace("Start DoLocationUp");
+    UT_TRACE("Start DoLocationUp");
     if (!IsLocationSet()) {
-        CDSMLog::Info("information of gps have not been set,can`t up");
+        UT_INFO("information of gps have not been set,can`t up");
         return;
     }
 
@@ -252,7 +270,7 @@ void CClientConn::DoLocationUp()
  */
 void CClientConn::ResetLocation()
 {
-    CDSMLog::Trace("Reset location");
+    UT_TRACE("Reset location");
     m_latitude = 0;
     m_longitude = 0;
     m_height = 0;

@@ -16,22 +16,30 @@ class CClientConnManager :
         public Singleton<CClientConnManager>
 {
 public:
-    CClientConnManager(){};
+    CClientConnManager();
     ~CClientConnManager(){};
 
-    void RegisterClientConn(unsigned int nClientFd, CClientConn* pClientConn);
     CClientConn* GetClientConnByFd(unsigned int nClientFd);
-    bool DeleteClientConnect(unsigned int nClientFd);  // 删除客户端连接对象
     bool UpdateConnStatus(unsigned int nClientFd,enNetStatus euStatus); // 更新连接的状态
     void ReceivePkt(unsigned int nClientFd,BYTE* buf, size_t nLen);
     enNetStatus GetClientConnStatus(unsigned int nClientFd); // 取客户端连接的状态
-    void Connect(unsigned int nClientFd);
+    //void Connect(unsigned int nClientFd);
     bool DoRegister(unsigned int nClientFd);
     bool DoAuth(unsigned int nClientFd);
-    bool DoLocationUp(unsigned int nClientFd);
+    //bool DoLocationUp(unsigned int nClientFd);
     void SetLocation(unsigned int nClientFd,uint64_t latitude,uint64_t longitude,uint32_t  height);
+    int Inialise(std::string strIp, unsigned int nPort);
+    int Inialise(unsigned int nClientFd,std::string strIp, unsigned int nPort);
+    void OnTimer(uint64_t curr_tick);
+    int ClientReconnect(unsigned int nClientFd,std::string strIp, unsigned int nPort); // 客户端重新连接
+
+private:
+    void _RegisterClientConn(unsigned int nClientFd, CClientConn* pClientConn);
+    bool _DeleteClientConnect(unsigned int nClientFd);  // 删除客户端连接对象
+
 private:
     std::map<unsigned int, CClientConn*> m_mapClients;
+    bool m_bInialised;
 
 };
 

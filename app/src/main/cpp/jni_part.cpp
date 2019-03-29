@@ -5,8 +5,8 @@
 #include <vector>
 //#include <dsm_transmit_jtt.h>
 //#include <DSM_JTT_API.h>
-//#include "dsm_jtt808_api.h"
-#include "base/config_file.h"
+#include "api/dsm_jtt808_api.h"
+//#include "base/config_file.h"
 //#include "client_conn.h"
 //#include "client_conn_manager.h"
 #include "hp_socket_helper.h"
@@ -207,8 +207,7 @@ Java_org_opencv_samples_tutorial2_DetectActitvity_CHECK(JNIEnv *jniEnv, jobject,
 }
 
 
-
-
+///unsigned int g_nClientFd;
 JNIEXPORT void JNICALL
 Java_org_opencv_samples_tutorial2_DetectActitvity_FindFeatures(JNIEnv *jniEnv, jobject obj,
                                                                jlong addrGray, jint index) {
@@ -223,7 +222,113 @@ Java_org_opencv_samples_tutorial2_DetectActitvity_FindFeatures(JNIEnv *jniEnv, j
 //    sleep(5);
 //    DSM_JTT808_Stop(1);
 
-    string path = "/sdcard/Android/data/com.ut.sdk/files";
+//    HP_TcpPullClientListener m_listener;
+//    HP_TcpPullClient m_client;
+//    struct TPkgInfo_t{
+//        bool is_header;
+//        int length;
+//    } m_pkgInfo;
+//    m_listener      = Create_HP_TcpPullClientListener();
+//    m_client       = Create_HP_TcpPullClient(m_listener);
+//    LOGE(" client %x", &m_client);
+//    HP_Set_FN_Client_OnConnect(m_listener, OnConnect);
+//    HP_Set_FN_Client_OnSend(m_listener, OnSend);
+//    HP_Set_FN_Client_OnPullReceive(m_listener, OnReceive);
+//    HP_Set_FN_Client_OnClose(m_listener, OnClose);
+//    HP_Client_SetExtra(m_client, &m_pkgInfo);
+//    HP_TcpClient_SetKeepAliveTime(m_client, 0 );
+
+
+    std::string path = "/sdcard/Android/data/com.ut.sdk/files";
+    CConfigFileReader::GetInstance()->LoadFromFile((path + "/dsm_jtt808.cfg").data());
+    char* szServerIp = CConfigFileReader::GetInstance()->GetConfigName("server_ip");
+    char* szServerPort = CConfigFileReader::GetInstance()->GetConfigName("server_port");
+    CDSMLog::GetInstance()->InitialiseLog4z(path + "/dsm_log.cfg");
+    UT_TRACE("Server IP[%s] Port[%s]",szServerIp,szServerPort);
+    //CreateHPSocketObjects();
+
+    //StartTcpClient("106.14.186.44", 7000);
+    //StartTcpClient(szServerIp, atoi(szServerPort));
+
+//    ut_uint16 conn_fd = 0;
+//    LOGE("StartTcpClient client %x", s_client);
+//    if(HP_Client_Start(s_client, "106.14.186.44", 7000, 0)){
+//        UT_TRACE("Start serverip ....ok.");
+//        /*  connected session maintain --> ( one client connection ==  one  connect fd )  */
+//        conn_fd = (WORD)HP_Client_GetConnectionID(s_client);
+//        UT_TRACE("Connect successful,peer handle[%d]",conn_fd);
+//        LOGE(" _____nClientFd %d ",conn_fd);
+//        /* notice the event that DSM client has been connected  */
+//        //dsmapp_srv_ind(conn_fd, DSM_TCP_EVT_CONNECTED);
+//        return ;
+//    }
+//    else {
+//        LOGE("Start server ip failed errno: %d , error desc %s\n",
+//             HP_Client_GetLastError(s_client), HP_Client_GetLastErrorDesc(s_client));
+//        //LOGE("StartTcpClient client %x", &m_client);
+//        return ;
+//    }
+
+    if (!CDsmJTT808_API::GetInstance()->Inialise()) {
+        LOGE("Inialise failed!");
+        return;
+    }
+
+    CDsmJTT808_API::GetInstance()->SetGpsInfo(45890000,23480000,100);
+    while(1) {
+        CDsmJTT808_API::GetInstance()->OnTimer();
+    }
+
+
+
+    //string path = "/sdcard/Android/data/com.ut.sdk/files";
+
+    //string path = "/sdcard/Android/data/com.ut.sdk/files";
+//    CConfigFileReader::GetInstance()->LoadFromFile((path + "/dsm_jtt808.cfg").data());
+//    char* szServerIp = CConfigFileReader::GetInstance()->GetConfigName("server_ip");
+//    char* szServerPort = CConfigFileReader::GetInstance()->GetConfigName("server_port");
+//    CDSMLog::GetInstance()->InitialiseLog4z(path + "/dsm_log.cfg");
+//    UT_TRACE("Server IP[%s] Port[%s]",szServerIp,szServerPort);
+
+    // 初始化socket
+   // ::CreateHPSocketObjects();
+//    s_listener      = Create_HP_TcpPullClientListener();
+//    s_client        = Create_HP_TcpPullClient(s_listener);
+//
+//    HP_Set_FN_Client_OnConnect(s_listener, OnConnect);
+//    HP_Set_FN_Client_OnSend(s_listener, OnSend);
+//    HP_Set_FN_Client_OnPullReceive(s_listener, OnReceive);
+//    HP_Set_FN_Client_OnClose(s_listener, OnClose);
+//
+//    HP_Client_SetExtra(s_client, &s_pkgInfo);
+//    HP_TcpClient_SetKeepAliveTime(s_client, 0 );
+
+    // 连接Server
+//    std::string m_strIp = szServerIp;
+//    int m_nPort = atoi(szServerPort);
+//    int nClientFd = StartTcpClient(szServerIp, m_nPort);
+//    LOGE(" _____nClientFd %d ",nClientFd);
+//    int m_nClientFd = CClientConnManager::GetInstance()->Inialise(nClientFd,szServerIp,m_nPort);
+//    //m_nClientFd = CClientConnManager::GetInstance()->Inialise(szServerIp,m_nPort);
+//    if (m_nClientFd != -1) {
+//        UT_TRACE("Connect to server IP[%s] Port[%s] success!",szServerIp,szServerPort);
+//        return ;
+//    }else{
+//        UT_TRACE("Connect to server IP[%s] Port[%s] failed!",szServerIp,szServerPort);
+//    }
+
+
+//    CDsmJTT808_API objApi;
+//
+//	if (!objApi.Inialise()) {
+//		UT_FATAL("Inialise failed!");
+//		LOGE("Inialise failed!");
+//	}
+//	objApi.SetGpsInfo(45890000,23480000,100);
+
+//    CreateHPSocketObjects();
+//    Inialise();
+//    SetGpsInfo(45890000,23480000,100);
 
 //    srand(time(0));
 //    if (totalFlow == nullptr) {
@@ -263,32 +368,37 @@ Java_org_opencv_samples_tutorial2_DetectActitvity_FindFeatures(JNIEnv *jniEnv, j
 //        g_nClientFd = new unsigned int;
 //    *g_nClientFd = 1;
 
-    //HPSocketHelper::CreateHPSocketObjects();
-    CConfigFileReader::GetInstance()->LoadFromFile((path + "/dsm_jtt808.cfg").data());
-    char *szServerIp = CConfigFileReader::GetInstance()->GetConfigName("server_ip");
-    char *szServerPort = CConfigFileReader::GetInstance()->GetConfigName("server_port");
-    CDSMLog::GetInstance()->InitialiseLog4z(path + "/dsm_log.cfg");
-    CDSMLog::Trace("Server IP[%s] Port[%s]", szServerIp, szServerPort);
+//    CConfigFileReader::GetInstance()->LoadFromFile((path + "/dsm_jtt808.cfg").data());
+//    char *szServerIp = CConfigFileReader::GetInstance()->GetConfigName("server_ip");
+//    char *szServerPort = CConfigFileReader::GetInstance()->GetConfigName("server_port");
+//    CDSMLog::GetInstance()->InitialiseLog4z(path + "/dsm_log.cfg");
 
-    // 初始化socket
-  CreateHPSocketObjects();
-//    s_listener      = Create_HP_TcpPullClientListener();
-//    s_client        = Create_HP_TcpPullClient(s_listener);
+//    s_listener2      = Create_HP_TcpPullClientListener();
+//    s_client2        = Create_HP_TcpPullClient(s_listener2);
 //
-//    HP_Set_FN_Client_OnConnect(s_listener, OnConnect);
-//    HP_Set_FN_Client_OnSend(s_listener, OnSend);
-//    HP_Set_FN_Client_OnPullReceive(s_listener, OnReceive);
-//    HP_Set_FN_Client_OnClose(s_listener, OnClose);
+//    HP_Set_FN_Client_OnConnect(s_listener2, OnConnect);
+//    HP_Set_FN_Client_OnSend(s_listener2, OnSend);
+//    HP_Set_FN_Client_OnPullReceive(s_listener2, OnReceive);
+//    HP_Set_FN_Client_OnClose(s_listener2, OnClose);
 //
-//    HP_Client_SetExtra(s_client, &s_pkgInfo);
-//    HP_TcpClient_SetKeepAliveTime(s_client, 0 );
+//    HP_Client_SetExtra(s_client2, &s_pkgInfo2);
+//    HP_TcpClient_SetKeepAliveTime(s_client2, 0 );
+//
 
-    StartTcpClient("106.14.186.44",7000);
 
-    LOGE("JNI before conn server --  %s, %s",szServerIp,szServerPort);
+    //Inialise();
+    //StartTcpClient("106.14.186.44",7000);
+
+
+
+//    while (1){
+//        sleep(1);
+//    }
+
+//    LOGE("JNI before conn server --  %s, %s",szServerIp,szServerPort);
     //g_objClientConn->Inialise(szServerIp, atoi(szServerPort));
 //     g_objClientConn->Inialise("", 1);
-    LOGE("JNI after conn server -- message ----");
+//    LOGE("JNI after conn server -- message ----");
 
 //    *g_nClientFd = g_objClientConn->Connect();
 

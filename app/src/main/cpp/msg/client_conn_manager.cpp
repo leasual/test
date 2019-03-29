@@ -5,7 +5,12 @@
 #include "client_conn_manager.h"
 
 
-void CClientConnManager::RegisterClientConn(unsigned int nClientFd, CClientConn* pClientConn)
+CClientConnManager::CClientConnManager():m_bInialised(false)
+{
+
+};
+
+void CClientConnManager::_RegisterClientConn(unsigned int nClientFd, CClientConn* pClientConn)
 {
     m_mapClients.insert(std::make_pair(nClientFd, pClientConn));
 }
@@ -17,15 +22,16 @@ CClientConn* CClientConnManager::GetClientConnByFd(unsigned int nClientFd)
         return  pIter->second;
     }
 
-    CDSMLog::Fatal("Get Client[%d] failed!",nClientFd);
+    UT_FATAL("Get Client[%d] failed!",nClientFd);
     return  NULL;
 }
 
 
-bool CClientConnManager::DeleteClientConnect(unsigned int nClientFd)
+bool CClientConnManager::_DeleteClientConnect(unsigned int nClientFd)
 {
     std::map<unsigned int, CClientConn*>::iterator pIter = m_mapClients.find(nClientFd);
     if (pIter != m_mapClients.end()) {
+        delete (pIter->second);
         m_mapClients.erase(pIter);
         return true;
     }
@@ -47,12 +53,12 @@ bool CClientConnManager::UpdateConnStatus(unsigned int nClientFd,enNetStatus euS
 {
     CClientConn* pClientConn = this->GetClientConnByFd(nClientFd);
     if (NULL == pClientConn) {
-        CDSMLog::Error("Client[%d] update status[%d] failed!",nClientFd,euStatus);
+        UT_ERROR("Client[%d] update status[%d] failed!",nClientFd,euStatus);
         return false;
     }
 
     pClientConn->UpdateConnStatus(euStatus);
-    CDSMLog::Trace("Client[%d] update status[%d] success!",nClientFd,euStatus);
+    UT_TRACE("Client[%lu] update status[%d] success!",nClientFd,euStatus);
     return true;
 }
 
@@ -61,7 +67,7 @@ enNetStatus CClientConnManager::GetClientConnStatus(unsigned int nClientFd) // å
 {
     CClientConn* pClientConn = this->GetClientConnByFd(nClientFd);
     if (NULL == pClientConn) {
-        CDSMLog::Error("Client[%d] get status failed!",nClientFd);
+        UT_ERROR("Client[%d] get status failed!",nClientFd);
         return NET_INIT;
     }
 
@@ -73,7 +79,7 @@ bool CClientConnManager::DoRegister(unsigned int nClientFd)
 {
     CClientConn* pClientConn = this->GetClientConnByFd(nClientFd);
     if (NULL == pClientConn) {
-        CDSMLog::Error("Client[%d] call DoRegister() failed!",nClientFd);
+        UT_ERROR("Client[%d] call DoRegister() failed!",nClientFd);
         return false;
     }
     pClientConn->DoRegister();
@@ -86,7 +92,7 @@ bool CClientConnManager::DoAuth(unsigned int nClientFd)
 {
     CClientConn* pClientConn = this->GetClientConnByFd(nClientFd);
     if (NULL == pClientConn) {
-        CDSMLog::Error("Client[%d] call DoAuth() failed!",nClientFd);
+        UT_ERROR("Client[%d] call DoAuth() failed!",nClientFd);
         return false;
     }
     pClientConn->DoAuth();
@@ -95,23 +101,64 @@ bool CClientConnManager::DoAuth(unsigned int nClientFd)
 }
 
 
-bool CClientConnManager::DoLocationUp(unsigned int nClientFd)
-{
-    CClientConn* pClientConn = this->GetClientConnByFd(nClientFd);
-    if (NULL == pClientConn) {
-        CDSMLog::Error("Client[%d] call DoAuth() failed!",nClientFd);
-        return false;
-    }
-    pClientConn->DoLocationUp();
-    return  true;
-}
+//bool CClientConnManager::DoLocationUp(unsigned int nClientFd)
+//{
+//    CClientConn* pClientConn = this->GetClientConnByFd(nClientFd);
+//    if (NULL == pClientConn) {
+//        UT_ERROR("Client[%d] call DoAuth() failed!",nClientFd);
+//        return false;
+//    }
+//    pClientConn->DoLocationUp();
+//    return  true;
+//}
 
 void CClientConnManager::SetLocation(unsigned int nClientFd,uint64_t latitude,uint64_t longitude,uint32_t  height)
 {
     CClientConn* pClientConn = this->GetClientConnByFd(nClientFd);
     if (NULL == pClientConn) {
-        CDSMLog::Error("Client[%d] call DoAuth() failed!",nClientFd);
+        UT_ERROR("Client[%d] call DoAuth() failed!",nClientFd);
         return;
     }
     pClientConn->SetLocationInfo(latitude,longitude,height);
+}
+
+
+int CClientConnManager::Inialise(unsigned int nClientFd,std::string strIp, unsigned int nPort)
+{
+    CClientConn* pClientConn = new CClientConn;
+    unsigned int ClientFd =  pClientConn->Inialise(strIp,nPort,nClientFd);
+    this->_RegisterClientConn(ClientFd,pClientConn);
+    m_bInialised = true;
+    return ClientFd;
+}
+
+
+int CClientConnManager::Inialise(std::string strIp, unsigned int nPort)
+{
+//    if (m_bInialised) {
+//        UT_ERROR("Client Ip[%s] nPort[%d] has already been inialised.",strIp, nPort);
+//        return -1;
+//    }
+
+    CClientConn* pClientConn = new CClientConn;
+    unsigned int nClientFd =  pClientConn->Inialise(strIp,nPort);
+    this->_RegisterClientConn(nClientFd,pClientConn);
+    m_bInialised = true;
+    return nClientFd;
+}
+
+
+void CClientConnManager::OnTimer(uint64_t curr_tick)
+{
+    std::map<unsigned int, CClientConn*>::iterator pIterBeg = m_mapClients.begin();
+    for (; pIterBeg != m_mapClients.end() ; pIterBeg++) {
+        pIterBeg->second->OnTimer(curr_tick);
+    }
+}
+
+
+int CClientConnManager::ClientReconnect(unsigned int nClientFd,std::string strIp, unsigned int nPort)
+{
+    this->_DeleteClientConnect(nClientFd);
+    return this->Inialise(strIp,nPort);
 }

@@ -201,6 +201,7 @@
 #include <list>
 #include <queue>
 #include <deque>
+#include "../../Util.h"
 
 
 //! logger ID type. DO NOT TOUCH
@@ -341,6 +342,8 @@ public:
     //! Push log, thread safe.
     virtual bool pushLog(LogData * pLog, const char * file = NULL, int line = 0) = 0;
 
+    virtual bool pushLog(LogData* pLog, const char* file = NULL, const char* func = NULL, int line = 0 ) = 0;
+
     //! set logger's attribute, thread safe.
     virtual bool enableLogger(LoggerId id, bool enable) = 0; // immediately when enable, and queue up when disable. 
     virtual bool setLoggerName(LoggerId id, const char * name) = 0;
@@ -409,19 +412,19 @@ do{\
 #define LOG_FATAL(id, log) LOG_STREAM(id, LOG_LEVEL_FATAL, __FILE__, __LINE__, log)
 
 //! super macro.
-#define LOGT( log ) LOG_TRACE(LOG4Z_MAIN_LOGGER_ID, log )
-#define LOGD( log ) LOG_DEBUG(LOG4Z_MAIN_LOGGER_ID, log )
+//#define LOGT( log ) LOG_TRACE(LOG4Z_MAIN_LOGGER_ID, log )
+//#define LOGD( log ) LOG_DEBUG(LOG4Z_MAIN_LOGGER_ID, log )
 //#define LOGI( log ) LOG_INFO(LOG4Z_MAIN_LOGGER_ID, log )
-#define LOGW( log ) LOG_WARN(LOG4Z_MAIN_LOGGER_ID, log )
+//#define LOGW( log ) LOG_WARN(LOG4Z_MAIN_LOGGER_ID, log )
 //#define LOGE( log ) LOG_ERROR(LOG4Z_MAIN_LOGGER_ID, log )
-#define LOGA( log ) LOG_ALARM(LOG4Z_MAIN_LOGGER_ID, log )
-#define LOGF( log ) LOG_FATAL(LOG4Z_MAIN_LOGGER_ID, log )
+//#define LOGA( log ) LOG_ALARM(LOG4Z_MAIN_LOGGER_ID, log )
+//#define LOGF( log ) LOG_FATAL(LOG4Z_MAIN_LOGGER_ID, log )
 
 
 //! format input log.
 #ifdef LOG4Z_FORMAT_INPUT_ENABLE
 #ifdef WIN32
-#define LOG_FORMAT(id, level, file, line, logformat, ...) \
+#define LOG_FORMAT(id, level, file,func,line, logformat, ...) \
 do{ \
     if (zsummer::log4z::ILog4zManager::getPtr()->prePushLog(id,level)) \
     {\
@@ -429,11 +432,11 @@ do{ \
         int __logLen = _snprintf_s(__pLog->_content + __pLog->_contentLen, LOG4Z_LOG_BUF_SIZE - __pLog->_contentLen, _TRUNCATE, logformat, ##__VA_ARGS__); \
         if (__logLen < 0) __logLen = LOG4Z_LOG_BUF_SIZE - __pLog->_contentLen; \
         __pLog->_contentLen += __logLen; \
-        zsummer::log4z::ILog4zManager::getPtr()->pushLog(__pLog, file, line); \
+        zsummer::log4z::ILog4zManager::getPtr()->pushLog(__pLog, file, func,line); \
     }\
 } while (0)
 #else
-#define LOG_FORMAT(id, level, file, line, logformat, ...) \
+#define LOG_FORMAT(id, level, file, func,line, logformat, ...) \
 do{ \
     if (zsummer::log4z::ILog4zManager::getPtr()->prePushLog(id,level)) \
     {\
@@ -442,18 +445,18 @@ do{ \
         if (__logLen < 0) __logLen = 0; \
         if (__logLen > LOG4Z_LOG_BUF_SIZE - __pLog->_contentLen) __logLen = LOG4Z_LOG_BUF_SIZE - __pLog->_contentLen; \
         __pLog->_contentLen += __logLen; \
-        zsummer::log4z::ILog4zManager::getPtr()->pushLog(__pLog, file, line); \
+        zsummer::log4z::ILog4zManager::getPtr()->pushLog(__pLog, file,func,line); \
     } \
 }while(0)
 #endif
 //!format string
-#define LOGFMT_TRACE(id, fmt, ...)  LOG_FORMAT(id, LOG_LEVEL_TRACE, __FILE__, __LINE__, fmt, ##__VA_ARGS__)
-#define LOGFMT_DEBUG(id, fmt, ...)  LOG_FORMAT(id, LOG_LEVEL_DEBUG, __FILE__, __LINE__, fmt, ##__VA_ARGS__)
-#define LOGFMT_INFO(id, fmt, ...)  LOG_FORMAT(id, LOG_LEVEL_INFO, __FILE__, __LINE__, fmt, ##__VA_ARGS__)
-#define LOGFMT_WARN(id, fmt, ...)  LOG_FORMAT(id, LOG_LEVEL_WARN, __FILE__, __LINE__, fmt, ##__VA_ARGS__)
-#define LOGFMT_ERROR(id, fmt, ...)  LOG_FORMAT(id, LOG_LEVEL_ERROR, __FILE__, __LINE__, fmt, ##__VA_ARGS__)
-#define LOGFMT_ALARM(id, fmt, ...)  LOG_FORMAT(id, LOG_LEVEL_ALARM, __FILE__, __LINE__, fmt, ##__VA_ARGS__)
-#define LOGFMT_FATAL(id, fmt, ...)  LOG_FORMAT(id, LOG_LEVEL_FATAL, __FILE__, __LINE__, fmt, ##__VA_ARGS__)
+#define LOGFMT_TRACE(id, fmt, ...)  LOG_FORMAT(id, LOG_LEVEL_TRACE, __FILE__,__FUNCTION__, __LINE__, fmt, ##__VA_ARGS__)
+#define LOGFMT_DEBUG(id, fmt, ...)  LOG_FORMAT(id, LOG_LEVEL_DEBUG, __FILE__,__FUNCTION__, __LINE__, fmt, ##__VA_ARGS__)
+#define LOGFMT_INFO(id, fmt, ...)  LOG_FORMAT(id, LOG_LEVEL_INFO, __FILE__, __FUNCTION__,__LINE__, fmt, ##__VA_ARGS__)
+#define LOGFMT_WARN(id, fmt, ...)  LOG_FORMAT(id, LOG_LEVEL_WARN, __FILE__,__FUNCTION__, __LINE__, fmt, ##__VA_ARGS__)
+#define LOGFMT_ERROR(id, fmt, ...)  LOG_FORMAT(id, LOG_LEVEL_ERROR, __FILE__, __FUNCTION__,__LINE__, fmt, ##__VA_ARGS__)
+#define LOGFMT_ALARM(id, fmt, ...)  LOG_FORMAT(id, LOG_LEVEL_ALARM, __FILE__, __FUNCTION__,__LINE__, fmt, ##__VA_ARGS__)
+#define LOGFMT_FATAL(id, fmt, ...)  LOG_FORMAT(id, LOG_LEVEL_FATAL, __FILE__,__FUNCTION__, __LINE__, fmt, ##__VA_ARGS__)
 #define LOGFMTT( fmt, ...) LOGFMT_TRACE(LOG4Z_MAIN_LOGGER_ID, fmt,  ##__VA_ARGS__)
 #define LOGFMTD( fmt, ...) LOGFMT_DEBUG(LOG4Z_MAIN_LOGGER_ID, fmt,  ##__VA_ARGS__)
 #define LOGFMTI( fmt, ...) LOGFMT_INFO(LOG4Z_MAIN_LOGGER_ID, fmt,  ##__VA_ARGS__)
@@ -480,6 +483,15 @@ inline void empty_log_format_function2(const char*, ...){}
 #define LOGFMTF LOGFMTT
 #endif
 
+
+#define UT_TRACE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
+//#define UT_TRACE(fmt, ...)  LOG_FORMAT(zsummer::log4z::ILog4zManager::getInstance()->findLogger("moniter"), LOG_LEVEL_TRACE, __FILE__,__FUNCTION__, __LINE__, fmt, ##__VA_ARGS__)
+#define UT_DEBUG(fmt, ...)  LOG_FORMAT(zsummer::log4z::ILog4zManager::getInstance()->findLogger("moniter"), LOG_LEVEL_DEBUG, __FILE__,__FUNCTION__, __LINE__, fmt, ##__VA_ARGS__)
+#define UT_INFO(fmt, ...)  LOG_FORMAT(zsummer::log4z::ILog4zManager::getInstance()->findLogger("moniter"), LOG_LEVEL_INFO, __FILE__, __FUNCTION__,__LINE__, fmt, ##__VA_ARGS__)
+#define UT_WARN(fmt, ...)  LOG_FORMAT(zsummer::log4z::ILog4zManager::getInstance()->findLogger("moniter"), LOG_LEVEL_WARN, __FILE__,__FUNCTION__, __LINE__, fmt, ##__VA_ARGS__)
+#define UT_ERROR(fmt, ...)  LOG_FORMAT(zsummer::log4z::ILog4zManager::getInstance()->findLogger("moniter"), LOG_LEVEL_ERROR, __FILE__, __FUNCTION__,__LINE__, fmt, ##__VA_ARGS__)
+#define UT_ALARM(fmt, ...)  LOG_FORMAT(zsummer::log4z::ILog4zManager::getInstance()->findLogger("moniter"), LOG_LEVEL_ALARM, __FILE__, __FUNCTION__,__LINE__, fmt, ##__VA_ARGS__)
+#define UT_FATAL(fmt, ...)  LOG_FORMAT(zsummer::log4z::ILog4zManager::getInstance()->findLogger("moniter"), LOG_LEVEL_FATAL, __FILE__,__FUNCTION__, __LINE__, fmt, ##__VA_ARGS__)
 
 _ZSUMMER_BEGIN
 _ZSUMMER_LOG4Z_BEGIN

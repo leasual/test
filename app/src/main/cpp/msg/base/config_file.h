@@ -2,6 +2,7 @@
 #define CONFIGFILEREADER_H_
 
 #include "public_def.h"
+#include "singleton.h"
 #include <string>
 #include <map>
 

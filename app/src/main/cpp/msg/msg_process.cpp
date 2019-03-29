@@ -5,9 +5,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "base/msg_def.h"
+#include <msg_def.h>
 
 #include "msg_process.h"
+#include "api/dsm_jtt808_api.h"
 
 
 CMsgProcess::CMsgProcess()
@@ -23,22 +24,6 @@ CMsgProcess::~CMsgProcess()
 
 }
 
-
-//void CMsgProcess::ResetLocation()
-//{
-//    m_latitude = 0;
-//    m_longitude = 0;
-//    m_heigh = 0;
-//}
-//
-//bool CMsgProcess::IsLocationSet()
-//{
-//    if (m_longitude != 0 && m_latitude != 0 && m_heigh != 0)
-//        return true;
-//
-//    return false;
-//}
-
 //
 // 处理注册回应的消息
 //
@@ -47,59 +32,65 @@ int CMsgProcess::_ProcessRegisterResp(BYTE *pRegResp, int nLen)
 	//81 00 00 05 01 78 87 11 33 01 00 00
 	//e1 3d 00 31 30 84
 	if (NULL == pRegResp || nLen < 0) {
-        CDSMLog::Error("Parameter error!");
+        UT_ERROR("Parameter error!");
         return -1;
     }
 
     JTT808MsgHead* pMsgHeader = (JTT808MsgHead*)pRegResp;
     if (nLen <= pMsgHeader->HEADERSIZE) {
         // 非法包
-        CDSMLog::Error("Package is less than header!");
+        UT_ERROR("Package is less than header!");
         return -1;
     }
 
 	BYTE* pTemp = pRegResp + pMsgHeader->HEADERSIZE;
 	size_t nBodyLen = pMsgHeader->GetMsgBodyLength();
-    //CDSMLog::Trace("The response msgLen[%x]",nBodyLen);
+    //UT_TRACE("The response msgLen[%x]",nBodyLen);
     bool bRegResult = false;  // 注册结果
     pTemp += 2; // 跳过应答流水号
 	switch(*pTemp) // 解析注册回应结果
 	{
 		case REGISTER_OK:   //!<  成功
-			CDSMLog::Info("注册返回: 注册成功");
+			UT_INFO("注册返回: 注册成功");
             bRegResult = true;
 			break;
 
 		case REGISTER_CAR_REGISTERED:    //!< 车辆已被注册
-			CDSMLog::Info("注册返回: 车辆已被注册");
+			UT_INFO("注册返回: 车辆已被注册");
 			break;
 					
 		case REGISTER_HAVE_NO_CAR:       //!< 数据库中无该车辆
-			CDSMLog::Info("注册返回: 数据库中无该车辆");
+			UT_INFO("注册返回: 数据库中无该车辆");
 			break;
 					
 		case REGISTER_DEV_REGISTERED:   //!< 终端已被注册
-			CDSMLog::Info("注册返回: 终端已被注册");
+			UT_INFO("注册返回: 终端已被注册");
 			break;
 					
 		case REGISTER_HAVE_NO_DEV:	    //!< 数据库中无该终端
-			CDSMLog::Info("注册返回: 数据库中无该终端");
+			UT_INFO("注册返回: 数据库中无该终端");
 			break;
 
         default:
-		    CDSMLog::Error("注册返回: Unknown response code[%d]",*pTemp);
+		    UT_ERROR("注册返回: Unknown response code[%d]",*pTemp);
 			break;
 	}
     pTemp++; // 跳过应答的结果
 
     if (bRegResult)  { // 注册成功
         memcpy(m_szAuthCode,pTemp,nBodyLen-3);
-        CDSMLog::dsm_dump((unsigned char*)m_szAuthCode,strlen(m_szAuthCode));
+        UT_DUMP(m_szAuthCode,strlen(m_szAuthCode));
         CConfigFileReader::GetInstance()->SetConfigValue("auth_code",(const char*)m_szAuthCode); //保存到配置文件
         return REGISTER_OK;
     }
 
 	return -1;
+}
+
+
+int CMsgProcess::_ProcessPltAccessoriesResp(BYTE* pResp, int nLen)
+{
+    return  1;
 }
 
 
@@ -113,21 +104,21 @@ int CMsgProcess::_ProcessGeneralResp(CClientConn* pClientConn,BYTE *pGeneralResp
     //80 01 00 05 01 78 87 11 33 01 00 0f
     // 6a dc 00 02 00 e2
     if (NULL == pGeneralResp || nLen < 0) {
-        CDSMLog::Error("Parameter error!");
+        UT_ERROR("Parameter error!");
         return -1;
     }
 
     JTT808MsgHead* pMsgHeader = (JTT808MsgHead*)pGeneralResp;
     if (nLen <= pMsgHeader->HEADERSIZE) {
         // 非法包
-        CDSMLog::Error("Package is less than header!");
+        UT_ERROR("Package is less than header!");
         return -1;
     }
 
     //80 01 00 05 01 78 87 11 33 01 00 10
     // 57 af 00 02 00 b3
     BYTE* pTemp = pGeneralResp + pMsgHeader->HEADERSIZE;
-    //CDSMLog::Trace("The response msgLen[%x]",pMsgHeader->GetMsgBodyLength());
+    //UT_TRACE("The response msgLen[%x]",pMsgHeader->GetMsgBodyLength());
 
     pTemp += 2; // 跳过应答流水号
     WORD cmd = (*(pTemp) <<8) + *(pTemp + 1);
@@ -136,7 +127,7 @@ int CMsgProcess::_ProcessGeneralResp(CClientConn* pClientConn,BYTE *pGeneralResp
     switch(*pTemp)
     {
         case RET_OK: //0
-            CDSMLog::Info("Response result[%s] for MsgID[%x]","成功",cmd);
+            UT_INFO("Response result[%s] for MsgID[%x]","成功",cmd);
             if (cmd == JTT_DEV_AUTH) {
                 // 收到注册的正确回应
                 pClientConn->UpdateConnStatus(NET_AUTHENTICATED); // 更新状态
@@ -148,27 +139,27 @@ int CMsgProcess::_ProcessGeneralResp(CClientConn* pClientConn,BYTE *pGeneralResp
             break;
 
         case RET_FAILED:
-            CDSMLog::Info("Response result[%s] for MsgID[%x]","失败",cmd);
+            UT_INFO("Response result[%s] for MsgID[%x]","失败",cmd);
             break;
 
         case RET_MESSAGE_ERROR:
-            CDSMLog::Info("Response result[%s] for MsgID[%x]","消息有误",cmd);
+            UT_INFO("Response result[%s] for MsgID[%x]","消息有误",cmd);
             break;
 
         case RET_NOT_SUPPORT:
-            CDSMLog::Info("Response result[%s] for MsgID[%x]","不支持",cmd);
+            UT_INFO("Response result[%s] for MsgID[%x]","不支持",cmd);
             break;
 
         case RET_ALARM:
-            CDSMLog::Info("Response result[%s] for MsgID[%x]","报警处理确认",cmd);
+            UT_INFO("Response result[%s] for MsgID[%x]","报警处理确认",cmd);
             break;
 
         case RET_PARAMETER_ERROR:
-            CDSMLog::Info("Response result[%s] for MsgID[%x]","参数错误",cmd);
+            UT_INFO("Response result[%s] for MsgID[%x]","参数错误",cmd);
             break;
 
         default:
-            CDSMLog::Error("Unknown response result[%x] for MsgId[%x]",*pTemp,cmd);
+            UT_ERROR("Unknown response result[%x] for MsgId[%x]",*pTemp,cmd);
             break;
     }
 
@@ -178,12 +169,12 @@ int CMsgProcess::_ProcessGeneralResp(CClientConn* pClientConn,BYTE *pGeneralResp
 void CMsgProcess::ProcessMsg(CClientConn* pClientConn,BYTE* data, size_t nLen)
 {
     if (NULL == pClientConn || NULL == data || nLen <= 0) {
-        CDSMLog::Error("Invalidate parameter!");
+        UT_ERROR("Invalidate parameter!");
         return;
     }
 
     if (!this->ReceiveData(data,nLen)) {
-        CDSMLog::Error("Recive data failed!");
+        UT_ERROR("Recive data failed!");
         return;
     }
 
@@ -194,7 +185,7 @@ void CMsgProcess::ProcessMsg(CClientConn* pClientConn,BYTE* data, size_t nLen)
         switch(cmd) {
             case JTT_PLAT_REGISTER_ACK:  // 平台注册回应
 				//81 00 00 05 01 78 87 11 33 01 00 00 e1 3d 00 31 30 84
-                CDSMLog::Trace("==>JTT_PLAT_REGISTER_ACK");
+                UT_TRACE("==>JTT_PLAT_REGISTER_ACK");
                 if (_ProcessRegisterResp((BYTE *)m_szRecvOnePkt, m_nRecvPktOffset) == REGISTER_OK) {
                     pClientConn->UpdateConnStatus(NET_REGISTED); // 更新状态
                 }
@@ -202,19 +193,22 @@ void CMsgProcess::ProcessMsg(CClientConn* pClientConn,BYTE* data, size_t nLen)
                 break;
 
             case JTT_PLAT_GENERAL_ACK:  // 平台通用应答
-                CDSMLog::Trace("==>JTT_PLAT_GENERAL_ACK");
+                UT_TRACE("==>JTT_PLAT_GENERAL_ACK");
                 _ProcessGeneralResp(pClientConn,(BYTE *) m_szRecvOnePkt, m_nRecvPktOffset);
                 break;
 
             case JTT_PLT_GET_PARA: // 查询终端参数
-                CDSMLog::Trace("==>JTT_PLT_GET_PARA");
+                UT_TRACE("==>JTT_PLT_GET_PARA");
+                break;
+
+            case JTT_SU_PLT_ACCESSORIES_UP:  // 报警附件上传指令
+                UT_TRACE("==>JTT_SU_PLT_ACCESSORIES_UP");
                 break;
 
             default:
-                CDSMLog::Error("Unknown cmd[%2x]",cmd);
+                UT_ERROR("Unknown cmd[%2x]",cmd);
                 break;
         }
-        //pClientConn->UpdateRecvPktTick(CUtil::GetInstance()->get_tick_count());
     }
     return;
 }
@@ -229,25 +223,25 @@ void CMsgProcess::ProcessMsg(CClientConn* pClientConn,BYTE* data, size_t nLen)
   * @param  result	 结果
   * @retval length of data
   */
-//int CMsgProcess::DevCommResp(WORD serialID,WORD answerID,BYTE result)
-//{
-//    int len = -1;
-//
-//    WORD msgID = JTT_DEV_GENERAL_ACK;
-//    m_sendBuffer[0] = (BYTE) (msgID>>8);
-//    m_sendBuffer[1] = (BYTE) (msgID);
-//
-//    m_sendBuffer[2] = (BYTE) (serialID>>8);
-//    m_sendBuffer[3] = (BYTE) (serialID);
-//
-//    m_sendBuffer[4] = (BYTE) answerID>>8;
-//    m_sendBuffer[5] = (BYTE) (answerID);
-//
-//    m_sendBuffer[6] = result;
-//
-//    len = 7;
-//    return len;
-//}
+int CMsgProcess::DevCommResp(WORD serialID,WORD answerID,BYTE result)
+{
+    int len = -1;
+
+    WORD msgID = JTT_DEV_GENERAL_ACK;
+    m_sendBuffer[0] = (BYTE) (msgID>>8);
+    m_sendBuffer[1] = (BYTE) (msgID);
+
+    m_sendBuffer[2] = (BYTE) (serialID>>8);
+    m_sendBuffer[3] = (BYTE) (serialID);
+
+    m_sendBuffer[4] = (BYTE) answerID>>8;
+    m_sendBuffer[5] = (BYTE) (answerID);
+
+    m_sendBuffer[6] = result;
+
+    len = 7;
+    return len;
+}
 
 
 /**
@@ -275,7 +269,7 @@ int CMsgProcess::DevAuthentication()
   */
 int CMsgProcess::DevHeartBeat(void)
 {
-    CDSMLog::Trace("Start DevHeartBeat");
+    UT_TRACE("Start DevHeartBeat");
     _ConstructDevHeartBeatPkt();
     _SendToPlt();
 
@@ -329,34 +323,34 @@ int CMsgProcess::DevUnregister(void)
   * @param  dev_arg 参数项列表
   * @retval length of data
   */
-//int CMsgProcess::DevGetParameterResp(WORD serialID,BYTE argNum,STR_PARAMETER *dev_arg)
-//{
-//    int len = -1;
-//    BYTE i,k;
-//    WORD j;
-//
-//    WORD msgID = JTT_PLT_GET_PARA_RESP;
-//    m_sendBuffer[0] = (BYTE) (msgID>>8);
-//    m_sendBuffer[1] = (BYTE) (msgID);
-//
-//    m_sendBuffer[2] = (BYTE) serialID>>8;
-//    m_sendBuffer[3] = (BYTE) (serialID);
-//
-//    m_sendBuffer[4] = argNum;
-//
-//    k = 0;
-//    for(i=0;i<argNum;i++)
-//    {
-//        for(j=0;j<dev_arg->data[i].count;j++)
-//        {
-//            m_sendBuffer[5+k] = dev_arg->data[i].idList[j];
-//        }
-//        k += dev_arg->data[i].count;
-//    }
-//
-//    len = k+5;
-//    return len;
-//}
+int CMsgProcess::DevGetParameterResp(WORD serialID,BYTE argNum,STR_PARAMETER *dev_arg)
+{
+    int len = -1;
+    BYTE i,k;
+    WORD j;
+
+    WORD msgID = JTT_PLT_GET_PARA_RESP;
+    m_sendBuffer[0] = (BYTE) (msgID>>8);
+    m_sendBuffer[1] = (BYTE) (msgID);
+
+    m_sendBuffer[2] = (BYTE) serialID>>8;
+    m_sendBuffer[3] = (BYTE) (serialID);
+
+    m_sendBuffer[4] = argNum;
+
+    k = 0;
+    for(i=0;i<argNum;i++)
+    {
+        for(j=0;j<dev_arg->data[i].count;j++)
+        {
+            m_sendBuffer[5+k] = dev_arg->data[i].idList[j];
+        }
+        k += dev_arg->data[i].count;
+    }
+
+    len = k+5;
+    return len;
+}
 
 
 /**
@@ -364,43 +358,43 @@ int CMsgProcess::DevUnregister(void)
   * @param  attr 终端属性
   * @retval length of data
   */
-//int CMsgProcess::DevGetAttriResp(STR_DEV_ATTR attr)
-//{
-//    int len = -1;
-//    int i,j;
-//
-//    WORD msgID = JTT_PLT_GET_DEV_ATTRI_RESP;
-//    m_sendBuffer[0] = (BYTE) (msgID>>8);
-//    m_sendBuffer[1] = (BYTE) (msgID);
-//
-//    m_sendBuffer[2] = (BYTE)(attr.dev_type>>8);
-//    m_sendBuffer[3] = (BYTE) (attr.dev_type);
-//
-//    for(i=0;i<5;i++)
-//        m_sendBuffer[4+i] = attr.manufacturer_ID[i];
-//    for(i=0;i<20;i++)
-//        m_sendBuffer[9+i] = attr.dev_model[i];
-//    for(i=0;i<7;i++)
-//        m_sendBuffer[29+i] = attr.dev_ID[i];
-//    for(i=0;i<10;i++)
-//        m_sendBuffer[44+i] = attr.ICCID[i];
-//
-//    m_sendBuffer[54] = attr.dev_version_len;
-//    for(i=0;i<attr.dev_version_len;i++)
-//        m_sendBuffer[55+i] = attr.dev_version[i];
-//    j = attr.dev_version_len;
-//
-//    m_sendBuffer[55+j] = attr.firmware_version_len;
-//    for(i=0;i<attr.firmware_version_len;i++)
-//        m_sendBuffer[56+j] = attr.firmware_version[i];
-//    j += attr.firmware_version_len;
-//
-//    m_sendBuffer[56+j] = attr.gnns;
-//    m_sendBuffer[57+j] = attr.communication_module;
-//
-//    len = 57+j+1;
-//    return len;
-//}
+int CMsgProcess::DevGetAttriResp(STR_DEV_ATTR attr)
+{
+    int len = -1;
+    int i,j;
+
+    WORD msgID = JTT_PLT_GET_DEV_ATTRI_RESP;
+    m_sendBuffer[0] = (BYTE) (msgID>>8);
+    m_sendBuffer[1] = (BYTE) (msgID);
+
+    m_sendBuffer[2] = (BYTE)(attr.dev_type>>8);
+    m_sendBuffer[3] = (BYTE) (attr.dev_type);
+
+    for(i=0;i<5;i++)
+        m_sendBuffer[4+i] = attr.manufacturer_ID[i];
+    for(i=0;i<20;i++)
+        m_sendBuffer[9+i] = attr.dev_model[i];
+    for(i=0;i<7;i++)
+        m_sendBuffer[29+i] = attr.dev_ID[i];
+    for(i=0;i<10;i++)
+        m_sendBuffer[44+i] = attr.ICCID[i];
+
+    m_sendBuffer[54] = attr.dev_version_len;
+    for(i=0;i<attr.dev_version_len;i++)
+        m_sendBuffer[55+i] = attr.dev_version[i];
+    j = attr.dev_version_len;
+
+    m_sendBuffer[55+j] = attr.firmware_version_len;
+    for(i=0;i<attr.firmware_version_len;i++)
+        m_sendBuffer[56+j] = attr.firmware_version[i];
+    j += attr.firmware_version_len;
+
+    m_sendBuffer[56+j] = attr.gnns;
+    m_sendBuffer[57+j] = attr.communication_module;
+
+    len = 57+j+1;
+    return len;
+}
 
 /**
   * @brief  位置信息汇报
@@ -470,6 +464,7 @@ void CMsgProcess::_ConstructPktHeader(WORD nCmd, WORD nBodyLen)
     // 消息体属性 2
     pPktHeader->SetMsgBodyLength(nBodyLen);
     pPktHeader->DisableEncrypt();
+    //pPktHeader->EnableEncrypt();
     pPktHeader->DisableMultiPacket();
     m_reqPtrOffset += 2;
     // 手机号 6
@@ -479,30 +474,32 @@ void CMsgProcess::_ConstructPktHeader(WORD nCmd, WORD nBodyLen)
     // 消息流水号 2
     pPktHeader->SetSeqNo(this->GenerateSeqNo());
     m_reqPtrOffset += 2;
-    CDSMLog::Trace("+++BodyLen[%d] from header",pPktHeader->GetMsgBodyLength());
+    UT_TRACE("+++BodyLen[%d] from header",pPktHeader->GetMsgBodyLength());
 }
 
 void CMsgProcess::_ConstructLocInfoPkt(uint64_t latitude,uint64_t longitude,uint32_t  height)
 {
-//    JT808Protocol* pLocUpPktHeader = (JT808Protocol*)m_szReqOneBuffer;
-//    m_reqPtrOffset = 0;
-//
-//    // 消息ID 2
-//    pLocUpPktHeader->SetCmd(JTT_DEV_AUTH);
-//    m_reqPtrOffset += 2;
-//    // 消息体属性 2
-//
-//    pLocUpPktHeader->DisableEncrypt();
-//    pLocUpPktHeader->DisableMultiPacket();
-//    m_reqPtrOffset += 2;
-//    // 手机号 6
-//    Str2BCD((char*)pLocUpPktHeader->SimNo,"013311877881");
-//    m_reqPtrOffset += 6;
-//    // 消息流水号 2
-//    pLocUpPktHeader->SetSeqNo(this->GenerateSeqNo());
-//    m_reqPtrOffset += 2;
+    JT808Protocol* pPktHeader = (JT808Protocol*)m_szReqOneBuffer;
+    m_reqPtrOffset = 0;
 
-    _ConstructPktHeader(JTT_DEV_LOC_REP,sizeof(JTT808Body_PositionUP));
+    // 消息ID 2
+    pPktHeader->SetCmd(JTT_DEV_LOC_REP);
+    m_reqPtrOffset += 2;
+    // 消息体属性 2
+    //pPktHeader->SetMsgBodyLength(nBodyLen);
+    pPktHeader->DisableEncrypt();
+    pPktHeader->DisableMultiPacket();
+    m_reqPtrOffset += 2;
+    // 手机号 6
+    //Str2BCD((char*)pPktHeader->SimNo,CConfigFileReader::GetInstance()->GetConfigName("sim_no"));
+    Str2BCD((char*)pPktHeader->SimNo,"013811088446");
+    endswap(&(pPktHeader->SimNo));
+    m_reqPtrOffset += 6;
+    // 消息流水号 2
+    pPktHeader->SetSeqNo(this->GenerateSeqNo());
+    m_reqPtrOffset += 2;
+
+    //_ConstructPktHeader(JTT_DEV_LOC_REP,sizeof(JTT808Body_PositionUP));
     int nBodyLen = 0;
     JTT808Body_PositionUP* pLocUpPkt = (JTT808Body_PositionUP*)(m_szReqOneBuffer + JTT808MsgHead::HEADERSIZE);
     pLocUpPkt->EnableFatigueFlag();
@@ -517,19 +514,61 @@ void CMsgProcess::_ConstructLocInfoPkt(uint64_t latitude,uint64_t longitude,uint
 	pLocUpPkt->SetSpeed(80);
 	pLocUpPkt->SetDirection(0);
     std::time_t t = std::time(NULL);
-
     char mbstr[18] = {0};
     if (std::strftime(mbstr, 18, "%y-%m-%d-%H-%M-%S", std::localtime(&t))) {
         Str2BCD((char*)pLocUpPkt->time,mbstr);
         endswap(&(pLocUpPkt->time));
     }
     m_reqPtrOffset += sizeof(JTT808Body_PositionUP);
+
+    // 构造位置附加信息
+    JTT808Body_PositionUP_Extra* pPosExtra = (JTT808Body_PositionUP_Extra*)(m_szReqOneBuffer + m_reqPtrOffset);
+    pPosExtra->extra_id = 0x65;
+    pPosExtra->extra_len = LEN_SU808_ALARM;  // 附加信息长度
+    m_reqPtrOffset += sizeof(JTT808Body_PositionUP_Extra);
+
+    JTT808_SU_Body_DSM_Alarm* pDSMAlarm = (JTT808_SU_Body_DSM_Alarm*)(m_szReqOneBuffer + m_reqPtrOffset);
+    pDSMAlarm->SetAlarmId(0);
+    pDSMAlarm->btStatus = 0;
+    pDSMAlarm->btAlarmType = 1;
+    pDSMAlarm->btAlarmGrade = 1;
+    pDSMAlarm->btFatiqueDegree = 2;
+
+    BYTE btReserved = 0;
+    memcpy(pDSMAlarm->btReserved,&btReserved,sizeof(pDSMAlarm->btReserved));
+    pDSMAlarm->btSpeed = 80;
+    pDSMAlarm->SetLatitude(latitude);
+    pDSMAlarm->SetLongitude(longitude);
+    if (std::strftime(mbstr, 18, "%y-%m-%d-%H-%M-%S", std::localtime(&t))) {
+        Str2BCD((char*)pDSMAlarm->time,mbstr);
+        endswap(&(pDSMAlarm->time));
+    }
+    pDSMAlarm->status = 0;
+
+    // 设置报警标志位
+    int offset_alram_flag = 0;
+    OFFSET(JTT808_SU_Body_DSM_Alarm,btAlarmFlag,offset_alram_flag);
+    JTT808_SU_Body_DSM_Alarm_Flag* pDSMAlarmFlag = (JTT808_SU_Body_DSM_Alarm_Flag*)(m_szReqOneBuffer + m_reqPtrOffset + offset_alram_flag);
+    char* szDeviceId = CConfigFileReader::GetInstance()->GetConfigName("dev_id");
+    pDSMAlarmFlag->SetDevId((BYTE*)szDeviceId);
+    if (std::strftime(mbstr, 18, "%y-%m-%d-%H-%M-%S", std::localtime(&t))) {
+        Str2BCD((char*)pDSMAlarmFlag->time,mbstr);
+        endswap(&(pDSMAlarmFlag->time));
+    }
+    pDSMAlarmFlag->btSeqNo = 0;
+    pDSMAlarmFlag->btAccessories = 1;
+    pDSMAlarmFlag->btReserved = 0;
+
+    m_reqPtrOffset += LEN_SU808_ALARM;  // 偏移累加
+
+    pPktHeader->SetMsgBodyLength(m_reqPtrOffset - JTT808MsgHead::HEADERSIZE);
+
     // 消息尾
     *((BYTE*)m_szReqOneBuffer + m_reqPtrOffset) = MakeCheckProtocol((BYTE*)m_szReqOneBuffer,m_reqPtrOffset);  // 校验码
     m_reqPtrOffset++;
-    CDSMLog::Trace("+++BodyLen[%d] from sizeof",sizeof(JTT808Body_PositionUP));
-    CDSMLog::Trace("m_reqPtrOffset=%d",m_reqPtrOffset);
-    CDSMLog::dsm_dump((unsigned char*)m_szReqOneBuffer,m_reqPtrOffset);
+    UT_TRACE("+++BodyLen[%lu] from sizeof",sizeof(JTT808Body_PositionUP));
+    UT_TRACE("m_reqPtrOffset=%d",m_reqPtrOffset);
+    UT_DUMP(m_szReqOneBuffer,m_reqPtrOffset);
 
     return;
 }
@@ -550,7 +589,8 @@ void CMsgProcess::_ConstructDevAuthPkt(const char* authentication_code)
     pAuthPktHeader->DisableMultiPacket();
     m_reqPtrOffset += 2;
     // 手机号 6
-    Str2BCD((char*)pAuthPktHeader->SimNo,CConfigFileReader::GetInstance()->GetConfigName("sim_no"));
+    //Str2BCD((char*)pAuthPktHeader->SimNo,CConfigFileReader::GetInstance()->GetConfigName("sim_no"));
+    Str2BCD((char*)pAuthPktHeader->SimNo,"013811088446");
     endswap(&(pAuthPktHeader->SimNo));
     m_reqPtrOffset += 6;
     // 消息流水号 2
@@ -567,8 +607,8 @@ void CMsgProcess::_ConstructDevAuthPkt(const char* authentication_code)
     *((BYTE*)m_szReqOneBuffer + m_reqPtrOffset) = MakeCheckProtocol((BYTE*)m_szReqOneBuffer,m_reqPtrOffset);  // 校验码
     m_reqPtrOffset++;
 
-    CDSMLog::Trace("m_reqPtrOffset=%d",m_reqPtrOffset);
-    CDSMLog::dsm_dump((unsigned char*)m_szReqOneBuffer,m_reqPtrOffset);
+    UT_TRACE("m_reqPtrOffset=%d",m_reqPtrOffset);
+    UT_DUMP(m_szReqOneBuffer,m_reqPtrOffset);
 
     return;
 }
@@ -590,7 +630,8 @@ void CMsgProcess::_ConstructDevHeartBeatPkt()
     pHertBeatPktHeader->DisableMultiPacket();
     m_reqPtrOffset += 2;
     // 手机号 6
-    Str2BCD((char*)pHertBeatPktHeader->SimNo,CConfigFileReader::GetInstance()->GetConfigName("sim_no"));
+    //Str2BCD((char*)pHertBeatPktHeader->SimNo,CConfigFileReader::GetInstance()->GetConfigName("sim_no"));
+    Str2BCD((char*)pHertBeatPktHeader->SimNo,"013811088446");
     endswap(&(pHertBeatPktHeader->SimNo));
     m_reqPtrOffset += 6;
     // 消息流水号 2
@@ -600,8 +641,8 @@ void CMsgProcess::_ConstructDevHeartBeatPkt()
     *((BYTE*)pHertBeatPktHeader + m_reqPtrOffset + pHertBeatPktHeader->GetMsgBodyLength()) = MakeCheckProtocol((BYTE*)pHertBeatPktHeader,pHertBeatPktHeader->HEADERSIZE);  // 校验码
     m_reqPtrOffset++;
 
-    CDSMLog::Trace("m_reqPtrOffset=%d",m_reqPtrOffset);
-    CDSMLog::dsm_dump((unsigned char*)m_szReqOneBuffer,m_reqPtrOffset);
+    UT_TRACE("m_reqPtrOffset=%d",m_reqPtrOffset);
+    UT_DUMP(m_szReqOneBuffer,m_reqPtrOffset);
 
     return;
 }
@@ -626,7 +667,8 @@ void CMsgProcess::_ConstructDevRegisterPkt()
     m_reqPtrOffset += 2;
 
     // 手机号 6
-    Str2BCD((char*)pRegPktHeader->SimNo,CConfigFileReader::GetInstance()->GetConfigName("sim_no"));
+    //Str2BCD((char*)pRegPktHeader->SimNo,CConfigFileReader::GetInstance()->GetConfigName("sim_no"));
+    Str2BCD((char*)pRegPktHeader->SimNo,"013811088446");
     endswap(&(pRegPktHeader->SimNo));
     m_reqPtrOffset += 6;
     // 消息流水号 2
@@ -668,8 +710,8 @@ void CMsgProcess::_ConstructDevRegisterPkt()
     *((BYTE*)m_szReqOneBuffer + m_reqPtrOffset) = MakeCheckProtocol((BYTE*)m_szReqOneBuffer,m_reqPtrOffset);  // 校验码
     m_reqPtrOffset++;
 
-    CDSMLog::Trace("m_reqPtrOffset=%d",m_reqPtrOffset);
-    CDSMLog::dsm_dump((unsigned char*)m_szReqOneBuffer,m_reqPtrOffset);
+    UT_TRACE("m_reqPtrOffset=%d",m_reqPtrOffset);
+    UT_DUMP(m_szReqOneBuffer,m_reqPtrOffset);
 }
 
 /**
@@ -682,13 +724,7 @@ void CMsgProcess::_ConstructDevRegisterPkt()
 int CMsgProcess::_SendToPlt()
 {
 	ReqBufferTransfer(); // 转义报文
-    //ClientSend((const BYTE*)m_szReqRawOneBuffer,m_reqRawPtr);
+    CDsmJTT808_API::GetInstance()->ClientSend_API((const BYTE*)m_szReqRawOneBuffer,m_reqRawPtr);
+    //::ClientSend((const BYTE*)m_szReqRawOneBuffer,m_reqRawPtr);
     return m_reqPtrOffset;;
 }
-
-//void CMsgProcess::SetLocation(uint64_t latitude,uint64_t longitude,uint32_t  height)
-//{
-//    m_latitude = latitude;
-//    m_longitude = longitude;
-//    m_heigh = height;
-//}

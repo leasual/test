@@ -61,10 +61,12 @@ typedef enum JTT_MSG_TYPE_
     JTT_DEV_GENERAL_ACK = 0x0001, // 终端通用应答
     JTT_PLAT_GENERAL_ACK = 0x8001, // 平台通用应答
 
+    JTT_SEND_SPLIT_PKT = 0x8003, // 补传分包请求
+
     JTT_DEV_HEARTBEAT = 0x0002, // 终端心跳
 
     JTT_DEV_REGISTER = 0x0100, // 终端注册
-    JTT_PLAT_REGISTER_ACK = 0x8100, // 平台注册回应
+    JTT_PLAT_REGISTER_ACK = 0x8100, // 终端注册回应
 
     JTT_DEV_LOGOUT = 0x0003, // 终端注销
 
@@ -76,6 +78,8 @@ typedef enum JTT_MSG_TYPE_
 
     JTT_PLT_GET_DEV_ATTRI_RESP = 0x0107, // 查询终端属性应答
     JTT_DEV_LOC_REP = 0x0200, // 终端位置上报
+
+    JTT_SU_PLT_ACCESSORIES_UP = 0x9208, // 报警附件上传指令
 
     JTT_CMD_INVALID = 0xFFFF
 }JTT_MSG_TYPE;
@@ -162,38 +166,23 @@ typedef struct JT808Protocol
 
     void DisableMultiPacket()
     {
-        WORD uData = Mask;
-        //endswap(&uData);
-        uData = (~0x2000) & uData;
-        endswap(&uData);
-        Mask = uData;
+		Mask = Mask & (~0x0020);
     }
 
     void EnableMultiPacket()
     {
-        WORD uData = Mask;
-        //endswap(&uData);
-        uData = 0x2000 | uData;
-        endswap(&uData);
-        Mask = uData;
+		Mask = Mask | 0x0020;
     }
 
     void DisableEncrypt()
     {
-        WORD uData = Mask;
-        //endswap(&uData);
-        uData = (~0x1c00) & uData;
-        endswap(&uData);
-        Mask = uData;
+		Mask = Mask & (~0x001c);
+		
     }
 
     void EnableEncrypt()
     {
-        WORD uData = Mask;
-        //endswap(&uData);
-        uData = 0x1c00 | uData;
-        endswap(&uData);
-        Mask = uData;
+		Mask = Mask | 0x001c;
     }
 
     /**
@@ -311,14 +300,14 @@ struct JTT808Body_PositionUP
     // 置疲劳驾驶的标志位
     void EnableFatigueFlag()
     {
-        alarm_flag |= 0x0004;
+        alarm_flag |= 0x0002;
         endswap(&alarm_flag);
     }
 
     // 取消疲劳驾驶的标志位
     void DisableFatigueFlag()
     {
-        alarm_flag &= ~0x0004;
+        alarm_flag &= ~0x0002;
         endswap(&alarm_flag);
     }
 
@@ -372,13 +361,85 @@ struct JTT808Body_PositionUP
 
 
 /*! 位置附加信息 */
-typedef struct
+struct JTT808Body_PositionUP_Extra
 {
-    BYTE extra_id;
-    BYTE extra_len;
+    BYTE extra_id;  // 附加信息ID
+    BYTE extra_len; // 附加信息长度
+};
 
-}STR_LOCATION_EXTRA_INF;
+/*! 苏标 驾驶员状态监测报警 */
+struct JTT808_SU_Body_DSM_Alarm
+{
+    DWORD dwAlarmId;       // 0->
+    BYTE btStatus;  // 4->
+    BYTE btAlarmType;  // 5->报警类型:0x01:疲劳驾驶报警 0x02:接打电话报警 0x03:抽烟报警 0x04:分神驾驶报警
+    BYTE btAlarmGrade;  // 6->报警等级:0x01:一级报警 0x02:二级报警
+    BYTE btFatiqueDegree; // 7->疲劳程度 1~10数值越大表示疲劳程度越严重
+    BYTE btReserved[4];  // 8->保留
+    BYTE btSpeed; // 12 -> 车速
+    WORD high;  // 13 -> 高程
+    DWORD latitude ;    //15 -> 纬度
+    DWORD longitude;    //19 -> 经度
+    BCD time[6];        //23 -> 时间
+    WORD status;      // 29 -> 车辆状态
+    BYTE btAlarmFlag[16]; // 31 -> 报警标识号
+
+    void SetAlarmId(DWORD dwAlarm)
+    {
+        dwAlarmId = dwAlarm;
+        endswap(&dwAlarmId);
+    }
+
+    void SetVendorStatus(WORD nStatus)
+    {
+        status = nStatus;
+        endswap(&status);
+    }
+
+    void SetLatitude(DWORD dwLatitude)
+    {
+        latitude = dwLatitude;
+        endswap(&latitude);
+    }
+
+    void SetLongitude(DWORD dwLongitude)
+    {
+        longitude = dwLongitude;
+        endswap(&longitude);
+    }
+
+    void SetHigh(WORD nHigh)
+    {
+        high = nHigh;
+        endswap(&high);
+    }
+};
+
+#define LEN_SU808_ALARM sizeof(JTT808_SU_Body_DSM_Alarm)
+
+/*! 苏标 报警标识号格式 */
+struct JTT808_SU_Body_DSM_Alarm_Flag
+{
+    BYTE dev_ID[7];  // 0 -> 终端 ID ,7 个字节,由大写字母和数字组成
+    BCD time[6];        //7 -> 时间
+    BYTE btSeqNo;     // 13 -> 同一时间点报警的序号,从 0 循环累加
+    BYTE btAccessories; // 14 -> 表示该报警对应的附件数量
+    BYTE btReserved;  // 15 -> 预留
+
+    void SetDevId(BYTE id[7])
+    {
+        endswap(id);
+        memcpy(dev_ID,id,7);
+    }
+};
+
+#define LEN_SU808_ALARM_FLAG  sizeof(JTT808_SU_Body_DSM_Alarm_Flag)  // 报警标识的长度
+
 
 #pragma pack( pop )
+
+#define OFFSET(TYPE, MEMBER, OFF) \
+    TYPE temp;              \
+    OFF = (unsigned long)(&(temp.MEMBER)) - (unsigned long)(&(temp));
 
 #endif //DSM_JTT808_MSG_DEF_H

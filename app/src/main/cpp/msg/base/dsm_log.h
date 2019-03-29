@@ -44,7 +44,6 @@
 
 #define BUG_LEN 1024
 #include "singleton.h"
-#include "../../Util.h"
 
 
 //! base macro.
@@ -55,6 +54,19 @@
         vsnprintf(szBuffer, sizeof(szBuffer), format, args);	\
         va_end(args);											\
 	} while (0)
+
+
+#define UT_DUMP(szBuffer, len)										\
+	do {													\
+        char buff[1] = {0};std::string strHex;					\
+        for (int i = 0; i < len; i++)							\
+        {														\
+            sprintf(buff,"%02x ",(unsigned char)szBuffer[i]);	\
+            strHex.append(buff);								\
+        }														\
+        UT_TRACE("%s",(char*)strHex.c_str());								\
+    }while(0)
+
 
 class CDSMLog : public Singleton<CDSMLog>
 {
@@ -81,25 +93,25 @@ public:
         va_end(marker);
     }
 
-    static void dsm_dump(unsigned char *buf_log, unsigned int len)
-    {
-        int i;
-        //printf("\nBuffer(%d) Data:\n", len);
-        char buff[8] = {0};
-        std::string strHex;
-        for (i = 0; i < len; i++)
-        {
-            sprintf(buff,"%02x ",buf_log[i]);
-            strHex.append(buff);
-
-            //printf("%02x ", buf_log[i]);
-            //if ((i+1) % 16 == 0)
-            //printf("\n");
-        }
-        Trace(strHex.c_str());
-        //printf("\n");
-        //printf("# %sClient Stop Fail --> %s (%d) [%d]"), (LPCTSTR)SafeString(lpszName), lpszDesc, code, ::GetLastError());
-    }
+//    static void dsm_dump(unsigned char *buf_log, unsigned int len)
+//    {
+//        int i;
+//        //printf("\nBuffer(%d) Data:\n", len);
+//        char buff[8] = {0};
+//        std::string strHex;
+//        for (i = 0; i < len; i++)
+//        {
+//            sprintf(buff,"%02x ",buf_log[i]);
+//            strHex.append(buff);
+//
+//            //printf("%02x ", buf_log[i]);
+//            //if ((i+1) % 16 == 0)
+//            //printf("\n");
+//        }
+//        UT_TRACE("%s",strHex.c_str());
+//        //printf("\n");
+//        //printf("# %sClient Stop Fail --> %s (%d) [%d]"), (LPCTSTR)SafeString(lpszName), lpszDesc, code, ::GetLastError());
+//    }
 
     void InitialiseLog4z(std::string szLogPath)
     {
@@ -109,62 +121,61 @@ public:
 								   });
     }
 
-    static void Trace(const char* format, ...)
-    {
-		char szBuffer[LOG4Z_LOG_BUF_SIZE];
-//		FORMAT_PARAM(format,szBuffer);
-//		LOGE(("Trace %s ", szBuffer);
-		LOG_TRACE(zsummer::log4z::ILog4zManager::getInstance()->findLogger("moniter"),
-				  szBuffer);
-    }
-	
-    static void Debug(const char* format, ...)
-	{
-		char szBuffer[LOG4Z_LOG_BUF_SIZE];
-		FORMAT_PARAM(format,szBuffer);
-		LOG_DEBUG(zsummer::log4z::ILog4zManager::getInstance()->findLogger("moniter"),
-				  szBuffer);
-	}
-	
-    static void Info(const char* format, ...)
-	{
-		char szBuffer[LOG4Z_LOG_BUF_SIZE];
-		FORMAT_PARAM(format,szBuffer);
-		LOG_INFO(zsummer::log4z::ILog4zManager::getInstance()->findLogger("moniter"),
-				 szBuffer);
-	}
-	
-    static void Warn(const char* format, ...)
-	{
-		char szBuffer[LOG4Z_LOG_BUF_SIZE];
-		FORMAT_PARAM(format,szBuffer);
-		LOGE(" %s ",szBuffer);
-		LOG_WARN(zsummer::log4z::ILog4zManager::getInstance()->findLogger("moniter"),
-				 szBuffer);
-	}
-	
-    static void Error(const char* format, ...)
-	{
-		char szBuffer[LOG4Z_LOG_BUF_SIZE];
-//		FORMAT_PARAM(format,szBuffer);
-		LOGE("Error %s ",szBuffer);
-//		LOG_ERROR(zsummer::log4z::ILog4zManager::getInstance()->findLogger("moniter"),
-//				  szBuffer);
-	}
-	
-    static void Fatal(const char* format, ...)
-	{
-		char szBuffer[LOG4Z_LOG_BUF_SIZE];
-		FORMAT_PARAM(format,szBuffer);
-		LOG_FATAL(zsummer::log4z::ILog4zManager::getInstance()->findLogger("moniter"),
-				  szBuffer);
-	}
+//     static void Trace(const char* format, ...)
+//     {
+//	 	char szBuffer[LOG4Z_LOG_BUF_SIZE];
+//	 	FORMAT_PARAM(format,szBuffer);
+//	 	LOG_TRACE(zsummer::log4z::ILog4zManager::getInstance()->findLogger("moniter"),
+//	 			  szBuffer);
+//     }
+//
+//     static void Debug(const char* format, ...)
+//	 {
+//	 	char szBuffer[LOG4Z_LOG_BUF_SIZE];
+//	 	FORMAT_PARAM(format,szBuffer);
+//	 	LOG_DEBUG(zsummer::log4z::ILog4zManager::getInstance()->findLogger("moniter"),
+//	 			  szBuffer);
+//	 }
+//
+//     static void Info(const char* format, ...)
+//	 {
+//	 	char szBuffer[LOG4Z_LOG_BUF_SIZE];
+//	 	FORMAT_PARAM(format,szBuffer);
+//	 	LOG_INFO(zsummer::log4z::ILog4zManager::getInstance()->findLogger("moniter"),
+//	 			 szBuffer);
+//	 }
+//
+//     static void Warn(const char* format, ...)
+//	 {
+//	 	char szBuffer[LOG4Z_LOG_BUF_SIZE];
+//	 	FORMAT_PARAM(format,szBuffer);
+//	 	LOG_WARN(zsummer::log4z::ILog4zManager::getInstance()->findLogger("moniter"),
+//	 			 szBuffer);
+//	 }
+//
+//     static void Error(const char* format, ...)
+//	 {
+//	 	char szBuffer[LOG4Z_LOG_BUF_SIZE];
+//	 	FORMAT_PARAM(format,szBuffer);
+//	 	LOG_ERROR(zsummer::log4z::ILog4zManager::getInstance()->findLogger("moniter"),
+//	 			  szBuffer);
+//	 }
+//
+//     static void Fatal(const char* format, ...)
+//	 {
+//	 	char szBuffer[LOG4Z_LOG_BUF_SIZE];
+//	 	FORMAT_PARAM(format,szBuffer);
+//	 	LOG_FATAL(zsummer::log4z::ILog4zManager::getInstance()->findLogger("moniter"),
+//	 			  szBuffer);
+//	 }
 	
 private:
-	char m_szBuffer[LOG4Z_LOG_BUF_SIZE];
+	//char m_szBuffer[LOG4Z_LOG_BUF_SIZE];
     std::once_flag  m_once_flag;
-	LoggerId m_moniter_logId;
+	//LoggerId m_moniter_logId;
 };
+
+
 
 //#define print_color(attr, color, fmt,...) CDSMLog::_print_color(attr, color, fmt, ##__VA_ARGS__)
 //#define succ(fmt, ...) CDSMLog::_print_color(BRIGHT, BLUE, fmt, ##__VA_ARGS__)

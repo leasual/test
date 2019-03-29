@@ -101,7 +101,7 @@ int  JTT808PktBase::GenerateSeqNo()
     int nSeqNo = rand()%(0xFFFF - 0x0001) + 0x0001;
     char buff[48] = {0};
     sprintf(buff,"%x",nSeqNo);
-    CDSMLog::Trace("The seqNo is[%d] [%x]",nSeqNo,nSeqNo);
+    //UT_TRACE("The seqNo is[%d] [%x]",nSeqNo,nSeqNo);
 
     return nSeqNo;
 }
@@ -130,15 +130,15 @@ bool JTT808PktBase::GetOnePacket(WORD* cmd)
         return false ;
     /*恢复转义*/
     RecvBufferTransfer();
-    CDSMLog::Trace("===Recived packet===");
-    CDSMLog::dsm_dump((BYTE*)m_szRecvOnePkt,m_nRecvPktOffset);
+    UT_TRACE("===Recived packet===");
+    UT_DUMP(m_szRecvOnePkt,m_nRecvPktOffset);
     m_nRecvRawPtrOffset = 0  ;
 
     /*校验*/
-    //CDSMLog::Trace("Check code[%d]",m_szRecvOnePkt[m_nRecvPktOffset-1]);
+    //UT_TRACE("Check code[%d]",m_szRecvOnePkt[m_nRecvPktOffset-1]);
     if (MakeCheckProtocol((BYTE*)m_szRecvOnePkt,m_nRecvPktOffset-1) == (BYTE)m_szRecvOnePkt[m_nRecvPktOffset-1]) {
         *cmd = (m_szRecvOnePkt[0]<<8) + m_szRecvOnePkt[1];
-        CDSMLog::Trace("Command[%x]  Check OK", *cmd);
+        UT_TRACE("Command[%x]  Check OK", *cmd);
         return true;
     }
 
@@ -227,7 +227,7 @@ BYTE JTT808PktBase::MakeCheckProtocol(BYTE *pData,int nLen)
     {
         check ^= pData[i];
     }
-    CDSMLog::Trace("check code[%x]",check);
+    UT_TRACE("check code[%x]",check);
     return check;
 }
 

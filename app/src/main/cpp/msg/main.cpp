@@ -4,21 +4,23 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "dsm_jtt808_api.h"
+#include "api/dsm_jtt808_api.h"
 
 
 int main(int argc, char* const argv[])
 {
-//	if (!Inialise()) {
-////		CDSMLog::Fatal("Inialise failed!");
-//		return -1;
-//	}
+	if (!CDsmJTT808_API::GetInstance()->Inialise()) {
+		UT_FATAL("Inialise failed!");
+		return -1;
+	}
+	CDsmJTT808_API::GetInstance()->SetGpsInfo(45890000,23480000,100);
+    //g_objClientConn.DoLocationUp();
 
 	while(1) {
-//		OnTimer();
+		CDsmJTT808_API::GetInstance()->OnTimer();
 	}
 
-	UnInialise();
+	//CDsmJTT808_API::GetInstance()->UnInialise();
 
 	return  1;
 }
@@ -53,7 +55,7 @@ int main(int argc, char* const argv[])
 //			// 重新连接
 //			CDSMLog::Trace("Start reconnect...");
 //			CClientConn* pClientConn = CClientConnManager::GetInstance()->GetClientConnByFd(nClientFd);
-//			CClientConnManager::GetInstance()->DeleteClientConnect(nClientFd);
+//			CClientConnManager::GetInstance()->_DeleteClientConnect(nClientFd);
 //			nClientFd = pClientConn->Connect();
 //			CClientConnManager::GetInstance()->RegisterClientConn(nClientFd,pClientConn);
 //			continue;

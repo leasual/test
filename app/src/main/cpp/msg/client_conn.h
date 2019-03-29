@@ -9,14 +9,6 @@
 #include "hpsocket/HPSocket4C.h"
 #include "base/singleton.h"
 #include "base/util.h"
-#include <stdio.h>
-#include <stdlib.h>
-
-#include "client_conn.h"
-#include "base/dsm_log.h"
-#include "base/type_def.h"
-#include "hp_socket_helper.h"
-#include "msg_process.h"
 
 #include <string>
 
@@ -33,7 +25,8 @@ public:
     CClientConn();
     ~CClientConn();
 
-    bool Inialise(std::string strServerIp, unsigned int nPort);
+    int Inialise(std::string strServerIp, unsigned int nPort);
+    int Inialise(std::string strServerIp, unsigned int nPort,unsigned int nClientFd);
 //    void SetCallBackToHP();
 //    int  StartTcpClient(const char *svr_ip, unsigned short int port);
 //    int  StopTcpClient(void);
@@ -46,7 +39,7 @@ public:
     void UpdateKeepAliveTick(uint64_t keepAliveTm);  // 更新保活时间
     void UpdateRecvPktTick(uint64_t recvPktTick);  // 更新最近一次接收报文的时间
     void ProcessMsg(BYTE* buf, size_t nLen);
-    int Connect();  // 连接服务器
+    //int Connect();  // 连接服务器
     void DoRegister();
     void DoAuth();
     void DoHeartBeat();
@@ -56,8 +49,8 @@ public:
     bool IsLocationSet(); // GPS是否有值
 
 private:
-    //HP_TcpPullClientListener m_listener;
-    //HP_TcpPullClient m_client;
+    HP_TcpPullClientListener m_listener;
+    HP_TcpPullClient m_client;
     //TPkgInfo m_pkgInfo;
 
     std::string m_strServerIp;   // 服务器端的IP地址

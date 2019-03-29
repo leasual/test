@@ -76,12 +76,12 @@ add_library( # Sets the name of the library.
 #        src/main/cpp/message/src/main.cpp
 #        src/main/cpp/message/src/DSM_JTT_API.cpp
 
-#        src/main/cpp/msg/client_conn.cpp
-#        src/main/cpp/msg/client_conn_manager.cpp
+        src/main/cpp/msg/client_conn.cpp
+        src/main/cpp/msg/client_conn_manager.cpp
         src/main/cpp/msg/hp_socket_helper.cpp
-#        src/main/cpp/msg/msg_process.cpp
+        src/main/cpp/msg/msg_process.cpp
         src/main/cpp/msg/base/config_file.cpp
-#        src/main/cpp/msg/base/jtt808_base.cpp
+        src/main/cpp/msg/base/jtt808_base.cpp
         src/main/cpp/msg/base/log4z.cpp
         src/main/cpp/msg/base/util.cpp
 

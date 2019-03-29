@@ -385,7 +385,7 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
 //        timer?.purge()
         timer?.cancel()
         Handler().post {
-            Utils.deleteFileAll(this)
+//            Utils.deleteFileAll(this)
             System.exit(0)
         }
         horzon?.stopGetRGB()
@@ -520,7 +520,7 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
                 integer.beginCali = true
             },8000)
 
-            Handler().postDelayed({  Utils.deleteFile(integer)},10000)
+//            Handler().postDelayed({  Utils.deleteFile(integer)},10000)
             Log.e(TAG, "AsyncTaskInitTotalFlow  successfully")
 
 //            horzon.setRecordMode(HorzonParameters.RecordMode.BOOT_RECORDING)
