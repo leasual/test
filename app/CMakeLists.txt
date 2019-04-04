@@ -34,9 +34,13 @@ include_directories(src/main/cpp/dsm_strategy)
 include_directories(src/main/cpp/dsm_strategy/utils/file)
 
 
-include_directories(src/main/cpp/message/include)
 
 include_directories(src/main/cpp/include)
+include_directories(src/main/cpp/message/include)
+include_directories(src/main/cpp/message/api)
+include_directories(src/main/cpp/message/base)
+include_directories(src/main/cpp/message)
+
 
 #add_library( libutils STATIC IMPORTED )
 #set_target_properties(libutils PROPERTIES IMPORTED_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/src/main/jniLibs/${ANDROID_ABI}/libutils.a)
@@ -71,13 +75,15 @@ add_library( # Sets the name of the library.
             src/main/cpp/jni_part.cpp
             src/main/cpp/cameras.cc
 
-        src/main/cpp/message/src/dsm_transmit_jtt.cpp
-                src/main/cpp/message/src/dsmapp_sms_custom_jtt.cpp
-                src/main/cpp/message/src/dsmapp_srv_jtt.cpp
-                src/main/cpp/message/src/dsmapp_srvinteraction_jtt.cpp
-                src/main/cpp/message/src/others.cpp
-                src/main/cpp/message/src/main.cpp
-                 src/main/cpp/message/src/DSM_JTT_API.cpp
+        src/main/cpp/message/client_conn.cpp
+        src/main/cpp/message/client_conn_manager.cpp
+        src/main/cpp/message/hp_socket_helper.cpp
+        src/main/cpp/message/msg_process.cpp
+        src/main/cpp/message/base/config_file.cpp
+        src/main/cpp/message/base/file_helper.cpp
+        src/main/cpp/message/base/jtt808_base.cpp
+        src/main/cpp/message/base/log4z.cpp
+        src/main/cpp/message/base/util.cpp
 
         src/main/cpp/dsm_strategy/judger.cc
         src/main/cpp/dsm_strategy/smoke_judger.cc
@@ -101,15 +107,12 @@ add_library( # Sets the name of the library.
         src/main/cpp/algorithm/utilities/src/utils.cc
         src/main/cpp/algorithm/object_detection/rcnn/src/object_detection.cc
 
-
-
         src/main/cpp/dsm_strategy/utils/file/config.cc
         src/main/cpp/dsm_strategy/utils/file/file_read_write_utils.cc
         src/main/cpp/dsm_strategy/utils/file/file_system.cc
         src/main/cpp/dsm_strategy/utils/file/file_utils.cc
         src/main/cpp/dsm_strategy/utils/file/system_config.cc
         src/main/cpp/dsm_strategy/utils/file/text_table_file.cc
-
         )
 
 

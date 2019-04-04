@@ -15,6 +15,8 @@ CMsgProcess::CMsgProcess():m_pCurrentUpLoading(NULL)
     memset(m_respBuffer,0,sizeof(m_respBuffer));
     memset(m_sendBuffer,0,sizeof(m_sendBuffer));
 	memset(m_szAuthCode,0,sizeof(m_szAuthCode));
+    //m_strSimNo = CConfigFileReader::GetInstance()->GetConfigName("sim_no");
+    m_strSimNo = "013811088446";
 }
 
 
@@ -109,7 +111,8 @@ int CMsgProcess::_ProcessPltAccessoryReq(CClientConn *pClientConn, BYTE *pAccess
     JTT808_SU_Accessory_up objAccessUp;
     objAccessUp.Format(pBody);
  
-    DevCommResp(pClientConn,nSeq,JTT_SU_PLT_ACCESSORY_UP,0);
+    DevCommResp(pClientConn,nSeq,JTT_SU_PLT_ACCESSORY_UP,0); // 往平台发通用应答消息
+
     int nClientFd = CClientConnManager::GetInstance()->Connect(objAccessUp.strIp,objAccessUp.nTcpPort);
     UT_INFO("Start Connect accessory server ip[%s] port[%d] clientFd[%d]...",objAccessUp.strIp.c_str(),objAccessUp.nTcpPort,nClientFd);
     // 给附件服务器发指令
@@ -123,7 +126,7 @@ int CMsgProcess::_ProcessPltAccessoryReq(CClientConn *pClientConn, BYTE *pAccess
 }
 
 /**
- *1210
+ *0x1210
  * @param pAlarmFlag  报警标识号
  * @param pAlarmNo 报警编号
  * @return
@@ -143,7 +146,7 @@ int CMsgProcess::DevAlarmAccessoryUp(CClientConn* pClient,BYTE* pAlarmFlag, BYTE
     m_reqPtrOffset += 2;
 
     // 手机号 6
-    Str2BCD((char*)pPktHeader->SimNo,CConfigFileReader::GetInstance()->GetConfigName("sim_no"));
+    Str2BCD((char*)pPktHeader->SimNo,(char*)m_strSimNo.c_str());
     endswap(&(pPktHeader->SimNo));
     m_reqPtrOffset += 6;
     // 消息流水号 2
@@ -152,12 +155,15 @@ int CMsgProcess::DevAlarmAccessoryUp(CClientConn* pClient,BYTE* pAlarmFlag, BYTE
 
     int nBodyLen = 0;
     JTT808_SU_DEV_ACCESSORY_UP* pDevAccessoryUp = (JTT808_SU_DEV_ACCESSORY_UP*)(m_szReqOneBuffer + JTT808MsgHead::HEADERSIZE);
+    std::vector<AlarmAccessory>  vAccessories;
+    if (!CClientConnManager::GetInstance()->GetAlarmFlag((char*)pAlarmFlag,vAccessories))
+        return -1;
 
     char* szDeviceId = CConfigFileReader::GetInstance()->GetConfigName("dev_id");
     memcpy(pDevAccessoryUp->dev_ID,szDeviceId,sizeof(pDevAccessoryUp->dev_ID));
     memcpy(pDevAccessoryUp->alarmFlag,pAlarmFlag,sizeof(pDevAccessoryUp->alarmFlag));
     memcpy(pDevAccessoryUp->alarmNo,pAlarmNo,sizeof(pDevAccessoryUp->alarmNo));
-    pDevAccessoryUp->accessoryNum = 1;
+    pDevAccessoryUp->accessoryNum = vAccessories.size();
     pDevAccessoryUp->accessoryType = 0;
     nBodyLen += LEN_DEV_ACCESSORY_UP;
 
@@ -165,27 +171,56 @@ int CMsgProcess::DevAlarmAccessoryUp(CClientConn* pClient,BYTE* pAlarmFlag, BYTE
 
     //<文件类型>_<通道号>_<报警类型>_<序号>_<报警编号>.<后缀名>
     //std::string strPath = "/home/public/Work/image/";
-    std::string strFileName = "00_65_6501_0_";
-    std::string strRealName = "/home/public/Work/image/alarm1.jpg";
-    strFileName.append((char*)pDevAccessoryUp->alarmNo);
-    strFileName.append(".jpg");
-    pAccessory->fileNameLen = strFileName.length();
-    nBodyLen += 1;
-    UT_TRACE("FileName[%s],length[%lu]",strFileName.c_str(),strFileName.length());
-    memcpy(m_szReqOneBuffer + JTT808MsgHead::HEADERSIZE + nBodyLen,strFileName.c_str(),strFileName.length());
-    nBodyLen += strFileName.length();
+    std::string strFileName,strRealName;
+    std::vector<AlarmAccessory>::iterator pIter = vAccessories.begin();
+    for (; pIter != vAccessories.end() ; ++pIter) {
+        strRealName = (char*)pIter->stFileName;
+        strFileName = "00_65_6501_0_";
+        strFileName.append((char*)pDevAccessoryUp->alarmNo);
+        strFileName.append(".jpg");
+        pAccessory->fileNameLen = strFileName.length();
+        nBodyLen += 1;
 
-    DWORD fileSize = 48053;
-    DWORD tmpFileSize = fileSize;
-    endswap(&tmpFileSize);
-    memcpy(m_szReqOneBuffer + JTT808MsgHead::HEADERSIZE + nBodyLen,&tmpFileSize,sizeof(pAccessory->fileSize));
-    nBodyLen += sizeof(pAccessory->fileSize);
+        UT_TRACE("FileName[%s],length[%lu]",strFileName.c_str(),strFileName.length());
+        memcpy(m_szReqOneBuffer + JTT808MsgHead::HEADERSIZE + nBodyLen,strFileName.c_str(),strFileName.length());
+        nBodyLen += strFileName.length();
 
-    FileInfo objFileInof(strRealName,euPIC,fileSize);
-    strcpy(objFileInof.m_szFileName,strFileName.c_str());
-    pClient->UpdateUpFileInfo(strRealName,objFileInof);
+        CFile file;
+        file.Open(pIter->stFileName, O_RDONLY);
+        size_t size = 0;
+        if (!file.GetSize(size))
+            UT_FATAL("Get file[%s] size error",pIter->stFileName);
+        DWORD fileSize = size;
+        endswap(&fileSize);
+        memcpy(m_szReqOneBuffer + JTT808MsgHead::HEADERSIZE + nBodyLen,&fileSize,sizeof(pAccessory->fileSize));
+        nBodyLen += sizeof(pAccessory->fileSize);
+
+        FileInfo objFileInof(strRealName,euPIC,size);
+        strcpy(objFileInof.m_szFileName,strFileName.c_str());
+        pClient->UpdateUpFileInfo(strFileName,objFileInof);
+    }
+
+//    std::string strFileName = "00_65_6501_0_";
+//    std::string strRealName = "/home/public/Work/image/alarm1.jpg";
+//    strFileName.append((char*)pDevAccessoryUp->alarmNo);
+//    strFileName.append(".jpg");
+//    pAccessory->fileNameLen = strFileName.length();
+//    nBodyLen += 1;
+//    UT_TRACE("FileName[%s],length[%lu]",strFileName.c_str(),strFileName.length());
+//    memcpy(m_szReqOneBuffer + JTT808MsgHead::HEADERSIZE + nBodyLen,strFileName.c_str(),strFileName.length());
+//    nBodyLen += strFileName.length();
+//
+//    DWORD fileSize = 48053;
+//    DWORD tmpFileSize = fileSize;
+//    endswap(&tmpFileSize);
+//    memcpy(m_szReqOneBuffer + JTT808MsgHead::HEADERSIZE + nBodyLen,&tmpFileSize,sizeof(pAccessory->fileSize));
+//    nBodyLen += sizeof(pAccessory->fileSize);
+//
+//    FileInfo objFileInof(strRealName,euPIC,fileSize);
+//    strcpy(objFileInof.m_szFileName,strFileName.c_str());
+//    pClient->UpdateUpFileInfo(strRealName,objFileInof);
+
     m_reqPtrOffset += nBodyLen;
-
     pPktHeader->SetMsgBodyLength(nBodyLen);
 
     // 消息尾
@@ -196,6 +231,8 @@ int CMsgProcess::DevAlarmAccessoryUp(CClientConn* pClient,BYTE* pAlarmFlag, BYTE
     UT_DUMP(m_szReqOneBuffer,m_reqPtrOffset);
 
     _SendToPlt(pClient);
+
+    CClientConnManager::GetInstance()->DelAlarmFlag((char*)pDevAccessoryUp->alarmFlag);
     return 1;
 }
 
@@ -270,7 +307,7 @@ int CMsgProcess::DevFileUpload(CClientConn* pClientConn,FileInfo* pFileInfo)
     m_reqPtrOffset += 2;
 
     // 手机号 6
-    Str2BCD((char*)pPktHeader->SimNo,CConfigFileReader::GetInstance()->GetConfigName("sim_no"));
+    Str2BCD((char*)pPktHeader->SimNo,(char*)m_strSimNo.c_str());
     endswap(&(pPktHeader->SimNo));
     m_reqPtrOffset += 6;
     // 消息流水号 2
@@ -301,15 +338,35 @@ int CMsgProcess::DevFileUpload(CClientConn* pClientConn,FileInfo* pFileInfo)
 
     UT_TRACE("$$$Send File Complete$$$");
     UT_DUMP(m_szReqOneBuffer,m_reqPtrOffset);
-
 	return _SendToPlt(pClientConn);
 }
 
-
-int CMsgProcess::_ProcessPltAccessoryUpResp(CClientConn* pClientConn,BYTE* pResp, int nLen)
+/**
+ * 0x1211
+ * @param pClientConn
+ * @param pResp
+ * @param nLen
+ * @return
+ */
+int CMsgProcess::_ProcessPltAccessoryUpResp(CClientConn* pClientConn)
 {
     // 平台已经正确回应了终端需要发送的文件信息
     // 这里给平台发送文件信息
+    std::map<std::string,FileInfo> files = pClientConn->GetUpFileInfo();
+    std::map<std::string,FileInfo>::iterator pIter = files.begin();
+    for (;pIter != files.end(); pIter++) {
+        if (pIter->second.m_fileStatus == euInit) {
+            break;
+        }
+    }
+    if (pIter == files.end()) {
+        // 到这里,没有文件需要传输了
+        pClientConn->m_mapFileInfo.clear();
+        return -1;
+    }
+    pIter->second.m_fileStatus = euUploading; // 更新文件上传的状态
+    m_pCurrentUpLoading = &pIter->second;
+
     m_reqPtrOffset = 0;
     JTT808MsgHead *pPktHeader = (JTT808MsgHead*)m_szReqOneBuffer;
 
@@ -323,7 +380,7 @@ int CMsgProcess::_ProcessPltAccessoryUpResp(CClientConn* pClientConn,BYTE* pResp
     m_reqPtrOffset += 2;
 
     // 手机号 6
-    Str2BCD((char*)pPktHeader->SimNo,CConfigFileReader::GetInstance()->GetConfigName("sim_no"));
+    Str2BCD((char*)pPktHeader->SimNo,(char*)m_strSimNo.c_str());
     endswap(&(pPktHeader->SimNo));
     m_reqPtrOffset += 6;
     // 消息流水号 2
@@ -331,15 +388,6 @@ int CMsgProcess::_ProcessPltAccessoryUpResp(CClientConn* pClientConn,BYTE* pResp
     m_reqPtrOffset += 2;
 
     int nBodyLen = 0;
-
-    std::map<std::string,FileInfo> files = pClientConn->GetUpFileInfo();
-    std::map<std::string,FileInfo>::iterator pIter = files.begin();
-    if (pIter == files.end())
-        return -1;
-    pIter->second.m_fileStatus = euUploading; // 更新文件上传的状态
-    m_pCurrentUpLoading = &pIter->second;
-
-
     BYTE nFileNameLen = (BYTE)strlen(pIter->second.m_szFileName);
     memcpy(m_szReqOneBuffer + m_reqPtrOffset + nBodyLen,&nFileNameLen,1);
     nBodyLen += 1;
@@ -363,7 +411,7 @@ int CMsgProcess::_ProcessPltAccessoryUpResp(CClientConn* pClientConn,BYTE* pResp
     //UT_TRACE("+++BodyLen[%d] from sizeof",nBodyLen);
     UT_TRACE("m_reqPtrOffset=%d",m_reqPtrOffset);
     UT_DUMP(m_szReqOneBuffer,m_reqPtrOffset);
-
+    //pClientConn->UpdateUpFileStatus(pIter->second.m_szFileName,euUploading);
     return _SendToPlt(pClientConn);
 }
 
@@ -390,10 +438,17 @@ int CMsgProcess::_ProcessPltUpFileOk(CClientConn* pClientConn,BYTE* pResp, int n
     PltFileUpCompleteAck objUpCompleteAck;
     objUpCompleteAck.Format(pBody);
 
-    UT_TRACE("Send Result[%hhu]",objUpCompleteAck.btUpResult);
-
-	return objUpCompleteAck.btUpResult;
-    //return 1;
+	if (objUpCompleteAck.btUpResult == 0) {
+	    //当前文件上传完成,如果有多个文件接着传下一个文件
+        //m_pCurrentUpLoading->m_fileStatus = euLoadSucc; // 更新状态
+        //pClientConn->UpdateUpFileStatus((char*)objUpCompleteAck.fileName,euLoadSucc);
+        pClientConn->DelFileItem((char*)objUpCompleteAck.szFileName);
+        _ProcessPltAccessoryUpResp(pClientConn);  //检查还有没有文件需要传输
+        UT_INFO("Send file[%s] success!",objUpCompleteAck.szFileName);
+	} else {
+	    UT_ERROR("Send file[%s] failed!",objUpCompleteAck.szFileName);
+	}
+    return 1;
 }
 
 
@@ -444,7 +499,7 @@ int CMsgProcess::_ProcessGeneralResp(CClientConn* pClientConn,BYTE *pGeneralResp
                 // 收到报警附件信息应答
                 UT_TRACE("Accessory server[%u] response msg[%d]",pClientConn->GetClientHandle(),JTT_SU_DEV_ACCESSORY_UP);
                 // 启动一个线程来发送附件文件
-                _ProcessPltAccessoryUpResp(pClientConn,pGeneralResp,nLen);
+                _ProcessPltAccessoryUpResp(pClientConn);
             }
 
             if (cmd == JTT_SU_DEV_FILE_UP) {
@@ -707,57 +762,15 @@ int CMsgProcess::DevGetAttriResp(STR_DEV_ATTR attr)
   * @brief  位置信息汇报
   * @retval length of data
   */
-int CMsgProcess::DevLocationUp(CClientConn* pClientConn,uint64_t latitude,uint64_t longitude,uint32_t  height)
+int CMsgProcess::DevLocationUp(CClientConn* pClientConn)
 {
-    _ConstructLocInfoPkt(latitude,longitude,height);
-    _SendToPlt(pClientConn);
-
+    // 从消息队列中取位置报警信息
+    DevLocInfo* pDevLoc = nullptr;
+    if (CClientConnManager::GetInstance()->m_queueDevLoc.PopFront(&pDevLoc)) {
+        _ConstructLocInfoPkt(pDevLoc);
+        _SendToPlt(pClientConn);
+    }
     return 1;
-
-//    int len = -1;
-//    int i;
-//
-//    WORD msgID = JTT_DEV_LOC_REP;
-//    m_sendBuffer[0] = (BYTE) (msgID>>8);
-//    m_sendBuffer[1] = (BYTE) (msgID);
-//
-//    m_sendBuffer[2] = (BYTE) (serialID>>8);
-//    m_sendBuffer[3] = (BYTE) (serialID);
-//
-//    m_sendBuffer[4] = (BYTE) (location.alarm_flag >> 24);
-//    m_sendBuffer[5] = (BYTE) (location.alarm_flag >> 16);
-//    m_sendBuffer[6] = (BYTE) (location.alarm_flag  >> 8);
-//    m_sendBuffer[7] = (BYTE) (location.alarm_flag );
-//
-//    m_sendBuffer[8] = (BYTE) (location.status >> 24);
-//    m_sendBuffer[9] = (BYTE) (location.status >> 16);
-//    m_sendBuffer[10] = (BYTE) (location.status >> 8);
-//    m_sendBuffer[11] = (BYTE) (location.status );
-//
-//    m_sendBuffer[12] = (BYTE) (location.latitude >> 24);
-//    m_sendBuffer[13] = (BYTE) (location.latitude >> 16);
-//    m_sendBuffer[14] = (BYTE) (location.latitude >> 8);
-//    m_sendBuffer[15] = (BYTE) (location.latitude );
-//
-//    m_sendBuffer[16] = (BYTE) (location.longitude>> 24);
-//    m_sendBuffer[17] = (BYTE) (location.longitude  >> 16);
-//    m_sendBuffer[18] = (BYTE) location.longitude >> 8;
-//    m_sendBuffer[19] = (BYTE) (location.longitude );
-//
-//    m_sendBuffer[20] = (BYTE) (location.high >> 8);
-//    m_sendBuffer[21] = (BYTE) (location.high );
-//
-//    m_sendBuffer[22] = (BYTE) (location.speed >> 8);
-//    m_sendBuffer[23] = (BYTE) (location.speed );
-//
-//    m_sendBuffer[24] = (BYTE) (location.direction >> 8);
-//    m_sendBuffer[25] = (BYTE) (location.direction );
-//
-//    for(i=0;i<6;i++)
-//        m_sendBuffer[26+i] = location.time[i];
-//
-//    len = 32;
-//    return len;
 }
 
 void CMsgProcess::_ConstructPktHeader(WORD nCmd, WORD nBodyLen)
@@ -775,7 +788,7 @@ void CMsgProcess::_ConstructPktHeader(WORD nCmd, WORD nBodyLen)
     pPktHeader->DisableMultiPacket();
     m_reqPtrOffset += 2;
     // 手机号 6
-    Str2BCD((char*)pPktHeader->SimNo,CConfigFileReader::GetInstance()->GetConfigName("sim_no"));
+    Str2BCD((char*)pPktHeader->SimNo,(char*)m_strSimNo.c_str());
     endswap(&(pPktHeader->SimNo));
     m_reqPtrOffset += 6;
     // 消息流水号 2
@@ -783,8 +796,13 @@ void CMsgProcess::_ConstructPktHeader(WORD nCmd, WORD nBodyLen)
     m_reqPtrOffset += 2;
 }
 
-void CMsgProcess::_ConstructLocInfoPkt(uint64_t latitude,uint64_t longitude,uint32_t  height)
+void CMsgProcess::_ConstructLocInfoPkt(DevLocInfo* pDevLocInfo)
 {
+    if (NULL == pDevLocInfo) {
+        UT_FATAL("Pointer to pDevLocInfo error!");
+        return;
+    }
+    static DWORD dwAlarmId = 0;
     JT808Protocol* pPktHeader = (JT808Protocol*)m_szReqOneBuffer;
     m_reqPtrOffset = 0;
 
@@ -797,7 +815,7 @@ void CMsgProcess::_ConstructLocInfoPkt(uint64_t latitude,uint64_t longitude,uint
     pPktHeader->DisableMultiPacket();
     m_reqPtrOffset += 2;
     // 手机号 6
-    Str2BCD((char*)pPktHeader->SimNo,CConfigFileReader::GetInstance()->GetConfigName("sim_no"));
+    Str2BCD((char*)pPktHeader->SimNo,(char*)m_strSimNo.c_str());
     endswap(&(pPktHeader->SimNo));
     m_reqPtrOffset += 6;
     // 消息流水号 2
@@ -807,17 +825,13 @@ void CMsgProcess::_ConstructLocInfoPkt(uint64_t latitude,uint64_t longitude,uint
     //_ConstructPktHeader(JTT_DEV_LOC_REP,sizeof(JTT808Body_PositionUP));
     int nBodyLen = 0;
     JTT808Body_PositionUP* pLocUpPkt = (JTT808Body_PositionUP*)(m_szReqOneBuffer + JTT808MsgHead::HEADERSIZE);
-
     pLocUpPkt->ResetAlarmFlag();
     pLocUpPkt->EnableFatigueFlag();
-
     pLocUpPkt->ResetStatus();
-
-    pLocUpPkt->SetLatitude(latitude);
-    pLocUpPkt->SetLongitude(longitude);
-    pLocUpPkt->SetHigh(height);
-
-	pLocUpPkt->SetSpeed(80);
+    pLocUpPkt->SetLatitude(pDevLocInfo->stLatitude);
+    pLocUpPkt->SetLongitude(pDevLocInfo->stLongitude);
+    pLocUpPkt->SetHigh(pDevLocInfo->stHeight);
+	pLocUpPkt->SetSpeed(pDevLocInfo->stSpeed);
 	pLocUpPkt->SetDirection(0);
     std::time_t t = std::time(NULL);
     char mbstr[18] = {0};
@@ -828,54 +842,57 @@ void CMsgProcess::_ConstructLocInfoPkt(uint64_t latitude,uint64_t longitude,uint
     m_reqPtrOffset += sizeof(JTT808Body_PositionUP);
     nBodyLen += sizeof(JTT808Body_PositionUP);
 
-    // 构造位置附加信息
-    JTT808Body_PositionUP_Extra* pPosExtra = (JTT808Body_PositionUP_Extra*)(m_szReqOneBuffer + m_reqPtrOffset);
-    pPosExtra->extra_id = 0x65;
-    pPosExtra->extra_len = LEN_SU808_ALARM;  // 附加信息长度
-    m_reqPtrOffset += sizeof(JTT808Body_PositionUP_Extra);
-    nBodyLen += sizeof(JTT808Body_PositionUP_Extra);
+    if (pDevLocInfo->stHasAlarm) {
+        // 构造位置附加信息
+        JTT808Body_PositionUP_Extra* pPosExtra = (JTT808Body_PositionUP_Extra*)(m_szReqOneBuffer + m_reqPtrOffset);
+        pPosExtra->extra_id = DSM_FLAG;
+        pPosExtra->extra_len = LEN_SU808_ALARM;  // 附加信息长度
+        m_reqPtrOffset += sizeof(JTT808Body_PositionUP_Extra);
+        nBodyLen += sizeof(JTT808Body_PositionUP_Extra);
 
-    JTT808_SU_Body_DSM_Alarm* pDSMAlarm = (JTT808_SU_Body_DSM_Alarm*)(m_szReqOneBuffer + m_reqPtrOffset);
-    pDSMAlarm->SetAlarmId(1);
-    pDSMAlarm->btStatus = 0;
-    pDSMAlarm->btAlarmType = 1;
-    pDSMAlarm->btAlarmGrade = 1;
-    pDSMAlarm->btFatiqueDegree = 1;
+        JTT808_SU_Body_DSM_Alarm* pDSMAlarm = (JTT808_SU_Body_DSM_Alarm*)(m_szReqOneBuffer + m_reqPtrOffset);
+        //pDSMAlarm->SetAlarmId((dwAlarmId++)%MAXUINT32);
+        pDSMAlarm->SetAlarmId((dwAlarmId++)%0XFFFFFFFF);
+        pDSMAlarm->btStatus = 0;
+        pDSMAlarm->btAlarmType = pDevLocInfo->stAlaryType;
+        pDSMAlarm->btAlarmGrade = 1;
+        pDSMAlarm->btFatiqueDegree = 1;
 
-    DWORD dwReserved = 0;
-    memcpy(pDSMAlarm->btReserved,&dwReserved,sizeof(pDSMAlarm->btReserved));
-    pDSMAlarm->btSpeed = 80;
-    pDSMAlarm->SetHigh(0);
-    pDSMAlarm->SetLatitude(latitude);
-    pDSMAlarm->SetLongitude(longitude);
-    if (std::strftime(mbstr, 18, "%y%m%d%H%M%S", std::localtime(&t))) {
-        Str2BCD((char*)pDSMAlarm->time,mbstr);
-        endswap(&(pDSMAlarm->time));
+        DWORD dwReserved = 0;
+        memcpy(pDSMAlarm->btReserved,&dwReserved,sizeof(pDSMAlarm->btReserved));
+        pDSMAlarm->btSpeed = pDevLocInfo->stSpeed;
+        pDSMAlarm->SetHigh(pDevLocInfo->stHeight);
+        pDSMAlarm->SetLatitude(pDevLocInfo->stLatitude);
+        pDSMAlarm->SetLongitude(pDevLocInfo->stLongitude);
+        if (std::strftime(mbstr, 18, "%y%m%d%H%M%S", std::localtime(&t))) {
+            Str2BCD((char*)pDSMAlarm->time,mbstr);
+            endswap(&(pDSMAlarm->time));
+        }
+        pDSMAlarm->status = 0;
+        nBodyLen += sizeof(JTT808_SU_Body_DSM_Alarm);
+
+        // 设置报警标志号
+        int offset_alram_flag = 0;
+        OFFSET(JTT808_SU_Body_DSM_Alarm,btAlarmFlag,offset_alram_flag);
+        JTT808_SU_Body_DSM_Alarm_Flag* pDSMAlarmFlag = (JTT808_SU_Body_DSM_Alarm_Flag*)(m_szReqOneBuffer + m_reqPtrOffset + offset_alram_flag);
+        char* szDeviceId = CConfigFileReader::GetInstance()->GetConfigName("dev_id");
+        pDSMAlarmFlag->SetDevId((BYTE*)szDeviceId);
+        if (std::strftime(mbstr, 18, "%y%m%d%H%M%S", std::localtime(&t))) {
+            Str2BCD((char*)pDSMAlarmFlag->time,mbstr);
+            endswap(&(pDSMAlarmFlag->time));
+        }
+        pDSMAlarmFlag->btSeqNo = 0;
+        pDSMAlarmFlag->btAccessories = pDevLocInfo->stAccessories.size();  // 附件数量
+        pDSMAlarmFlag->btReserved = 0;
+
+        CClientConnManager::GetInstance()->UpdateAlarmFlag((char*)pDSMAlarmFlag,pDevLocInfo->stAccessories);
+        m_reqPtrOffset += LEN_SU808_ALARM;  // 偏移累加
     }
-    pDSMAlarm->status = 0;
-    nBodyLen += sizeof(JTT808_SU_Body_DSM_Alarm);
 
-    // 设置报警标志位
-    int offset_alram_flag = 0;
-    OFFSET(JTT808_SU_Body_DSM_Alarm,btAlarmFlag,offset_alram_flag);
-    JTT808_SU_Body_DSM_Alarm_Flag* pDSMAlarmFlag = (JTT808_SU_Body_DSM_Alarm_Flag*)(m_szReqOneBuffer + m_reqPtrOffset + offset_alram_flag);
-    char* szDeviceId = CConfigFileReader::GetInstance()->GetConfigName("dev_id");
-    pDSMAlarmFlag->SetDevId((BYTE*)szDeviceId);
-    if (std::strftime(mbstr, 18, "%y%m%d%H%M%S", std::localtime(&t))) {
-        Str2BCD((char*)pDSMAlarmFlag->time,mbstr);
-        endswap(&(pDSMAlarmFlag->time));
-    }
-    pDSMAlarmFlag->btSeqNo = 0;
-    pDSMAlarmFlag->btAccessories = 1;  // 附件数量
-    pDSMAlarmFlag->btReserved = 0;
-
-    m_reqPtrOffset += LEN_SU808_ALARM;  // 偏移累加
     pPktHeader->SetMsgBodyLength(nBodyLen);
-
     // 消息尾
     *((BYTE*)m_szReqOneBuffer + m_reqPtrOffset) = MakeCheckProtocol((BYTE*)m_szReqOneBuffer,m_reqPtrOffset);  // 校验码
     m_reqPtrOffset++;
-    //UT_TRACE("+++BodyLen[%d] from sizeof",nBodyLen);
     UT_TRACE("m_reqPtrOffset=%d",m_reqPtrOffset);
     UT_DUMP(m_szReqOneBuffer,m_reqPtrOffset);
 
@@ -898,7 +915,7 @@ void CMsgProcess::_ConstructDevAuthPkt(const char* authentication_code)
     pAuthPktHeader->DisableMultiPacket();
     m_reqPtrOffset += 2;
     // 手机号 6
-    Str2BCD((char*)pAuthPktHeader->SimNo,CConfigFileReader::GetInstance()->GetConfigName("sim_no"));
+    Str2BCD((char*)pAuthPktHeader->SimNo,(char*)m_strSimNo.c_str());
     endswap(&(pAuthPktHeader->SimNo));
     m_reqPtrOffset += 6;
     // 消息流水号 2
@@ -938,7 +955,9 @@ void CMsgProcess::_ConstructDevHeartBeatPkt()
     pHertBeatPktHeader->DisableMultiPacket();
     m_reqPtrOffset += 2;
     // 手机号 6
-    Str2BCD((char*)pHertBeatPktHeader->SimNo,CConfigFileReader::GetInstance()->GetConfigName("sim_no"));
+    Str2BCD((char*)pHertBeatPktHeader->SimNo,(char*)m_strSimNo.c_str());
+    UT_TRACE("sim_no =%s",CConfigFileReader::GetInstance()->GetConfigName("sim_no"));
+
     endswap(&(pHertBeatPktHeader->SimNo));
     m_reqPtrOffset += 6;
     // 消息流水号 2
@@ -974,7 +993,7 @@ void CMsgProcess::_ConstructDevRegisterPkt()
     m_reqPtrOffset += 2;
 
     // 手机号 6
-    Str2BCD((char*)pRegPktHeader->SimNo,CConfigFileReader::GetInstance()->GetConfigName("sim_no"));
+    Str2BCD((char*)pRegPktHeader->SimNo,(char*)m_strSimNo.c_str());
     endswap(&(pRegPktHeader->SimNo));
     m_reqPtrOffset += 6;
     // 消息流水号 2

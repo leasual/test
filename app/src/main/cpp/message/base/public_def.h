@@ -9,11 +9,11 @@
 #include <string.h>
 #include <stdio.h>
 #include <iomanip>
+
 #include "type_def.h"
 #include "msg_def.h"
 #include "config_file.h"
 #include "dsm_log.h"
-
 
 
 #define SERVER_HEARTBEAT_INTERVAL	2*60*1000    //  心跳的時間間隔爲3分钟
@@ -31,5 +31,7 @@
 #define CHECK_EINVAL(expr)				CHECK_ERROR(expr, ERROR_INVALID_PARAMETER)
 #define ASSERT_CHECK_ERROR(expr, code)	{ASSERT(expr); CHECK_ERROR(expr, code);}
 #define ASSERT_CHECK_EINVAL(expr)		{ASSERT(expr); CHECK_EINVAL(expr);}
+
+#define ASSERT							assert
 
 #endif //DSM_JTT808_PUBLIC_DEF_H

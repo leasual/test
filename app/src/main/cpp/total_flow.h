@@ -177,6 +177,9 @@ public:
     string pathSmoke = "/storage/sdcard1/smoke/";
     string pathAbnormal = "/storage/sdcard1/abnormal/";
     string pathUnknow = "/storage/sdcard1/unknown/";
+    string currentPath =  "/storage/sdcard1/img/";
+    queue<string> pictures;
+    bool stopQueue = false;
     int index = 0;
     long time_diff = 0;
     std::thread process_picture_thread_;

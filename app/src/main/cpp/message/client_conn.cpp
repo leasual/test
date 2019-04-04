@@ -346,12 +346,12 @@ void CClientConn::DoHeartBeat()
 void CClientConn::DoLocationUp()
 {
     UT_TRACE("Start DoLocationUp");
-    if (!IsLocationSet()) {
-        UT_INFO("information of gps have not been set,can`t up");
-        return;
-    }
+//    if (!IsLocationSet()) {
+//        UT_INFO("information of gps have not been set,can`t up");
+//        return;
+//    }
 
-    CMsgProcess::GetInstance()->DevLocationUp(this,m_latitude,m_longitude,m_height);
+	CMsgProcess::GetInstance()->DevLocationUp(this);
 }
 
 /**

@@ -255,14 +255,14 @@ void TotalFlow::ProcessPictureThread() {
         if (!keep_running_flag_) {
             break;
         }
-        LOGE(" TotalFlow::ProcessPictureThread() %d", isSave);
+//        LOGE(" TotalFlow::ProcessPictureThread() %d", isSave);
         if (isSave) {
             std::unique_lock<std::mutex> uniqueLock(frame_mutex_);
             cv::Mat frame = frame_.clone();
             uniqueLock.unlock();
             if (!frame.empty()) {
                 index++;
-                if (index % 3 == 0) {
+                if (index % 2 == 0) {
                     auto start1 = std::chrono::steady_clock::now();
 
                     struct timeval tv;
@@ -276,6 +276,8 @@ void TotalFlow::ProcessPictureThread() {
                     p = *localtime(&nSrc);
                     char str[80];
                     strftime(str, 1000, "%Y-%m-%d %H-%M-%S", &p);
+                    queue<string> queue1;
+
 
                     int dis, fat, smoke, call, abnorm;
                     result_.GetDistraction(dis, bboxd);
@@ -290,7 +292,7 @@ void TotalFlow::ProcessPictureThread() {
                     else
                         unknown = 0;
 
-                    string currentPath;
+
                     if (dis == 2) {
                         currentPath = pathDis;
                     } else if (call == 2) {
@@ -305,6 +307,8 @@ void TotalFlow::ProcessPictureThread() {
                         currentPath = pathUnknow;
                     } else
                         currentPath = path;
+
+//                    LOGE("warning --  fat %d,dis %d,call %d,", fat,dis,call);
 
                     cv::putText(frame, distration + to_string(dis), cv::Point(10, 10),
                                 1, 1, cv::Scalar(122, 255, 50));
@@ -344,8 +348,16 @@ void TotalFlow::ProcessPictureThread() {
 
 
 
-                    LOGE("result value - %s", file.data());
+//                    LOGE("result value - %s", file.data());
+                   if(!stopQueue){
+                       if(pictures.size() > 50)
+                           pictures.pop();
+                       pictures.push(file);
+                   }
                     cv::imwrite(file, frame);
+
+
+
                     auto end = std::chrono::steady_clock::now();
                     auto count = std::chrono::duration_cast<std::chrono::milliseconds>(
                             end - start).count();

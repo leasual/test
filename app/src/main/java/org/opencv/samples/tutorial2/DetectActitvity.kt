@@ -5,11 +5,8 @@ import android.app.Activity
 import android.app.AlertDialog
 import android.app.ProgressDialog
 import android.content.ContentValues
-import android.content.ContentValues.TAG
 import android.content.Context
 import android.content.SharedPreferences
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.location.*
 import android.media.MediaPlayer
 import android.net.wifi.WifiManager
@@ -17,16 +14,15 @@ import android.os.AsyncTask
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.telephony.TelephonyManager
 import android.text.TextUtils
 import android.util.Log
 import android.view.WindowManager
 import android.widget.TextView
-import com.horzon.parameters.HorzonParameters
 import com.op.dm.Utils
 import com.op.dm.Utils.getGpsLoaalTime
 import com.tencent.bugly.Bugly.init
 import com.ut.sdk.R
-import com.ut.sdk.R.raw.cali
 import kotlinx.android.synthetic.main.tutorial2_surface_view.*
 import org.opencv.android.BaseLoaderCallback
 import org.opencv.android.CameraBridgeViewBase
@@ -34,11 +30,8 @@ import org.opencv.android.LoaderCallbackInterface
 import org.opencv.android.OpenCVLoader
 import org.opencv.core.Mat
 import org.opencv.imgproc.Imgproc
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
-import java.nio.IntBuffer
 import java.util.*
-import kotlin.math.log
+import kotlin.concurrent.timerTask
 
 /**
  * Created by chris on 1/4/19.
@@ -49,6 +42,7 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
     internal var index = 0
     var rgb: Mat? = null
     private var mRgba: Mat? = null
+    private var mRgba2: Mat? = null
     private var mGray: Mat? = null
     private var progressDialog: ProgressDialog? = null
     //这个优先级会有变动，为了不修改jni里返回值顺序和ui的顺序，引入这个数组，之后只改这里就可以修改警告播报优先级-> 从names[3],names[2],names[1]..这个顺序遍历names数组
@@ -69,9 +63,9 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
     private var timer: Timer? = null
     private var timerTask: TimerTask? = null
     var page = 0
-//    var locationManager: LocationManager? = null
-//    var location: Location? = null
-    var beginCali = false;
+    var locationManager: LocationManager? = null
+    var location: Location? = null
+    var beginCali = false
     var totaltime = 0L
     var firsttime = 0L
     init {
@@ -95,43 +89,42 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
 
     }
 
-//    var  locationListener = object: LocationListener {
-//        override fun onLocationChanged(location: Location?) {
-//        }
-//
-//        override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) {
-//            var loc: Location? = getLastKnownLocation()
-//            Log.e(ContentValues.TAG, "onLocationChanged time is " + getGpsLoaalTime(loc?.time ?: 0))
-//            Log.e(ContentValues.TAG, "onLocationChanged lat is " + loc?.latitude)
-//        }
-//
-//        override fun onProviderEnabled(provider: String?) {
-//        }
-//
-//        override fun onProviderDisabled(provider: String?) {
-//        }
-//
-//    }
-    var bitMap: Bitmap? = null
+    var  locationListener = object: LocationListener {
+        override fun onLocationChanged(location: Location?) {
+        }
+
+        override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) {
+            var loc: Location? = getLastKnownLocation()
+            Log.e(ContentValues.TAG, "onLocationChanged time is " + getGpsLoaalTime(loc?.time ?: 0))
+            Log.e(ContentValues.TAG, "onLocationChanged lat is " + loc?.latitude)
+        }
+
+        override fun onProviderEnabled(provider: String?) {
+        }
+
+        override fun onProviderDisabled(provider: String?) {
+        }
+
+    }
+
+
+
 
     @SuppressLint("MissingPermission")
     public override fun onCreate(savedInstanceState: Bundle?) {
         Log.i(TAG, "called onCreate")
         super.onCreate(savedInstanceState)
-
 //        var mac = checks()
 //        Log.e("mac  dizhi   " , mac)
         firsttime = System.currentTimeMillis()
-//        locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager?
-//        location = locationManager?.getLastKnownLocation(locationManager?.getBestProvider(getCriteria(), true))
-//        locationManager?.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 1f, locationListener)
+        locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager?
+        location = locationManager?.getLastKnownLocation(locationManager?.getBestProvider(getCriteria(), true))
+//        locationManager?.requestLocationUpdates(LocationManager.GPS_PROVIDER, 3000, 1f, locationListener)
+        var telemamanger = getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
+        var  getSimSerialNumber:String? = telemamanger.getSimSerialNumber();
+        var getSimNumber :String? = telemamanger.getLine1Number();
 
-        bitMap = Bitmap.createBitmap(1280, 720, Bitmap.Config.ARGB_8888)
-//        var timerTask = timerTask {
-//            locationManager?.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1, 1f, locationListener)
-//        }
-//        var timer = Timer()
-////        timer.schedule(timerTask,10,5000)
+        Log.e(" ka hao !! ", getSimNumber?:"null" + " --  " + getSimSerialNumber?:"null")
 
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         setContentView(R.layout.tutorial2_surface_view)
@@ -145,37 +138,36 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
 
 
         with(tutorial2_activity_surface_view) {
-            visibility = CameraBridgeViewBase.INVISIBLE
-//            setCvCameraViewListener(this@DetectActitvity)
-//            setCameraIndex(1)
-
-//            setMaxFrameSize(1280, 720)
-//            setMaxFrameSize(640, 480)
-
+            visibility = CameraBridgeViewBase.VISIBLE
+            setCvCameraViewListener(this@DetectActitvity)
+            setCameraIndex(1)
+            setMaxFrameSize(640, 480)
         }
+
+//        with(tutorial2_activity_surface_view2) {
+//            visibility = CameraBridgeViewBase.VISIBLE
+//            setCvCameraViewListener(object :CameraBridgeViewBase.CvCameraViewListener2{
+//                override fun onCameraViewStarted(width: Int, height: Int) {
+//                    mRgba2 = Mat()
+//                }
+//
+//                override fun onCameraViewStopped() {
+//                }
+//
+//                override fun onCameraFrame(inputFrame: CameraBridgeViewBase.CvCameraViewFrame?): Mat {
+//                    mRgba2 = inputFrame?.rgba()
+//                    return mRgba2!!
+//                }
+//
+//            })
+//            setCameraIndex(0)
+//            setMaxFrameSize(640, 480)
+//        }
 
         progressDialog = ProgressDialog(this)
         progressDialog?.setTitle("加载中,请稍后")
         progressDialog?.show()
 
-        var builder: AlertDialog.Builder? = AlertDialog.Builder(this)
-        builder?.let {
-            with(it) {
-                setTitle("是否进行注册?")
-                setMessage("注册时请保持摄像头能清晰照到脸部")
-                setPositiveButton("注册") { _, _ ->
-                    register = true
-                    totalDone = true
-                }
-                setNegativeButton("直接进入") { _, _ ->
-                    register = false
-                    totalDone = true
-                }
-                setCancelable(false)
-                alertDialog = it.create()
-                alertDialog?.setCanceledOnTouchOutside(false)
-            }
-        }
         sdPlayer = MediaPlayer.create(this, R.raw.sdcard)
 
         detectFacePlayer = MediaPlayer.create(this, R.raw.detecting)
@@ -193,32 +185,42 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
             }
         }
         timer = Timer()
-        timer?.schedule(timerTask, 0, 5000)
-
-        horzon = HorzonParameters(this)
-
-
+        timer?.schedule(timerTask, 0, 3000)
     }
+    var lati = 0L
+    var longi= 0L
+    var alti = 0
+    var speeds :Short = 0
 
-//    @SuppressLint("MissingPermission")
-//    private fun getLastKnownLocation(): Location? {
-//
-////        val locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
-//        val providers = locationManager?.allProviders
-//        var bestLocation: Location? = null
-//        var times = 0L
-//        for (provider in providers!!) {
-//            val l = locationManager?.getLastKnownLocation(provider) ?: continue
-//            l?.apply {
-//                if(times < time){
-//                    bestLocation = l
-//                    times = time
-//                }
-//            }
-//            Log.e(ContentValues.TAG, " time is " + getGpsLoaalTime(l.time ?: 0) + " type- "+provider)
-//        }
-//        return bestLocation
-//    }
+    @SuppressLint("MissingPermission")
+    private fun getLastKnownLocation(): Location? {
+//        val locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
+        val providers = locationManager?.allProviders
+        var bestLocation: Location? = null
+        var times = 0L
+        if (providers != null) {
+            for (provider in providers) {
+                val l = locationManager?.getLastKnownLocation(provider) ?: continue
+                l?.apply {
+                    if(times < time){
+                        bestLocation = l
+                        times = time
+                        if(l.latitude > 1)
+                            lati = (l.latitude * 1000000).toLong()
+                        if(l.longitude > 1)
+                            longi = (l.longitude*1000000).toLong()
+                        alti = l.altitude.toInt()
+                        speeds = speed.toShort()
+
+                    }
+                }
+            Log.e(ContentValues.TAG, " time is " + getGpsLoaalTime(l.time ?: 0) + " type- "+provider)
+            Log.e(ContentValues.TAG, " gps is " + l.latitude + "  " + l.longitude + " type- "+provider + " speed " + l.speed)
+
+            }
+        }
+        return bestLocation
+    }
 
     private fun checks(): String {
         var mac = getAndroidLowVersionMac(applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager)
@@ -299,7 +301,7 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
             haveface = true
             register = false
             detectDone = true
-            save = true
+//            save = true
             Log.e("sss", "regist done --------------- ")
         },9000)
 
@@ -356,7 +358,6 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
 
     public override fun onPause() {
         super.onPause()
-//        tutorial2_activity_surface_view?.disableView()
     }
 
     public override fun onResume() {
@@ -375,6 +376,8 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
         super.onDestroy()
         stop()
         tutorial2_activity_surface_view?.disableView()
+//        tutorial2_activity_surface_view2?.disableView()
+
 //        android.os.Process.killProcess(android.os.Process.myPid())
         players.forEach {
             it?.stop()
@@ -385,10 +388,10 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
 //        timer?.purge()
         timer?.cancel()
         Handler().post {
-            Utils.deleteFileAll(this)
+//            Utils.deleteFileAll(this)
             System.exit(0)
         }
-        horzon?.stopGetRGB()
+
     }
 
     override fun onCameraViewStarted(width: Int, height: Int) {
@@ -457,14 +460,28 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
     }
 
     private val mLoaderCallback = object : BaseLoaderCallback(this) {
+        @SuppressLint("MissingPermission")
         override fun onManagerConnected(status: Int) {
             when (status) {
                 LoaderCallbackInterface.SUCCESS -> {
                     Log.e(TAG, "OpenCV loaded successfully")
                     System.loadLibrary("native-lib")
-                    rgb = Mat()
-                    mRgba = Mat()
-//                    tutorial2_activity_surface_view?.enableView()
+                    tutorial2_activity_surface_view?.enableView()
+//                    tutorial2_activity_surface_view2?.enableView()
+                    var timerTask =  timerTask {
+                        runOnUiThread {
+                            locationManager?.requestLocationUpdates(LocationManager.GPS_PROVIDER, 3000, 1f, locationListener)
+                            locationManager?.requestLocationUpdates(LocationManager.PASSIVE_PROVIDER, 3000, 1f, locationListener)
+                            locationManager?.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 3000, 1f, locationListener)
+
+                            getLastKnownLocation()
+                        }
+
+                    }
+                    var timer = Timer()
+                    timer.schedule(timerTask,3000,5000)
+
+
                     if (!totalDone) {
                         val context = mAppContext
                         AsyncTaskInitFile().execute(context as DetectActitvity)
@@ -482,6 +499,18 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
             super.onPostExecute(integer)
             Log.e(TAG, "AsyncTaskInitFile  successfully")
             AsyncTaskInitTotalFlow().execute(integer)
+            integer.CHECK("")
+
+            var timerTask =  timerTask {
+//                integer.runOnUiThread {
+//                }
+                integer.OnMessage(integer.lati, integer.longi,integer.alti, integer.speeds)
+
+            }
+            var timer = Timer()
+            timer.schedule(timerTask,5000,3000)
+
+
         }
 
         override fun doInBackground(vararg contexts: DetectActitvity): DetectActitvity {
@@ -490,19 +519,17 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
             val edi = sp.edit()
             edi.putInt("index",contexts[0].page)
             edi.apply()
-            Utils.deleteFileAll(contexts[0])
+//            Utils.deleteFileAll(contexts[0])
             Utils.addModeles(contexts[0],contexts[0].page)
             return contexts[0]
         }
     }
     private var alertDialog: AlertDialog? = null
-    var horzon :HorzonParameters? = null
+
     internal class AsyncTaskInitTotalFlow : AsyncTask<DetectActitvity, Int, DetectActitvity>() {
         override fun onPostExecute(integer: DetectActitvity) {
             super.onPostExecute(integer)
 //            integer.totalDone = true
-
-
             integer.views?.forEachIndexed { index, textView ->
                 textView.text = integer.names[index] + " : " + "正常"
             }
@@ -520,64 +547,10 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
                 integer.beginCali = true
             },8000)
 
-            Handler().postDelayed({  Utils.deleteFile(integer)},10000)
+            Handler().postDelayed({
+//                Utils.deleteFile(integer)
+            },10000)
             Log.e(TAG, "AsyncTaskInitTotalFlow  successfully")
-
-//            horzon.setRecordMode(HorzonParameters.RecordMode.BOOT_RECORDING)
-//            horzon.setResolution(HorzonParameters.CameraType.CVBS,HorzonParameters.VideoType.SUB_STREAM,HorzonParameters.VideoResolution.RES_480P)
-//            horzon.setResolution(HorzonParameters.CameraType.MAIN,HorzonParameters.VideoType.SUB_STREAM,HorzonParameters.VideoResolution.RES_480P)
-
-//            horzon.setVideoFrameRate(HorzonParameters.CameraType.CVBS,HorzonParameters.VideoType.SUB_STREAM,10)
-            integer.horzon?.startGetRGB {
-                Log.e(" rgb %^&&** " ,""+ it.size)
-//                val intBuf = ByteBuffer.wrap(it).asIntBuffer()
-//                val array = IntArray(intBuf.remaining())
-//                intBuf.get(array)
-//                integer.bitMap!!.setPixels(array,0,1280,0,0,1280,720)
-
-                var time = System.currentTimeMillis()
-                val options = BitmapFactory.Options()
-                options.inPreferredConfig = Bitmap.Config.ARGB_8888
-                var bitMap2 = BitmapFactory.decodeByteArray(it,0,it.size,options)
-                Log.e(" bitmap time ", "" + (System.currentTimeMillis() - time))
-                with(integer){
-                    org.opencv.android.Utils.bitmapToMat(bitMap2,mRgba)
-                    rgb?.let { it1 ->
-                        Imgproc.cvtColor(mRgba, it1, Imgproc.COLOR_RGBA2RGB)
-                        if (totalDone){
-                            mRgba?.let {
-
-                                if(!cali && beginCali){
-                                    Cali(it1.nativeObjAddr,0)
-                                }
-
-                                if(cali && !detectDone){
-                                    playDetecting()
-                                    var now = System.currentTimeMillis()
-                                    var diff = now - lastdetect
-                                    if(diff > 200){
-                                        Detect(it1.nativeObjAddr,0)
-                                        lastdetect = now
-                                    }
-                                }
-
-                                if (cali && detectDone){
-                                    if (index % 3 == 0){
-                                        var array = FindFeatures2(it1.nativeObjAddr, it.nativeObjAddr, register, save)
-                                        array?.let {
-                                            if(it.size > 2)
-                                                getStringResult(it)
-                                        }
-                                    }//减少uitext更新频率，没必要每帧都改变
-                                    else{
-                                        FindFeatures2(it1.nativeObjAddr, it.nativeObjAddr, register, save)
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
         }
 
         override fun doInBackground(vararg contexts: DetectActitvity): DetectActitvity {
@@ -586,8 +559,7 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
             }
             var tim = System.currentTimeMillis()/1000 + 1*60*60*24*10
             contexts[0].FindFeatures(tim, contexts[0].page)
-
-
+//            contexts[0].CHECK("")
 //            if(contexts[0].CHECK(contexts[0].checks()))
 //                contexts[0].FindFeatures(0, 0)
 //            else
@@ -598,6 +570,7 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
 
     external fun stop()
     external fun CHECK(mac: String): Boolean
+    external fun OnMessage(lati: Long,alti: Long,height:Int,speed:Short): Boolean
     //    external fun CHECK(mac:String)
     external fun FindFeatures(matAddrGr: Long, index: Int)
     external fun Cali(matAddrGr: Long, index: Int)

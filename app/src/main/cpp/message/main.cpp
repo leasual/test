@@ -11,12 +11,33 @@
 
 int main(int argc, char* const argv[])
 {
+
 	if (!CDsmJTT808_API::GetInstance()->Inialise()) {
 		UT_FATAL("Inialise failed!");
 		return -1;
 	}
-	CDsmJTT808_API::GetInstance()->SetGpsInfo(45890000,23480000,100);
 
+//	AlarmAccessory objAccess;
+//	objAccess.stFileType = euPIC;
+//	const char* szFilePath = "/home/public/Work/image/alarm1.jpg";
+//	strcpy(objAccess.stFileName,"/home/public/Work/image/alarm1.jpg");
+//	objAccess.dwFileSize = 48053;
+//	std::vector<AlarmAccessory> vAccessories;
+//	vAccessories.push_back(objAccess);
+//	uint64_t latitude,uint64_t longitude,uint32_t  height,WORD speed, bool bAlarm,euAlarmType alarmType,
+	CDsmJTT808_API::GetInstance()->SetGpsInfo(45890000,23480000,20,100,true,vAccessories);
+
+	//DevLocInfo* pDevLoc = nullptr;
+	//CClientConnManager::GetInstance()->GetLocation(pDevLoc);
+	//UT_TRACE("item = %zu",objDevLoc.stAccessories.size());
+	//CClientConnManager::GetInstance()->m_queueDevLoc.PopFront(&pDevLoc);
+	//UT_TRACE("item = %zu",(pDevLoc)->stAccessories.size());
+	//return 1;
+
+	if (!CDsmJTT808_API::GetInstance()->Connect()) {
+		UT_FATAL("Connect failed!");
+		return -1;
+	}
 
 
 //	CMsgProcess::GetInstance()->_ConstructLocInfoPkt(0,0,0);

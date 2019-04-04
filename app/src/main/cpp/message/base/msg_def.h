@@ -7,7 +7,6 @@
 
 #include "public_def.h"
 #include <algorithm>
-#include "type_def.h"
 
 template <class T>
 void endswap(T *objp)
@@ -16,7 +15,11 @@ void endswap(T *objp)
     std::reverse(memp, memp + sizeof(T));
 }
 
-#define MSG_FLAG 0x7e
+#define MSG_FLAG  0x7e
+#define ADAS_FLAG 0x64      //高级驾驶辅助系统
+#define DSM_FLAG  0x65      //驾驶员状态监控系统
+#define TPMS_FLAG 0x66      //轮胎气压监测系统
+#define BSD_FLAG  0x67      //盲点监测系统
 
 /*! 错误码 */
 typedef enum
@@ -501,9 +504,9 @@ struct JTT808_SU_Body_DSM_Alarm_Flag
 
     void SetDevId(BYTE id[7])
     {
-        //endswap(id);
         memcpy(dev_ID,id,7);
     }
+
 };
 #define LEN_SU808_ALARM_FLAG  sizeof(JTT808_SU_Body_DSM_Alarm_Flag)  // 报警标识的长度
 
@@ -551,7 +554,7 @@ struct DevFileUpComplete
 struct PltFileUpCompleteAck
 {
     BYTE fileNameLen;  // 文件名称长度
-    STRING fileName;  // 文件名称
+    char szFileName[50]; // 文件名称
     BYTE  btFileType; // 文件类型
     BYTE  btUpResult;  // 上传结果 0x00:完成 0x01:需要补传
     BYTE  btReSendPkts; // 补传数据包的数量
@@ -565,9 +568,8 @@ struct PltFileUpCompleteAck
         fileNameLen = *(BYTE*)pBody;
         nOffset += 1;
 
-        char szFileName[50] = {0};
+        memset(szFileName,0,50);
         memcpy(szFileName,pBody+nOffset,fileNameLen);
-        fileName = (STRING)szFileName;
         nOffset += fileNameLen;
 
         btFileType = *((BYTE*)(pBody + nOffset));

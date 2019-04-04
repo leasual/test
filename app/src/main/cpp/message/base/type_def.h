@@ -6,7 +6,8 @@
 #define DSM_JTT808_TYPEDEF_H
 
 #include <stdint.h>
-
+#include <vector>
+#include <string>
 //#define BYTE  unsigned char     // 无符号单字节,8位
 //#define WORD unsigned short   // 无符号双字节,16位
 //#define DWORD unsigned long  // 无符号4字节,32位
@@ -45,7 +46,6 @@ typedef signed int              ut_int32;
 #define MSG_FLAG    0x7e
 
 
-
 // 網絡狀態定義
 enum enNetStatus
 {
@@ -71,6 +71,65 @@ enum euFileUpStatus
     euInit, // 初始状态
     euUploading, // 正在上传中
     euLoadSucc, // 上传成功
+};
+
+//报警事件类型
+enum euAlarmType
+{
+    euAlarmInit = 0,
+    euFatigue, // 疲劳
+    euCall, // 打电话
+    euSmoking, //抽烟
+    euDistract, // 分神
+};
+
+
+// 报警附件结构体定义
+struct AlarmAccessory
+{
+    char stFileName[256]; // 报警文件路径
+    //DWORD dwFileSize;   //  文件大小
+    euFileType stFileType;  // 报警文件类型:0-图片 2-视频
+    AlarmAccessory()
+    {
+        memset(stFileName,0,256);
+        //dwFileSize = 0;
+    }
+};
+/**
+ * 终端上传的位置信息,如果有报警信息,还需要带上报警信息
+ */
+struct DevLocInfo
+{
+    uint64_t stLatitude;      // 纬度
+    uint64_t stLongitude;     // 经度
+    uint32_t  stHeight;       // 高度
+    WORD stSpeed;  // 速度
+    bool stHasAlarm; // 是否有报警信息
+    euAlarmType stAlaryType; // 报警事件类型
+    std::vector<AlarmAccessory>  stAccessories; // 附件数量
+
+    DevLocInfo():stLatitude(0),stLongitude(0),stHeight(0),stSpeed(0),stHasAlarm(false),stAlaryType(euAlarmInit)
+    {
+
+    }
+
+    DevLocInfo(uint64_t latitude,uint64_t longitude,uint32_t  height,WORD speed,bool bAlarm,
+               euAlarmType alarmType, std::vector<AlarmAccessory>& accessories)
+    {
+        stLatitude = latitude;
+        stLongitude = longitude;
+        stHeight = height;
+        stSpeed = speed;
+        stHasAlarm = bAlarm;
+        stAccessories = accessories;
+        stAlaryType = alarmType;
+    }
+
+    ~DevLocInfo()
+    {
+        stAccessories.clear();
+    }
 };
 
 #endif //DSM_JTT808_TYPEDEF_H

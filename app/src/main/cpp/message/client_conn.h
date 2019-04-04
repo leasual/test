@@ -54,6 +54,34 @@ public:
 
     std::map<std::string,FileInfo> m_mapFileInfo;  // 需要上传的文件信息
 
+    bool UpdateUpFileStatus(std::string strFileName,euFileUpStatus st)
+    {
+        std::map<std::string,FileInfo>::iterator pIterFound =
+                m_mapFileInfo.find(strFileName);
+        if (pIterFound == m_mapFileInfo.end()) {
+            UT_ERROR("Update file[%s] status failed!",strFileName.c_str());
+            return false;
+        }else{
+            pIterFound->second.m_fileStatus = st;
+            UT_INFO("Update file[%s] status success!",strFileName.c_str());
+            return true;
+        }
+    }
+
+    bool DelFileItem(std::string strFileName)
+    {
+        std::map<std::string,FileInfo>::iterator pIterFound =
+                m_mapFileInfo.find(strFileName);
+        if (pIterFound == m_mapFileInfo.end()) {
+            UT_ERROR("Delete file item[%s] failed!",strFileName.c_str());
+            return false;
+        }else{
+            UT_INFO("Delete file item[%s] success!",strFileName.c_str());
+            m_mapFileInfo.erase(pIterFound);
+            return true;
+        }
+    }
+
 
 private:
 	// Callback

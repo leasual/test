@@ -7,7 +7,7 @@
 
 
 #include "base/config_file.h"
-#include "hp_socket_helper.h"
+//#include "hp_socket_helper.h"
 #include "client_conn_manager.h"
 #include "singleton.h"
 
@@ -16,7 +16,8 @@ class CDsmJTT808_API :
         public Singleton<CDsmJTT808_API>
 {
 public:
-    CDsmJTT808_API() {m_listener = NULL; m_client = NULL;}
+    //CDsmJTT808_API() {m_listener = NULL; m_client = NULL;}
+    CDsmJTT808_API() {}
     ~CDsmJTT808_API() {}
 
     bool Inialise()
@@ -30,17 +31,29 @@ public:
         // 连接Server
         m_strIp = "106.14.186.44";
         m_nPort = 7000;
+        return true;
+    }
 
+    bool Connect()
+    {
         m_nClientFd = CClientConnManager::GetInstance()->Connect(m_strIp,m_nPort,true);
-		//m_nClientFd = CClientConnManager::GetInstance()->Connect("106.14.186.44",13880);
         if (m_nClientFd != -1) {
-//            UT_TRACE("Connect to server IP[%s] Port[%s] success!",szServerIp,szServerPort);
+            UT_TRACE("Connect to server IP[%s] Port[%d] success!",m_strIp.c_str(),m_nPort);
             return true;
-        }else{
-//            UT_TRACE("Connect to server IP[%s] Port[%s] failed!",szServerIp,szServerPort);
+        } else {
+            UT_TRACE("Connect to server IP[%s] Port[%d] failed!",m_strIp.c_str(),m_nPort);
         }
-
         return false;
+    }
+
+    void StartTimer()
+    {
+
+    }
+
+    void StopTimer()
+    {
+
     }
 
     void OnTimer()
@@ -69,41 +82,42 @@ public:
         usleep(millSecond * 1000); // 让出millSecond毫秒的时间片
     }
 
-    void SetGpsInfo(uint64_t latitude,uint64_t longitude,uint32_t  height/*,const  char* szFileName,euFileType fileType*/)
+    void SetGpsInfo(uint64_t latitude,uint64_t longitude,uint32_t  height,WORD speed, bool bAlarm,euAlarmType alarmType,std::vector<AlarmAccessory>& accessories)
     {
-        CClientConnManager::GetInstance()->SetLocation(m_nClientFd,latitude,longitude,height);
+        CClientConnManager::GetInstance()->SetLocation(m_nClientFd,latitude,longitude,height,speed,bAlarm,
+                                                       alarmType,accessories);
     }
 
     void UnInialise()
     {
-        DestroyHPSocketObjects();
+        //DestroyHPSocketObjects();
         m_nClientFd = -1;
-        m_listener = NULL;
-        m_client = NULL;
+//        m_listener = NULL;
+//        m_client = NULL;
     }
 
-    int  ClientSend_API(const BYTE* buff, size_t nBuffLen)
-    {
-        return ClientSend(m_client,buff,nBuffLen);
-    }
-
-    int StopTcpClient_API()
-    {
-        return StopTcpClient(m_client);
-    }
-
-    int StartTcpClient_API(const char *svr_ip, unsigned short int port)
-    {
-       return StartTcpClient(m_client,svr_ip,port);
-    }
+//    int  ClientSend_API(const BYTE* buff, size_t nBuffLen)
+//    {
+//        return ClientSend(m_client,buff,nBuffLen);
+//    }
+//
+//    int StopTcpClient_API()
+//    {
+//        return StopTcpClient(m_client);
+//    }
+//
+//    int StartTcpClient_API(const char *svr_ip, unsigned short int port)
+//    {
+//       return StartTcpClient(m_client,svr_ip,port);
+//    }
 
 private:
     unsigned int m_nClientFd;
     std::string m_strIp;
     unsigned int m_nPort;
 
-    HP_TcpPullClientListener m_listener;
-    HP_TcpPullClient m_client;
+//    HP_TcpPullClientListener m_listener;
+//    HP_TcpPullClient m_client;
 };
 
 

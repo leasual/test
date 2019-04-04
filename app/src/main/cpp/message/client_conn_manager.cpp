@@ -100,26 +100,68 @@ bool CClientConnManager::DoAuth(unsigned int nClientFd)
     return  true;
 }
 
+void CClientConnManager::SetLocation(DevLocInfo& refDevLocInfo)
+{
+    m_queueDevLoc.PushBack(&refDevLocInfo);
+}
 
-//bool CClientConnManager::DoLocationUp(unsigned int nClientFd)
-//{
+void CClientConnManager::SetLocation(unsigned int nClientFd,uint64_t latitude,uint64_t longitude,uint32_t  height,WORD speed, bool bAlarm,
+                                     euAlarmType alarmType,std::vector<AlarmAccessory>& accessories)
+{
 //    CClientConn* pClientConn = this->GetClientConnByFd(nClientFd);
 //    if (NULL == pClientConn) {
 //        UT_ERROR("Client[%d] call DoAuth() failed!",nClientFd);
-//        return false;
+//        return;
 //    }
-//    pClientConn->DoLocationUp();
+//    pClientConn->SetLocationInfo(latitude,longitude,height);
+
+    DevLocInfo* pLocInfo = new DevLocInfo(latitude,longitude,height,speed,bAlarm,alarmType,accessories);
+    m_queueDevLoc.PushBack(pLocInfo);
+}
+
+
+//bool CClientConnManager::GetLocation(DevLocInfo* pDevLocInfo)
+//{
+//    if (m_queueDevLoc.IsEmpty())
+//        return  false;
+//
+//    m_queueDevLoc.PopFront(&pDevLocInfo);
 //    return  true;
 //}
 
-void CClientConnManager::SetLocation(unsigned int nClientFd,uint64_t latitude,uint64_t longitude,uint32_t  height)
+void CClientConnManager::UpdateAlarmFlag(std::string strAlarmFlag,std::vector<AlarmAccessory>& refAccessories)
 {
-    CClientConn* pClientConn = this->GetClientConnByFd(nClientFd);
-    if (NULL == pClientConn) {
-        UT_ERROR("Client[%d] call DoAuth() failed!",nClientFd);
-        return;
+    UT_TRACE("Update alarm flag[%s] success.",strAlarmFlag.c_str());
+    m_mapAccessories.insert(std::make_pair(strAlarmFlag,refAccessories));
+}
+
+bool CClientConnManager::GetAlarmFlag(std::string strAlarmFlag,std::vector<AlarmAccessory>& refAccessories)
+{
+    std::map<std::string,std::vector<AlarmAccessory> >::iterator pIterFound =
+            m_mapAccessories.find(strAlarmFlag);
+
+    if (pIterFound == m_mapAccessories.end()) {
+        UT_ERROR("Cant find alarm flag[%s]",strAlarmFlag.c_str());
+        return false;
     }
-    pClientConn->SetLocationInfo(latitude,longitude,height);
+    refAccessories = pIterFound->second;
+
+    UT_TRACE("Find alarm flag[%s] success.",strAlarmFlag.c_str());
+    return true;
+}
+
+
+bool CClientConnManager::DelAlarmFlag(std::string strAlarmFlag)
+{
+    std::map<std::string,std::vector<AlarmAccessory> >::iterator pIterFound =
+            m_mapAccessories.find(strAlarmFlag);
+    if (pIterFound != m_mapAccessories.end()) {
+        m_mapAccessories.erase(pIterFound);
+        UT_TRACE("Erase alarm flag[%s] success.",strAlarmFlag.c_str());
+        return true;
+    }
+    UT_TRACE("Erase alarm flag[%s] failed.",strAlarmFlag.c_str());
+    return false;
 }
 
 int CClientConnManager::Connect(std::string strIp, unsigned int nPort, bool bTimer)
