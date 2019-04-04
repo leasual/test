@@ -40,13 +40,18 @@ CClientConn::CClientConn():m_nClientFd(-1),
 	UT_TRACE("Set buffersize to %d",dwSize);
 
 	HP_TcpClient_SetKeepAliveTime(m_client, 0);
+
+//	m_strSimNo = CConfigFileReader::GetInstance()->GetConfigName("sim_no");
+	m_strSimNo = "013811088446";
+//	m_strDevModel = CConfigFileReader::GetInstance()->GetConfigName("dev_model");
+	m_strDevModel = "13811088446";
 }
 
 CClientConn::~CClientConn()
 {
 	ReleaseHPSocket();
 	m_nClientFd = -1;
-	UT_TRACE("Release client[fd=%d] connect.",m_nClientFd);
+	//UT_TRACE("Release client[fd=%d] connect.",m_nClientFd);
 }
 
 
@@ -354,6 +359,18 @@ void CClientConn::DoLocationUp()
 	CMsgProcess::GetInstance()->DevLocationUp(this);
 }
 
+
+const char* CClientConn::GetSimNo()
+{
+    return m_strSimNo.c_str();
+}
+
+const char* CClientConn::GetDevModel()
+{
+    return m_strDevModel.c_str();
+}
+
+
 /**
  * 重置GPS的值
  */
@@ -378,4 +395,55 @@ bool CClientConn::IsLocationSet()
     return false;
 }
 
+
+bool CClientConn::UpdateUpFileStatus(std::string strFileName,euFileUpStatus st)
+{
+	std::map<std::string,FileInfo>::iterator pIterFound =
+			m_mapFileInfo.find(strFileName);
+	if (pIterFound == m_mapFileInfo.end()) {
+		UT_ERROR("Update file[%s] status failed!",strFileName.c_str());
+		return false;
+	}else{
+		pIterFound->second.m_fileStatus = st;
+		UT_INFO("Update file[%s] status success!",strFileName.c_str());
+		return true;
+	}
+}
+
+FileInfo* CClientConn::GetFileItem(std::string strFileName)
+{
+	std::map<std::string,FileInfo>::iterator pIterFound =
+			m_mapFileInfo.find(strFileName);
+	if (pIterFound == m_mapFileInfo.end()) {
+		UT_ERROR("Get file item[%s] failed!",strFileName.c_str());
+		return NULL;
+	}else{
+		UT_INFO("Get file item[%s] success!",strFileName.c_str());
+		return &(pIterFound->second);
+	}
+}
+
+void CClientConn::UpdateUpFileInfo(std::string strFileName, FileInfo fileInfo)
+{
+	m_mapFileInfo.insert(std::make_pair(strFileName,fileInfo));
+}
+
+void CClientConn::ClearUpFileInfo()
+{
+	m_mapFileInfo.clear();
+}
+
+bool CClientConn::DelFileItem(std::string strFileName)
+{
+	std::map<std::string,FileInfo>::iterator pIterFound =
+			m_mapFileInfo.find(strFileName);
+	if (pIterFound == m_mapFileInfo.end()) {
+		UT_ERROR("Delete file item[%s] failed!",strFileName.c_str());
+		return false;
+	}else{
+		UT_INFO("Delete file item[%s] success!",strFileName.c_str());
+		m_mapFileInfo.erase(pIterFound);
+		return true;
+	}
+}
 
