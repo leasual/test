@@ -89,7 +89,7 @@ Visualizer::Visualizer(std::vector<std::string> arguments)
 			this->vis_hog = true;
 			this->vis_aus = true;
 		}
-		else if (arguments[i].compare("-vis-align") == 0)
+		else if (arguments[i].compare("-vis-landmark") == 0)
 		{
 			this->vis_align = true;
 		}

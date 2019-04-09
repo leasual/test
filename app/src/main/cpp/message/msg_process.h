@@ -34,11 +34,11 @@ public:
 	int DevFileUpload(CClientConn*,FileInfo*); // 终端文件上传指令
 
 private:
-	void _ConstructDevRegisterPkt();
-	void _ConstructDevHeartBeatPkt();
-	void _ConstructDevAuthPkt(const char* authentication_code);
-    void _ConstructLocInfoPkt(DevLocInfo* pDevLocInfo); //构造位置基本信息汇报报文
-	void _ConstructPktHeader(WORD nCmd, WORD nBodyLen); // 构造指令头
+	void _ConstructDevRegisterPkt(const char*szModuleId,char* szSimNo);
+	void _ConstructDevHeartBeatPkt(char* szSimNo);
+	void _ConstructDevAuthPkt(const char* authentication_code,char* szSimNo);
+    void _ConstructLocInfoPkt(DevLocInfo* pDevLocInfo,char* szSimNo); //构造位置基本信息汇报报文
+	void _ConstructPktHeader(WORD nCmd, WORD nBodyLen,char* szSimNo); // 构造指令头
 	int _ProcessGeneralResp(CClientConn* pClientConn,BYTE *pGeneralResp, int nLen);  // 处理通用应答的返回结果
 	int _ProcessRegisterResp(BYTE *pRegResp, int nLen);  //处理注册回应的消息
 	int _ProcessPltAccessoryReq(CClientConn* pClientConn,BYTE* pResp, int nLen); // 平台请求报警附件上传
@@ -52,7 +52,6 @@ private:
     BYTE m_respBuffer[DATA_LEN*2];
 	char m_szAuthCode[32];
 	FileInfo* m_pCurrentUpLoading; // 记录当前正在上传的文件
-	std::string m_strSimNo;
 };
 
 #endif //DSM_JTT808_MSG_PROCESS_H

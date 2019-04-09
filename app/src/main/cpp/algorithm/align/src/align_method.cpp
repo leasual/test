@@ -63,7 +63,7 @@ cv::Mat FivePtsAlign::Align() {
     return face_img;
 }
 
-
+#ifdef USE_DLIB
 /////////////////////////////////////////////////  DlibAlign  /////////////////////////////////////////////////////
 DlibAlign::DlibAlign(const cv::Mat &im, const dlib::full_object_detection &dlib_shape, const int size) :
         _im(im),
@@ -109,3 +109,5 @@ cv::Mat DlibAlign::Align(){
     cv::cvtColor(rgb_face, bgr_face, cv::COLOR_RGB2BGR);
     return bgr_face;
 }
+
+#endif

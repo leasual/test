@@ -23,7 +23,7 @@ public:
     CClientConnManager();
     ~CClientConnManager(){};
 
-	int Connect(std::string strIp, unsigned int nPort,bool bTimer = false);
+	int Connect(std::string strSimNo, std::string strDevModel,std::string& strIp, unsigned int nPort,bool bTimer = false);
     CClientConn* GetClientConnByFd(unsigned int nClientFd);
     bool UpdateConnStatus(unsigned int nClientFd,enNetStatus euStatus); // 更新连接的状态
     void ReceivePkt(unsigned int nClientFd,BYTE* buf, size_t nLen);
@@ -32,18 +32,19 @@ public:
     bool DoAuth(unsigned int nClientFd);
     void SetLocation(DevLocInfo& pDevLocInfo);
     void SetLocation(unsigned int nClientFd,uint64_t latitude,uint64_t longitude,uint32_t height,WORD speed, bool bAlarm,
-                     euAlarmType alarmType,std::vector<AlarmAccessory>& accessories);
+                     euAlarmType alarmType,int nAlarmChannel,std::vector<AlarmAccessory>& accessories);
     //bool GetLocation(DevLocInfo* pDevLocInfo);
     void OnTimer(uint64_t curr_tick);
-    int  ClientReconnect(unsigned int nClientFd,std::string strIp, unsigned int nPort); // 客户端重新连接
+    int  ClientReconnect(unsigned int nClientFd,std::string& strSimNo,std::string& strDevMode,std::string& strIp, unsigned int nPort); // 客户端重新连接
 	void UpdateAlarmFlag(std::string strAlarmFlag,std::vector<AlarmAccessory>& refAccessories);
-	bool GetAlarmFlag(std::string strAlarmFlag,std::vector<AlarmAccessory>& refAccessories);
+	bool GetAlarmAccessory(std::string strAlarmFlag, std::vector<AlarmAccessory> &refAccessories);
 	bool DelAlarmFlag(std::string strAlarmFlag);
+	bool DeleteClientConnect(unsigned int nClientFd);  // 删除客户端连接对象
     CCASQueueX<DevLocInfo>  m_queueDevLoc;  // 位置信息队列
 
 private:
     void _RegisterClientConn(unsigned int nClientFd, CClientConn* pClientConn);
-    bool _DeleteClientConnect(unsigned int nClientFd);  // 删除客户端连接对象
+
 
 private:
     std::map<unsigned int, CClientConn*> m_mapClients;

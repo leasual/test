@@ -20,23 +20,29 @@ public:
     CDsmJTT808_API() {}
     ~CDsmJTT808_API() {}
 
-    bool Inialise()
+    bool Inialise(char* strSimNo, char* strDevModel, char* strIp, int nPort)
     {
-        CConfigFileReader::GetInstance()->LoadFromFile("/sdcard/Android/data/com.ut.sdk/files/dsm_jtt808.cfg");
 //        char* szServerIp = CConfigFileReader::GetInstance()->GetConfigName("server_ip");
 //        char* szServerPort = CConfigFileReader::GetInstance()->GetConfigName("server_port");
-        CDSMLog::GetInstance()->InitialiseLog4z("/sdcard/Android/data/com.ut.sdk/files/dsm_log.cfg");
-//        UT_TRACE("Server IP[%s] Port[%s]",szServerIp,szServerPort);
+//        if (NULL == szServerIp || NULL == szServerPort)
+//            return false;
+
+        if (NULL == strSimNo || NULL == strDevModel || NULL == strIp)
+            return false;
+
+        UT_TRACE("Server IP[%s] Port[%d]",strIp,nPort);
 
         // 连接Server
-        m_strIp = "106.14.186.44";
+        m_strIp = strIp;
         m_nPort = 7000;
+        m_strSimNo = strSimNo;
+        m_strDevModel = strDevModel;
         return true;
     }
 
     bool Connect()
     {
-        m_nClientFd = CClientConnManager::GetInstance()->Connect(m_strIp,m_nPort,true);
+        m_nClientFd = CClientConnManager::GetInstance()->Connect(m_strSimNo,m_strDevModel,m_strIp,m_nPort,true);
         if (m_nClientFd != -1) {
             UT_TRACE("Connect to server IP[%s] Port[%d] success!",m_strIp.c_str(),m_nPort);
             return true;
@@ -65,7 +71,7 @@ public:
         if (CClientConnManager::GetInstance()->GetClientConnStatus(m_nClientFd) == NET_DISCONNECTED) {
             // 重新连接
             UT_TRACE("Start reconnect...");
-            m_nClientFd = CClientConnManager::GetInstance()->ClientReconnect(m_nClientFd,(char*)m_strIp.c_str(),m_nPort);
+            m_nClientFd = CClientConnManager::GetInstance()->ClientReconnect(m_nClientFd,m_strSimNo,m_strDevModel,m_strIp,m_nPort);
         }
 
         enNetStatus euStatus = CClientConnManager::GetInstance()->GetClientConnStatus(m_nClientFd);
@@ -82,10 +88,10 @@ public:
         usleep(millSecond * 1000); // 让出millSecond毫秒的时间片
     }
 
-    void SetGpsInfo(uint64_t latitude,uint64_t longitude,uint32_t  height,WORD speed, bool bAlarm,euAlarmType alarmType,std::vector<AlarmAccessory>& accessories)
+    void SetGpsInfo(uint64_t latitude,uint64_t longitude,uint32_t  height,WORD speed, bool bAlarm,euAlarmType alarmType,int alarmChannel,std::vector<AlarmAccessory>& accessories)
     {
         CClientConnManager::GetInstance()->SetLocation(m_nClientFd,latitude,longitude,height,speed,bAlarm,
-                                                       alarmType,accessories);
+                                                       alarmType,alarmChannel,accessories);
     }
 
     void UnInialise()
@@ -115,7 +121,8 @@ private:
     unsigned int m_nClientFd;
     std::string m_strIp;
     unsigned int m_nPort;
-
+    std::string m_strSimNo;
+    std::string m_strDevModel;
 //    HP_TcpPullClientListener m_listener;
 //    HP_TcpPullClient m_client;
 };

@@ -10,11 +10,11 @@ FaceAttribute::FaceAttribute(const std::string model_folder_path) {
     dnn_face_attribute_net = cv::dnn::readNetFromCaffe( proto_path, model_path );
 }
 
-/*std::vector<cv::Mat> FaceAttribute::GetFaceAttribute(const cv::Mat &align){
-//    if (align.empty())
+/*std::vector<cv::Mat> FaceAttribute::GetFaceAttribute(const cv::Mat &landmark){
+//    if (landmark.empty())
 
     std::vector<cv::Mat> outputBlobs;
-    cv::Mat input_blob = cv::dnn::blobFromImage( align, 1.,
+    cv::Mat input_blob = cv::dnn::blobFromImage( landmark, 1.,
                                                  cv::Size(96,96), cv::Scalar(104,117,123), 0 );//for mobilefacenet_96
     dnn_face_attribute_net.setInput( input_blob, "data" );
     dnn_face_attribute_net.forward(outputBlobs,outBlobNames);

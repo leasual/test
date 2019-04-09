@@ -47,7 +47,7 @@ bool CUtil::ReadFile(const char* lpszFileName, CFile& file, CFileMapping& fmap, 
         SIZE_T dwSize = 0;
         if(file.GetSize(dwSize))
         {
-            if(dwSize > 0 && dwSize <= dwMaxFileSize)
+            if(dwSize > 0 /*&& dwSize <= dwMaxFileSize*/)
             {
                 if(fmap.Map(file, dwSize))
                     return true;

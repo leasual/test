@@ -10,17 +10,8 @@
 #include <vector>
 #include <memory>
 #include "net.h"
+#include "classify.h"
 
-struct ObjInfo
-{
-    ObjInfo():xL_(0),yL_(0),xR_(0),yR_(0),label_(-1),score_(0){}
-    int xL_;
-    int yL_;
-    int xR_;
-    int yR_;
-    int label_;
-    float score_;
-};
 
 class ObjectResult;
 
@@ -29,16 +20,11 @@ public:
     explicit ObjectDetect(const std::string & model);
     std::shared_ptr<ObjectResult> Detect(const cv::Mat& image);
 private:
-    std::vector<cv::Rect> FilterBboxWithCls(const cv::Mat& img, std::vector<cv::Rect>& rects, int label);
-    float computeArea(const ObjInfo& obj)  { return (obj.xR_ - obj.xL_ + 1) * (obj.yR_ - obj.yL_ + 1); }
-    float iou(const ObjInfo& obj1, const ObjInfo& obj2);
-    std::vector<ObjInfo> nms(std::vector<ObjInfo>& objs, float threshold = 0.65);
     size_t index(){ index_ = ++index_ % 3; return index_;}
 private:
     size_t index_;
-    std::shared_ptr<std::vector<std::shared_ptr<ncnn::Net>>> net_;
-    std::shared_ptr<ObjectResult> result_;
-    std::shared_ptr<ncnn::Net> cls_net_;
+    std::shared_ptr<std::vector<std::shared_ptr<Classification>>>classification_;
+    std::shared_ptr<ObjectResult> object_result_;
 };
 
 class ObjectResult{

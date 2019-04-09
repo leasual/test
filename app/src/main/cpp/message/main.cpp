@@ -12,20 +12,34 @@
 int main(int argc, char* const argv[])
 {
 
-	if (!CDsmJTT808_API::GetInstance()->Inialise()) {
+	CConfigFileReader::GetInstance()->LoadFromFile("dsm_jtt808.cfg");
+    char* strSimNo = CConfigFileReader::GetInstance()->GetConfigName("sim_no");
+    char* strDevModel = CConfigFileReader::GetInstance()->GetConfigName("dev_model");
+    char* strIp = CConfigFileReader::GetInstance()->GetConfigName("server_ip");
+    char* strPort = CConfigFileReader::GetInstance()->GetConfigName("server_port");
+
+	if (!CDsmJTT808_API::GetInstance()->Inialise(strSimNo,strDevModel,strIp, strPort)) {
 		UT_FATAL("Inialise failed!");
 		return -1;
 	}
 
-//	AlarmAccessory objAccess;
-//	objAccess.stFileType = euPIC;
-//	const char* szFilePath = "/home/public/Work/image/alarm1.jpg";
-//	strcpy(objAccess.stFileName,"/home/public/Work/image/alarm1.jpg");
-//	objAccess.dwFileSize = 48053;
-//	std::vector<AlarmAccessory> vAccessories;
-//	vAccessories.push_back(objAccess);
-//	uint64_t latitude,uint64_t longitude,uint32_t  height,WORD speed, bool bAlarm,euAlarmType alarmType,
-	CDsmJTT808_API::GetInstance()->SetGpsInfo(45890000,23480000,20,100,true,vAccessories);
+//	std::vector<std::string> v;
+//	v.push_back("hu");
+//	v.push_back("wen");
+
+    std::vector<AlarmAccessory> vAccessories;
+
+	AlarmAccessory objAccess;
+	objAccess.stFileType = euPIC;
+	strcpy(objAccess.stFileName,"/home/public/Work/image/alarm1.jpg");
+	vAccessories.emplace_back(objAccess);
+
+    AlarmAccessory objAccess2;
+    objAccess2.stFileType = euPIC;
+    strcpy(objAccess2.stFileName,"/home/public/Work/image/alarm2.jpg");
+    vAccessories.emplace_back(objAccess2);
+
+	CDsmJTT808_API::GetInstance()->SetGpsInfo(45890000,23480000,20,100,true,euFatigue,DSM_ALARM_FLAG,vAccessories);
 
 	//DevLocInfo* pDevLoc = nullptr;
 	//CClientConnManager::GetInstance()->GetLocation(pDevLoc);
@@ -34,7 +48,7 @@ int main(int argc, char* const argv[])
 	//UT_TRACE("item = %zu",(pDevLoc)->stAccessories.size());
 	//return 1;
 
-	if (!CDsmJTT808_API::GetInstance()->Connect()) {
+	if (!CDsmJTT808_API::GetInstance()->Connect(strSimNo,strDevModel)) {
 		UT_FATAL("Connect failed!");
 		return -1;
 	}
@@ -82,7 +96,7 @@ int main(int argc, char* const argv[])
 //			// 重新连接
 //			CDSMLog::Trace("Start reconnect...");
 //			CClientConn* pClientConn = CClientConnManager::GetInstance()->GetClientConnByFd(nClientFd);
-//			CClientConnManager::GetInstance()->_DeleteClientConnect(nClientFd);
+//			CClientConnManager::GetInstance()->DeleteClientConnect(nClientFd);
 //			nClientFd = pClientConn->Connect();
 //			CClientConnManager::GetInstance()->RegisterClientConn(nClientFd,pClientConn);
 //			continue;

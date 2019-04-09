@@ -17,13 +17,12 @@ public:
     /// \param [in] tracker_file 配置文件的路径
     ConfigTracker(const std::string &tracker_file);
 
-
     /// \brief 加载配置文件内容
     void LoadData() ;
 
 public:
     //分神的配置参数
-    static int distraction_threshold_;
+    static float distraction_threshold_;
     static int distraction_left_angle_;
     static int distraction_right_angle_;
     static int distraction_up_angle_;
@@ -32,21 +31,24 @@ public:
     static int distraction_photo_numbers_;
     static int distraction_photo_interval_;
 
+    //打哈欠的配置参数
+    static float yawn_threshold_;
+
     //疲劳检测的配置参数
-    static int fatigue_threshold_;
+    static float fatigue_threshold_;
     static int fatigue_video_times_;
     static int fatigue_photo_numbers_;
     static int fatigue_photo_interval_;
 
     //抽烟检测的配置参数
-    static int smoke_threshold_;
+    static float smoke_threshold_;
     static int smoke_alarm_interval_;
     static int smoke_video_times_;
     static int smoke_photo_numbers_;
     static int smoke_photo_interval_;
 
     //打电话的配置参数
-    static int call_threshold_;
+    static float call_threshold_;
     static int call_alarm_interval_;
     static int call_video_times_;
     static int call_photo_numbers_;
@@ -74,6 +76,20 @@ public:
 
     //视频录制分辨率设置
     static int video_resolution_;
+
+	//路径配置
+	static std::string path_load_img_; // 加载视频图片的路径
+	static std::string path_save_img_; // 图片保存路径
+
+	static int camera_online_;  // 摄像头是否在线
+    static int camera_index_;   // 摄像头ID
+    static int camera_fps_;            // 摄像头帧率
+    static int process_fps_;           // 数据处理帧率
+
+    static int write_result_;   // 保存结果标志位
+    static std::string path_save_result_;    //保存结果路径
+
+    static bool debug_;    //显示landmark和bbox
 };
 
 

@@ -27,12 +27,13 @@ CClientConn* CClientConnManager::GetClientConnByFd(unsigned int nClientFd)
 }
 
 
-bool CClientConnManager::_DeleteClientConnect(unsigned int nClientFd)
+bool CClientConnManager::DeleteClientConnect(unsigned int nClientFd)
 {
     std::map<unsigned int, CClientConn*>::iterator pIter = m_mapClients.find(nClientFd);
     if (pIter != m_mapClients.end()) {
         delete (pIter->second);
         m_mapClients.erase(pIter);
+        UT_TRACE("Releasae client fd[%d] success,now left [%lu] connects",nClientFd,m_mapClients.size());
         return true;
     }
 
@@ -106,7 +107,7 @@ void CClientConnManager::SetLocation(DevLocInfo& refDevLocInfo)
 }
 
 void CClientConnManager::SetLocation(unsigned int nClientFd,uint64_t latitude,uint64_t longitude,uint32_t  height,WORD speed, bool bAlarm,
-                                     euAlarmType alarmType,std::vector<AlarmAccessory>& accessories)
+                                     euAlarmType alarmType,int nAlarmChannel,std::vector<AlarmAccessory>& accessories)
 {
 //    CClientConn* pClientConn = this->GetClientConnByFd(nClientFd);
 //    if (NULL == pClientConn) {
@@ -115,7 +116,7 @@ void CClientConnManager::SetLocation(unsigned int nClientFd,uint64_t latitude,ui
 //    }
 //    pClientConn->SetLocationInfo(latitude,longitude,height);
 
-    DevLocInfo* pLocInfo = new DevLocInfo(latitude,longitude,height,speed,bAlarm,alarmType,accessories);
+    DevLocInfo* pLocInfo = new DevLocInfo(latitude,longitude,height,speed,bAlarm,alarmType,nAlarmChannel,accessories);
     m_queueDevLoc.PushBack(pLocInfo);
 }
 
@@ -135,7 +136,7 @@ void CClientConnManager::UpdateAlarmFlag(std::string strAlarmFlag,std::vector<Al
     m_mapAccessories.insert(std::make_pair(strAlarmFlag,refAccessories));
 }
 
-bool CClientConnManager::GetAlarmFlag(std::string strAlarmFlag,std::vector<AlarmAccessory>& refAccessories)
+bool CClientConnManager::GetAlarmAccessory(std::string strAlarmFlag, std::vector<AlarmAccessory> &refAccessories)
 {
     std::map<std::string,std::vector<AlarmAccessory> >::iterator pIterFound =
             m_mapAccessories.find(strAlarmFlag);
@@ -164,9 +165,9 @@ bool CClientConnManager::DelAlarmFlag(std::string strAlarmFlag)
     return false;
 }
 
-int CClientConnManager::Connect(std::string strIp, unsigned int nPort, bool bTimer)
+int CClientConnManager::Connect(std::string strSimNo, std::string strDevMode, std::string& strIp, unsigned int nPort, bool bTimer)
 {
-    CClientConn* pClientConn = new CClientConn;
+    CClientConn* pClientConn = new CClientConn(strSimNo,strDevMode);
     unsigned int nClientFd =  pClientConn->Connect(strIp,nPort,bTimer);
     m_mapClients.insert(std::make_pair(nClientFd, pClientConn));
     return nClientFd;
@@ -182,8 +183,8 @@ void CClientConnManager::OnTimer(uint64_t curr_tick)
 }
 
 
-int CClientConnManager::ClientReconnect(unsigned int nClientFd,std::string strIp, unsigned int nPort)
+int CClientConnManager::ClientReconnect(unsigned int nClientFd,std::string& strSimNo,std::string& strDevMode,std::string& strIp, unsigned int nPort)
 {
-    this->_DeleteClientConnect(nClientFd);
-    return this->Connect(strIp,nPort);
+    this->DeleteClientConnect(nClientFd);
+    return this->Connect(strSimNo,strDevMode,strIp,nPort);
 }

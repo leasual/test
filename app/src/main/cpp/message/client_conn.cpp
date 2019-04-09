@@ -12,7 +12,7 @@
 #include "client_conn_manager.h"
 
 
-CClientConn::CClientConn():m_nClientFd(-1),
+CClientConn::CClientConn(std::string strSimNo, std::string strDevMode):m_nClientFd(-1),
                             m_nServerPort(0),
                             m_conn_status(NET_DISCONNECTED),// 初始状态置为连接断开
                             m_latitude(0),
@@ -41,10 +41,10 @@ CClientConn::CClientConn():m_nClientFd(-1),
 
 	HP_TcpClient_SetKeepAliveTime(m_client, 0);
 
-//	m_strSimNo = CConfigFileReader::GetInstance()->GetConfigName("sim_no");
-	m_strSimNo = "013811088446";
-//	m_strDevModel = CConfigFileReader::GetInstance()->GetConfigName("dev_model");
-	m_strDevModel = "13811088446";
+	m_strSimNo = strSimNo,
+	m_strDevModel = strDevMode;
+	//m_strSimNo = CConfigFileReader::GetInstance()->GetConfigName("sim_no");
+	//m_strDevModel = CConfigFileReader::GetInstance()->GetConfigName("dev_model");
 }
 
 CClientConn::~CClientConn()
@@ -177,66 +177,6 @@ int CClientConn::Inialise(std::string strServerIp, unsigned int nPort,unsigned i
     return m_nClientFd;
 }
 
-//int CClientConn::StartTcpClient(const char *svr_ip, unsigned short int port)
-//{
-//    UT_TRACE("StartTcpClient server ip addr %s port %d ...\n", svr_ip, port);
-//    ut_uint16 conn_fd = 0;
-//    if(HP_Client_Start(m_client, svr_ip, port, 0)){
-//        UT_INFO("Start serverip ....ok\n");
-//
-//        /* set heart break time, default 20 second now */
-//        //dsmapp_srv_heart_set(20);
-//
-//        /*  connected session maintain --> ( one client connection ==  one  connect fd )  */
-//        conn_fd = (WORD)HP_Client_GetConnectionID(m_client);
-//
-//        /* notice the event that DSM client has been connected  */
-//        //dsmapp_srv_ind(conn_fd, DSM_TCP_EVT_CONNECTED);
-//        return 1;
-//    }
-//    else {
-//        CDSMLog::Error("start server ip failed errno: %d , error desc %s\n", HP_Client_GetLastError(m_client), HP_Client_GetLastErrorDesc(m_client));
-//        return -1;
-//    }
-//}
-//
-//int CClientConn::StopTcpClient(void)
-//{
-//    if(HP_Client_Stop(m_client)){
-//
-//        ut_uint16 conn_fd = 0;
-//        conn_fd = (ut_uint16)HP_Client_GetConnectionID(m_client);
-//
-//        UT_TRACE("Shutdown the connect socketFD %d !\n", conn_fd);
-//        //dsmapp_srv_ind(conn_fd, DSM_TCP_EVT_PIPE_CLOSED);
-//
-//        return 1;
-//    }
-//    else {
-//        CDSMLog::Error("Stop Tcp Client error :%d %s \n", HP_Client_GetLastError(m_client), HP_Client_GetLastErrorDesc(m_client));
-//        return -1;
-//    }
-//}
-//
-//
-//
-//void CClientConn::SetCallBackToHP()
-//{
-//    m_listener      = Create_HP_TcpPullClientListener();
-//    m_client        = Create_HP_TcpPullClient(m_listener);
-//
-//    HP_Set_FN_Client_OnConnect(m_listener, HPSocketHelper::OnConnect);
-//    HP_Set_FN_Client_OnSend(m_listener, HPSocketHelper::OnSend);
-//    HP_Set_FN_Client_OnPullReceive(m_listener, HPSocketHelper::OnReceive);
-//    HP_Set_FN_Client_OnClose(m_listener, HPSocketHelper::OnClose);
-//
-//    HP_Client_SetExtra(m_client, &m_pkgInfo);
-//    HP_TcpClient_SetKeepAliveTime(m_client, 0 );
-//
-//    return;
-//}
-//
-//
 void CClientConn::ReleaseHPSocket()
 {
     Destroy_HP_TcpPullClient(m_client);

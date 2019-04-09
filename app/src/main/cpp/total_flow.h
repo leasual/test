@@ -13,11 +13,11 @@
 #include <iostream>
 #include <chrono>
 #include <algorithm>
+#include <mutex>
 #include <thread>
 #include <opencv2/opencv.hpp>
 
-#include "shape_predict_untouch.h"
-#include "detector.h"
+#include "shape_predict.h"
 #include "align_method.h"
 #include "faceAlign.h"
 #include "faceID.h"
@@ -29,7 +29,6 @@
 
 #include "config_tracker.h"
 #include "judger.h"
-#include "smoke_judger.h"
 
 #include "head_pose_states.h"
 #include "eye_mouth_plus.h"
@@ -85,8 +84,6 @@ public:
 
     inline bool GetFaceId(std::string& name) const { name = name_; return true;}
 
-    inline bool GetCalibration(int& val) const { cv::Rect bbox; return calibration_.GetValue(val, bbox);}
-
     inline bool GetDistraction(int& val, cv::Rect& bbox ) const { return distraction_.GetValue(val, bbox);}
 
     inline bool GetFatigue(int& val, cv::Rect& bbox) const { return fatigue_.GetValue(val, bbox);}
@@ -96,6 +93,8 @@ public:
     inline bool GetCall(int& val,cv::Rect& bbox) const { return call_.GetValue(val, bbox);}
 
     inline bool GetAbnormal(int& val) const { cv::Rect bbox; return abnormal_.GetValue(val, bbox);}
+
+    inline bool GetYawn(int& val) const { cv::Rect bbox; return yawn_.GetValue(val, bbox);}
 
 private:
 
@@ -107,8 +106,6 @@ private:
 
     inline void SetFaceId(const std::string& val) {name_ = val;}
 
-    inline void SetCalibration(int val) {calibration_.SetValue(val, cv::Rect());}
-
     inline void SetDistraction(int val, cv::Rect& bbox) {distraction_.SetValue(val, bbox);}
 
     inline void SetFatigue(int val, cv::Rect& bbox) {fatigue_.SetValue(val, bbox);}
@@ -119,25 +116,27 @@ private:
 
     inline void SetAbnormal(int val) {abnormal_.SetValue(val, cv::Rect());}
 
+    inline void SetYawn(int val) {yawn_.SetValue(val, cv::Rect());}
+
     inline bool ResetResult(){
-        calibration_.ResetValue();
         distraction_.ResetValue();
         fatigue_.ResetValue();
         smoke_.ResetValue();
         call_.ResetValue();
         abnormal_.ResetValue();
+        yawn_.ResetValue();
         return true;
     }
 private:
      void SetParam(size_t interval, size_t speed){
         interval_ = interval;
         speed_threshold_ = speed;
-        calibration_.SetParam(interval_, speed_threshold_);
         distraction_.SetParam(interval_, speed_threshold_);
         fatigue_.SetParam(interval_, speed_threshold_);
         smoke_.SetParam(interval_, speed_threshold_);
         call_.SetParam(interval_, speed_threshold_);
         abnormal_.SetParam(interval_, speed_threshold_);
+        yawn_.SetParam(interval_, speed_threshold_);
     }
 
      void SetSpeed(size_t speed){
@@ -147,6 +146,7 @@ private:
        smoke_.SetSpeed(current_speed_);
        call_.SetSpeed(current_speed_);
        abnormal_.SetSpeed(current_speed_);
+       yawn_.SetSpeed(current_speed_);
     }
 private:
     size_t interval_;
@@ -156,12 +156,12 @@ private:
     std::vector<cv::Point2f> landmarks_;    //人脸关键点
     cv::Vec3f angles_;                      //人脸角度信息 0：上下， 1：左右
     std::string name_;                      //faceID策略
-    Strategy calibration_;                  //校准策略  0：正常校准， 1:暂停校准， 2:完成校准, -1 注册
     Strategy distraction_;                  //分神策略
     Strategy fatigue_;                      //疲劳策略
     Strategy smoke_;                        //抽烟策略
     Strategy call_;                         //打电话策略
     Strategy abnormal_;                     //驾驶员异常策略
+    Strategy yawn_;                         //打哈欠策略
 };
 
 class TotalFlow {
@@ -222,7 +222,7 @@ private:
     std::string sp_model_path_;
     std::string head_pose_model_path_;
     std::string faceid_path_;
-    std::string gaze_tracking_path_;
+//    std::string gaze_tracking_path_;
 
 //    std::shared_ptr<MTCNNDetector> detector_;
     std::shared_ptr<AlignMethod> align_method_;
@@ -230,9 +230,9 @@ private:
     std::shared_ptr<ShapePredictor> predictor_;
     std::shared_ptr<HeadPoseEstimator> head_pose_estimator_;
     std::shared_ptr<FaceID> faceid_;
-    std::shared_ptr<FaceAttribute> faceAttribute_;
+//    std::shared_ptr<FaceAttribute> faceAttribute_;
     std::shared_ptr<ObjectDetect> object_detect_;
-    std::vector<std::string> arguments_;
+//    std::vector<std::string> arguments_;
 
     ConfigTracker config_;
     HeadPoseStatus head_pose_detector_;
@@ -250,12 +250,12 @@ private:
     std::mutex angle_mutex_;
     std::mutex result_mutex_;
 
-//    Judger smoke_judger_;
-    SmokeJudger smoke_judger_;
-    Judger call_judger_;
-    Judger close_eye_judger_;
-    Judger open_mouth_judger_;
-    Judger distract_judger_;
+    Judger smoke_judger_;               //抽烟检测
+    Judger call_judger_;                //打电话检测
+    Judger close_eye_judger_;           //闭眼检测
+    Judger open_mouth_judger_;          //打哈欠检测
+    Judger head_left_right_judger_;     //左顾右盼检测
+    Judger head_up_down_judger_;        //低头仰头检测
 
     /// 以下为在图像中检测到的有效信息,用于各种策略判断
     cv::Mat frame_;     ///< 摄像头读取的帧
@@ -276,6 +276,7 @@ private:
     bool regist_over_flag_;
     bool mark_no_face_;
     bool face_match_flag_;
+    size_t face_match_count_;
     std::string feature_name_path_;
     std::string name_;
     std::mutex name_mutex_;

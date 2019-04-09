@@ -16,10 +16,6 @@ void endswap(T *objp)
 }
 
 #define MSG_FLAG  0x7e
-#define ADAS_FLAG 0x64      //高级驾驶辅助系统
-#define DSM_FLAG  0x65      //驾驶员状态监控系统
-#define TPMS_FLAG 0x66      //轮胎气压监测系统
-#define BSD_FLAG  0x67      //盲点监测系统
 
 /*! 错误码 */
 typedef enum
@@ -350,6 +346,20 @@ struct JTT808Body_PositionUP
         endswap(&alarm_flag);
     }
 
+    // 置危险驾驶标志位
+    void EnableDangerousFlag()
+    {
+        alarm_flag |= 0x00000008;
+        endswap(&alarm_flag);
+    }
+
+    // 取消危险驾驶标志位
+    void DisableDangerousFlag()
+    {
+        alarm_flag &= (~0x00000008);
+        endswap(&alarm_flag);
+    }
+
     void SetStatus(DWORD dwStatus)
     {
         status = dwStatus;
@@ -492,6 +502,7 @@ struct JTT808_SU_Accessory_up
     }
 };
 
+#define HEX_VALUE_TO_CHAR(n)			(n <= 9 ? n + '0' : (n <= 'F' ? n + 'A' - 0X0A : n + 'a' - 0X0A))
 
 /*! 苏标 报警标识号格式 */
 struct JTT808_SU_Body_DSM_Alarm_Flag
@@ -507,6 +518,21 @@ struct JTT808_SU_Body_DSM_Alarm_Flag
         memcpy(dev_ID,id,7);
     }
 
+    std::string FormatToString()
+    {
+        char buf[17]={0};
+        sprintf(buf,"%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c",
+                HEX_VALUE_TO_CHAR(dev_ID[0]),HEX_VALUE_TO_CHAR(dev_ID[1]),HEX_VALUE_TO_CHAR(dev_ID[2]),
+                HEX_VALUE_TO_CHAR(dev_ID[3]),HEX_VALUE_TO_CHAR(dev_ID[4]),HEX_VALUE_TO_CHAR(dev_ID[5]),
+                HEX_VALUE_TO_CHAR(dev_ID[6]),(time[0]),(time[1]),
+                (time[2]),(time[3]),(time[4]),
+                (time[5]),HEX_VALUE_TO_CHAR(btSeqNo),HEX_VALUE_TO_CHAR(btAccessories),
+                HEX_VALUE_TO_CHAR(btReserved)
+        );
+
+        buf[16]=0;
+        return (char*)buf;
+    }
 };
 #define LEN_SU808_ALARM_FLAG  sizeof(JTT808_SU_Body_DSM_Alarm_Flag)  // 报警标识的长度
 

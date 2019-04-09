@@ -15,8 +15,6 @@ CMsgProcess::CMsgProcess():m_pCurrentUpLoading(NULL)
     memset(m_respBuffer,0,sizeof(m_respBuffer));
     memset(m_sendBuffer,0,sizeof(m_sendBuffer));
 	memset(m_szAuthCode,0,sizeof(m_szAuthCode));
-    //m_strSimNo = CConfigFileReader::GetInstance()->GetConfigName("sim_no");
-    m_strSimNo = "013811088446";
 }
 
 
@@ -113,7 +111,8 @@ int CMsgProcess::_ProcessPltAccessoryReq(CClientConn *pClientConn, BYTE *pAccess
  
     DevCommResp(pClientConn,nSeq,JTT_SU_PLT_ACCESSORY_UP,0); // 往平台发通用应答消息
 
-    int nClientFd = CClientConnManager::GetInstance()->Connect(objAccessUp.strIp,objAccessUp.nTcpPort);
+    int nClientFd = CClientConnManager::GetInstance()->Connect(pClientConn->GetSimNo(),pClientConn->GetDevModel(),
+            objAccessUp.strIp,objAccessUp.nTcpPort);
     UT_INFO("Start Connect accessory server ip[%s] port[%d] clientFd[%d]...",objAccessUp.strIp.c_str(),objAccessUp.nTcpPort,nClientFd);
     // 给附件服务器发指令
     CClientConn* pClient = CClientConnManager::GetInstance()->GetClientConnByFd(nClientFd);
@@ -146,7 +145,7 @@ int CMsgProcess::DevAlarmAccessoryUp(CClientConn* pClient,BYTE* pAlarmFlag, BYTE
     m_reqPtrOffset += 2;
 
     // 手机号 6
-    Str2BCD((char*)pPktHeader->SimNo,(char*)m_strSimNo.c_str());
+    Str2BCD((char*)pPktHeader->SimNo,(char*)pClient->GetSimNo());
     endswap(&(pPktHeader->SimNo));
     m_reqPtrOffset += 6;
     // 消息流水号 2
@@ -156,7 +155,7 @@ int CMsgProcess::DevAlarmAccessoryUp(CClientConn* pClient,BYTE* pAlarmFlag, BYTE
     int nBodyLen = 0;
     JTT808_SU_DEV_ACCESSORY_UP* pDevAccessoryUp = (JTT808_SU_DEV_ACCESSORY_UP*)(m_szReqOneBuffer + JTT808MsgHead::HEADERSIZE);
     std::vector<AlarmAccessory>  vAccessories;
-    if (!CClientConnManager::GetInstance()->GetAlarmFlag((char*)pAlarmFlag,vAccessories))
+    if (!CClientConnManager::GetInstance()->GetAlarmAccessory((char *) pAlarmFlag, vAccessories))
         return -1;
 
     char* szDeviceId = CConfigFileReader::GetInstance()->GetConfigName("dev_id");
@@ -170,14 +169,19 @@ int CMsgProcess::DevAlarmAccessoryUp(CClientConn* pClient,BYTE* pAlarmFlag, BYTE
     JTT808_SU_ACCESSORY* pAccessory = (JTT808_SU_ACCESSORY*)(m_szReqOneBuffer + JTT808MsgHead::HEADERSIZE + nBodyLen);
 
     //<文件类型>_<通道号>_<报警类型>_<序号>_<报警编号>.<后缀名>
-    //std::string strPath = "/home/public/Work/image/";
     std::string strFileName,strRealName;
     std::vector<AlarmAccessory>::iterator pIter = vAccessories.begin();
     for (; pIter != vAccessories.end() ; ++pIter) {
         strRealName = (char*)pIter->stFileName;
-        strFileName = "00_65_6501_0_";
+        strFileName = pIter->stPltFileName;
         strFileName.append((char*)pDevAccessoryUp->alarmNo);
-        strFileName.append(".jpg");
+
+        if (pIter->stFileType == euPIC)
+            strFileName.append(".jpg");
+        else if(pIter->stFileType == euVideo)
+            strFileName.append(".avi");
+        else
+            strFileName.append(".jpg");
         pAccessory->fileNameLen = strFileName.length();
         nBodyLen += 1;
 
@@ -195,30 +199,10 @@ int CMsgProcess::DevAlarmAccessoryUp(CClientConn* pClient,BYTE* pAlarmFlag, BYTE
         memcpy(m_szReqOneBuffer + JTT808MsgHead::HEADERSIZE + nBodyLen,&fileSize,sizeof(pAccessory->fileSize));
         nBodyLen += sizeof(pAccessory->fileSize);
 
-        FileInfo objFileInof(strRealName,euPIC,size);
-        strcpy(objFileInof.m_szFileName,strFileName.c_str());
-        pClient->UpdateUpFileInfo(strFileName,objFileInof);
+        FileInfo objFileInfo(strRealName,euPIC,size);
+        strcpy(objFileInfo.m_szFileName,strFileName.c_str());
+        pClient->UpdateUpFileInfo(strFileName,objFileInfo);
     }
-
-//    std::string strFileName = "00_65_6501_0_";
-//    std::string strRealName = "/home/public/Work/image/alarm1.jpg";
-//    strFileName.append((char*)pDevAccessoryUp->alarmNo);
-//    strFileName.append(".jpg");
-//    pAccessory->fileNameLen = strFileName.length();
-//    nBodyLen += 1;
-//    UT_TRACE("FileName[%s],length[%lu]",strFileName.c_str(),strFileName.length());
-//    memcpy(m_szReqOneBuffer + JTT808MsgHead::HEADERSIZE + nBodyLen,strFileName.c_str(),strFileName.length());
-//    nBodyLen += strFileName.length();
-//
-//    DWORD fileSize = 48053;
-//    DWORD tmpFileSize = fileSize;
-//    endswap(&tmpFileSize);
-//    memcpy(m_szReqOneBuffer + JTT808MsgHead::HEADERSIZE + nBodyLen,&tmpFileSize,sizeof(pAccessory->fileSize));
-//    nBodyLen += sizeof(pAccessory->fileSize);
-//
-//    FileInfo objFileInof(strRealName,euPIC,fileSize);
-//    strcpy(objFileInof.m_szFileName,strFileName.c_str());
-//    pClient->UpdateUpFileInfo(strRealName,objFileInof);
 
     m_reqPtrOffset += nBodyLen;
     pPktHeader->SetMsgBodyLength(nBodyLen);
@@ -238,7 +222,7 @@ int CMsgProcess::DevAlarmAccessoryUp(CClientConn* pClient,BYTE* pAlarmFlag, BYTE
 
 
 /**
- *
+ * 往平台传输文件
  * @param pClientConn
  * @param pFileInfo   需要上传的文件类型
  * @return
@@ -267,7 +251,7 @@ int CMsgProcess::DevFileUpload(CClientConn* pClientConn,FileInfo* pFileInfo)
         m_szReqOneBuffer[3] = 0x64;
         m_reqPtrOffset += sizeof(DWORD);
 
-        UT_TRACE("File[%s],length[%lu]",pFileInfo->m_szFileName,strlen(pFileInfo->m_szFileName));
+        //UT_TRACE("File[%s],length[%lu]",pFileInfo->m_szFileName,strlen(pFileInfo->m_szFileName));
         BYTE    szFileName[50] = {0};
         strcpy((char*)szFileName,pFileInfo->m_szFileName);
         memcpy(m_szReqOneBuffer + m_reqPtrOffset,szFileName, 50);
@@ -307,7 +291,7 @@ int CMsgProcess::DevFileUpload(CClientConn* pClientConn,FileInfo* pFileInfo)
     m_reqPtrOffset += 2;
 
     // 手机号 6
-    Str2BCD((char*)pPktHeader->SimNo,(char*)m_strSimNo.c_str());
+    Str2BCD((char*)pPktHeader->SimNo,(char*)pClientConn->GetSimNo());
     endswap(&(pPktHeader->SimNo));
     m_reqPtrOffset += 6;
     // 消息流水号 2
@@ -342,7 +326,7 @@ int CMsgProcess::DevFileUpload(CClientConn* pClientConn,FileInfo* pFileInfo)
 }
 
 /**
- * 0x1211
+ * 0x1211  文件信息上传
  * @param pClientConn
  * @param pResp
  * @param nLen
@@ -361,11 +345,13 @@ int CMsgProcess::_ProcessPltAccessoryUpResp(CClientConn* pClientConn)
     }
     if (pIter == files.end()) {
         // 到这里,没有文件需要传输了
-        pClientConn->m_mapFileInfo.clear();
+        pClientConn->ClearUpFileInfo();
+        // 到这里,此次上传附件的任务已经完成,删除和附件服务器之间的Socket连接
+        CClientConnManager::GetInstance()->DeleteClientConnect(pClientConn->GetClientHandle());
         return -1;
     }
     pIter->second.m_fileStatus = euUploading; // 更新文件上传的状态
-    m_pCurrentUpLoading = &pIter->second;
+    m_pCurrentUpLoading = &pIter->second;   // 当前需要上传的文件
 
     m_reqPtrOffset = 0;
     JTT808MsgHead *pPktHeader = (JTT808MsgHead*)m_szReqOneBuffer;
@@ -380,7 +366,7 @@ int CMsgProcess::_ProcessPltAccessoryUpResp(CClientConn* pClientConn)
     m_reqPtrOffset += 2;
 
     // 手机号 6
-    Str2BCD((char*)pPktHeader->SimNo,(char*)m_strSimNo.c_str());
+    Str2BCD((char*)pPktHeader->SimNo,(char*)pClientConn->GetSimNo());
     endswap(&(pPktHeader->SimNo));
     m_reqPtrOffset += 6;
     // 消息流水号 2
@@ -415,10 +401,15 @@ int CMsgProcess::_ProcessPltAccessoryUpResp(CClientConn* pClientConn)
     return _SendToPlt(pClientConn);
 }
 
-
+/**
+ * 向平台传输文件
+ * @param pClientConn
+ * @param pResp
+ * @param nLen
+ * @return
+ */
 int CMsgProcess::_ProcessPltUpFileOk(CClientConn* pClientConn,BYTE* pResp, int nLen)
 {
-
     if (NULL == pClientConn || NULL == pResp || nLen < 0) {
         UT_ERROR("Parameter error!");
         return -1;
@@ -438,15 +429,20 @@ int CMsgProcess::_ProcessPltUpFileOk(CClientConn* pClientConn,BYTE* pResp, int n
     PltFileUpCompleteAck objUpCompleteAck;
     objUpCompleteAck.Format(pBody);
 
+    FileInfo* pFileInfo = pClientConn->GetFileItem((char*)objUpCompleteAck.szFileName);
 	if (objUpCompleteAck.btUpResult == 0) {
 	    //当前文件上传完成,如果有多个文件接着传下一个文件
         //m_pCurrentUpLoading->m_fileStatus = euLoadSucc; // 更新状态
         //pClientConn->UpdateUpFileStatus((char*)objUpCompleteAck.fileName,euLoadSucc);
+        if (NULL != pFileInfo) {
+            UT_INFO("Send file[%s] success!",pFileInfo->m_strOrigFileName.c_str());
+        }
         pClientConn->DelFileItem((char*)objUpCompleteAck.szFileName);
         _ProcessPltAccessoryUpResp(pClientConn);  //检查还有没有文件需要传输
-        UT_INFO("Send file[%s] success!",objUpCompleteAck.szFileName);
 	} else {
-	    UT_ERROR("Send file[%s] failed!",objUpCompleteAck.szFileName);
+        if (NULL != pFileInfo) {
+            UT_ERROR("Send file[%s] failed!",pFileInfo->m_strOrigFileName.c_str());
+        }
 	}
     return 1;
 }
@@ -603,7 +599,7 @@ void CMsgProcess::ProcessMsg(CClientConn* pClientConn,BYTE* data, size_t nLen)
   */
 int CMsgProcess::DevCommResp(CClientConn* pClientConn,WORD serialID,WORD answerID,BYTE result)
 {
-    _ConstructPktHeader(JTT_DEV_GENERAL_ACK,LEN_DEV_GEN_ACK);
+    _ConstructPktHeader(JTT_DEV_GENERAL_ACK,LEN_DEV_GEN_ACK,(char*)pClientConn->GetSimNo());
 
     DevGeneralAck* objGenAck = (DevGeneralAck*)(m_szReqOneBuffer + JT808Protocol::HEADERSIZE);
     objGenAck->SetSeqNo(serialID);
@@ -631,7 +627,7 @@ int CMsgProcess::DevAuthentication(CClientConn* pClientConn)
     if (szAuthCode == NULL)
         szAuthCode = (char*)m_szAuthCode;
     endswap(szAuthCode);
-    this->_ConstructDevAuthPkt(szAuthCode);
+    this->_ConstructDevAuthPkt(szAuthCode,(char*)pClientConn->GetSimNo());
     this->_SendToPlt(pClientConn);
 
     return 1;
@@ -645,7 +641,7 @@ int CMsgProcess::DevAuthentication(CClientConn* pClientConn)
 int CMsgProcess::DevHeartBeat(CClientConn* pClientConn)
 {
     UT_TRACE("Start DevHeartBeat");
-    _ConstructDevHeartBeatPkt();
+    _ConstructDevHeartBeatPkt((char*)pClientConn->GetSimNo());
     _SendToPlt(pClientConn);
 
     return 1;
@@ -654,7 +650,7 @@ int CMsgProcess::DevHeartBeat(CClientConn* pClientConn)
 
 int CMsgProcess::DevRegister(CClientConn* pClientConn)
 {
-    this->_ConstructDevRegisterPkt();
+    this->_ConstructDevRegisterPkt((char*)pClientConn->GetDevModel(),(char*)pClientConn->GetSimNo());
     this->_SendToPlt(pClientConn);
 
 	return 1;
@@ -767,13 +763,13 @@ int CMsgProcess::DevLocationUp(CClientConn* pClientConn)
     // 从消息队列中取位置报警信息
     DevLocInfo* pDevLoc = nullptr;
     if (CClientConnManager::GetInstance()->m_queueDevLoc.PopFront(&pDevLoc)) {
-        _ConstructLocInfoPkt(pDevLoc);
+        _ConstructLocInfoPkt(pDevLoc,(char*)pClientConn->GetSimNo());
         _SendToPlt(pClientConn);
     }
     return 1;
 }
 
-void CMsgProcess::_ConstructPktHeader(WORD nCmd, WORD nBodyLen)
+void CMsgProcess::_ConstructPktHeader(WORD nCmd, WORD nBodyLen,char* szSimNo)
 {
     JT808Protocol* pPktHeader = (JT808Protocol*)m_szReqOneBuffer;
     m_reqPtrOffset = 0;
@@ -788,7 +784,7 @@ void CMsgProcess::_ConstructPktHeader(WORD nCmd, WORD nBodyLen)
     pPktHeader->DisableMultiPacket();
     m_reqPtrOffset += 2;
     // 手机号 6
-    Str2BCD((char*)pPktHeader->SimNo,(char*)m_strSimNo.c_str());
+    Str2BCD((char*)pPktHeader->SimNo,szSimNo);
     endswap(&(pPktHeader->SimNo));
     m_reqPtrOffset += 6;
     // 消息流水号 2
@@ -796,7 +792,7 @@ void CMsgProcess::_ConstructPktHeader(WORD nCmd, WORD nBodyLen)
     m_reqPtrOffset += 2;
 }
 
-void CMsgProcess::_ConstructLocInfoPkt(DevLocInfo* pDevLocInfo)
+void CMsgProcess::_ConstructLocInfoPkt(DevLocInfo* pDevLocInfo,char* szSimNo)
 {
     if (NULL == pDevLocInfo) {
         UT_FATAL("Pointer to pDevLocInfo error!");
@@ -815,7 +811,7 @@ void CMsgProcess::_ConstructLocInfoPkt(DevLocInfo* pDevLocInfo)
     pPktHeader->DisableMultiPacket();
     m_reqPtrOffset += 2;
     // 手机号 6
-    Str2BCD((char*)pPktHeader->SimNo,(char*)m_strSimNo.c_str());
+    Str2BCD((char*)pPktHeader->SimNo,szSimNo);
     endswap(&(pPktHeader->SimNo));
     m_reqPtrOffset += 6;
     // 消息流水号 2
@@ -826,7 +822,7 @@ void CMsgProcess::_ConstructLocInfoPkt(DevLocInfo* pDevLocInfo)
     int nBodyLen = 0;
     JTT808Body_PositionUP* pLocUpPkt = (JTT808Body_PositionUP*)(m_szReqOneBuffer + JTT808MsgHead::HEADERSIZE);
     pLocUpPkt->ResetAlarmFlag();
-    pLocUpPkt->EnableFatigueFlag();
+    //pLocUpPkt->EnableFatigueFlag();
     pLocUpPkt->ResetStatus();
     pLocUpPkt->SetLatitude(pDevLocInfo->stLatitude);
     pLocUpPkt->SetLongitude(pDevLocInfo->stLongitude);
@@ -845,7 +841,7 @@ void CMsgProcess::_ConstructLocInfoPkt(DevLocInfo* pDevLocInfo)
     if (pDevLocInfo->stHasAlarm) {
         // 构造位置附加信息
         JTT808Body_PositionUP_Extra* pPosExtra = (JTT808Body_PositionUP_Extra*)(m_szReqOneBuffer + m_reqPtrOffset);
-        pPosExtra->extra_id = DSM_FLAG;
+        pPosExtra->extra_id = pDevLocInfo->stAlarmChannel;
         pPosExtra->extra_len = LEN_SU808_ALARM;  // 附加信息长度
         m_reqPtrOffset += sizeof(JTT808Body_PositionUP_Extra);
         nBodyLen += sizeof(JTT808Body_PositionUP_Extra);
@@ -855,6 +851,11 @@ void CMsgProcess::_ConstructLocInfoPkt(DevLocInfo* pDevLocInfo)
         pDSMAlarm->SetAlarmId((dwAlarmId++)%0XFFFFFFFF);
         pDSMAlarm->btStatus = 0;
         pDSMAlarm->btAlarmType = pDevLocInfo->stAlaryType;
+        if (pDevLocInfo->stAlaryType == euFatigue)
+            pLocUpPkt->EnableFatigueFlag();
+        else
+            pLocUpPkt->EnableDangerousFlag();
+
         pDSMAlarm->btAlarmGrade = 1;
         pDSMAlarm->btFatiqueDegree = 1;
 
@@ -885,6 +886,61 @@ void CMsgProcess::_ConstructLocInfoPkt(DevLocInfo* pDevLocInfo)
         pDSMAlarmFlag->btAccessories = pDevLocInfo->stAccessories.size();  // 附件数量
         pDSMAlarmFlag->btReserved = 0;
 
+        // 确定一下平台的文件名称
+        int nAlarmIndex = 0;
+        std::vector<AlarmAccessory>::iterator pIter = pDevLocInfo->stAccessories.begin();
+        for (; pIter != pDevLocInfo->stAccessories.end() ; ++pIter) {
+            std::string strPltFileName;
+            // 文件类型
+            if (pIter->stFileType == euPIC)
+                strPltFileName.append("00_");
+            else if (pIter->stFileType == euAudio)
+                strPltFileName.append("01_");
+            else if (pIter->stFileType == euVideo)
+                strPltFileName.append("02_");
+            else if (pIter->stFileType == euText)
+                strPltFileName.append("03_");
+            else
+                strPltFileName.append("04_");
+
+            // 通道号
+            if (pDevLocInfo->stAlarmChannel == ADAS_ALARM_FLAG)
+                strPltFileName.append("64_");
+            else if (pDevLocInfo->stAlarmChannel == DSM_ALARM_FLAG)
+                strPltFileName.append("65_");
+            else
+                strPltFileName.append("0_");
+
+            // 报警类型
+            if (pDevLocInfo->stAlarmChannel == DSM_ALARM_FLAG) {
+                if(pDevLocInfo->stAlaryType == euFatigue)
+                    strPltFileName.append("6501_");
+                else if (pDevLocInfo->stAlaryType == euCall)
+                    strPltFileName.append("6502_");
+                else if (pDevLocInfo->stAlaryType == euSmoking)
+                    strPltFileName.append("6503_");
+                else if (pDevLocInfo->stAlaryType == euDistract)
+                    strPltFileName.append("6504_");
+                else
+                    strPltFileName.append("6500_");
+            }
+            else if (pDevLocInfo->stAlarmChannel == ADAS_ALARM_FLAG) {
+                strPltFileName.append("6401_");
+            } else {
+                strPltFileName.append("0000_");
+            }
+
+            // 序号
+            char szIndex[8] = {0};
+            itoa(nAlarmIndex, szIndex, 10);
+            strPltFileName.append((char*)szIndex);
+            strPltFileName.append("_");
+            nAlarmIndex++;
+
+            strcpy(pIter->stPltFileName,strPltFileName.c_str());
+        }
+        //std::string strAlarmFlag = pDSMAlarmFlag->FormatToString();
+        //UT_TRACE("###alarm flag[%s]",strAlarmFlag.c_str());
         CClientConnManager::GetInstance()->UpdateAlarmFlag((char*)pDSMAlarmFlag,pDevLocInfo->stAccessories);
         m_reqPtrOffset += LEN_SU808_ALARM;  // 偏移累加
     }
@@ -902,7 +958,7 @@ void CMsgProcess::_ConstructLocInfoPkt(DevLocInfo* pDevLocInfo)
 /**
  * 构造终端监权报文
  */
-void CMsgProcess::_ConstructDevAuthPkt(const char* authentication_code)
+void CMsgProcess::_ConstructDevAuthPkt(const char* authentication_code,char* szSimNo)
 {
     JT808Protocol *pAuthPktHeader = (JT808Protocol*)m_szReqOneBuffer;
     m_reqPtrOffset = 0;
@@ -915,7 +971,7 @@ void CMsgProcess::_ConstructDevAuthPkt(const char* authentication_code)
     pAuthPktHeader->DisableMultiPacket();
     m_reqPtrOffset += 2;
     // 手机号 6
-    Str2BCD((char*)pAuthPktHeader->SimNo,(char*)m_strSimNo.c_str());
+    Str2BCD((char*)pAuthPktHeader->SimNo,szSimNo);
     endswap(&(pAuthPktHeader->SimNo));
     m_reqPtrOffset += 6;
     // 消息流水号 2
@@ -942,7 +998,7 @@ void CMsgProcess::_ConstructDevAuthPkt(const char* authentication_code)
  *  构造终端保活报文
  *
  */
-void CMsgProcess::_ConstructDevHeartBeatPkt()
+void CMsgProcess::_ConstructDevHeartBeatPkt(char* szSimNo)
 {
     JT808Protocol *pHertBeatPktHeader = (JT808Protocol*)m_szReqOneBuffer;
     m_reqPtrOffset = 0;
@@ -955,9 +1011,7 @@ void CMsgProcess::_ConstructDevHeartBeatPkt()
     pHertBeatPktHeader->DisableMultiPacket();
     m_reqPtrOffset += 2;
     // 手机号 6
-    Str2BCD((char*)pHertBeatPktHeader->SimNo,(char*)m_strSimNo.c_str());
-    UT_TRACE("sim_no =%s",CConfigFileReader::GetInstance()->GetConfigName("sim_no"));
-
+    Str2BCD((char*)pHertBeatPktHeader->SimNo,szSimNo);
     endswap(&(pHertBeatPktHeader->SimNo));
     m_reqPtrOffset += 6;
     // 消息流水号 2
@@ -978,7 +1032,7 @@ void CMsgProcess::_ConstructDevHeartBeatPkt()
  *  构造终端注册报文
  *
  */
-void CMsgProcess::_ConstructDevRegisterPkt()
+void CMsgProcess::_ConstructDevRegisterPkt(const char*szModuleId,char* szSimNo)
 {
     m_reqPtrOffset = 0;
     JTT808MsgHead *pRegPktHeader = (JTT808MsgHead*)m_szReqOneBuffer;
@@ -993,7 +1047,7 @@ void CMsgProcess::_ConstructDevRegisterPkt()
     m_reqPtrOffset += 2;
 
     // 手机号 6
-    Str2BCD((char*)pRegPktHeader->SimNo,(char*)m_strSimNo.c_str());
+    Str2BCD((char*)pRegPktHeader->SimNo,szSimNo);
     endswap(&(pRegPktHeader->SimNo));
     m_reqPtrOffset += 6;
     // 消息流水号 2
@@ -1010,7 +1064,7 @@ void CMsgProcess::_ConstructDevRegisterPkt()
     pRegisterPkt->SetManuId((BYTE*)szManuId); nBodyLen += 5;
 
     //char szModuleId[20] = "13811088446";
-	char* szModuleId = CConfigFileReader::GetInstance()->GetConfigName("dev_model");
+	//char* szModuleId = CConfigFileReader::GetInstance()->GetConfigName("dev_model");
     pRegisterPkt->SetDevModelId((BYTE*)szModuleId); nBodyLen += 20;	
 	
     //char szDeviceId[7] = "device";

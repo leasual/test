@@ -26,15 +26,12 @@ include_directories(src/main/cpp/algorithm/face_detection/include)
 include_directories(src/main/cpp/algorithm/faceid/include)
 include_directories(src/main/cpp/algorithm/gaze_tracking/include)
 include_directories(src/main/cpp/algorithm/head_pose/include)
+include_directories(src/main/cpp/algorithm/landmark/dlib/include)
 include_directories(src/main/cpp/algorithm/object_detection/include)
 include_directories(src/main/cpp/algorithm/object_detection/rcnn/include)
 include_directories(src/main/cpp/algorithm/utilities/include)
-
 include_directories(src/main/cpp/dsm_strategy)
 include_directories(src/main/cpp/dsm_strategy/utils/file)
-
-
-
 include_directories(src/main/cpp/include)
 include_directories(src/main/cpp/message/include)
 include_directories(src/main/cpp/message/api)
@@ -95,7 +92,7 @@ add_library( # Sets the name of the library.
 
         src/main/cpp/algorithm/align/src/align_method.cpp
         src/main/cpp/algorithm/align/src/faceAlign.cpp
-        src/main/cpp/algorithm/align/src/shape_predict_untouch.cc
+#        src/main/cpp/algorithm/align/src/shape_predict_untouch.cc
         src/main/cpp/algorithm/face_detection/src/detector.cc
         src/main/cpp/algorithm/face_detection/src/onet.cc
         src/main/cpp/algorithm/face_detection/src/pnet.cc
@@ -103,9 +100,11 @@ add_library( # Sets the name of the library.
         src/main/cpp/algorithm/faceid/src/faceAttribute.cpp
         src/main/cpp/algorithm/faceid/src/faceID.cpp
         src/main/cpp/algorithm/head_pose/src/head_pose_estimator.cc
+        src/main/cpp/algorithm/landmark/dlib/src/shape_predict.cc
         src/main/cpp/algorithm/utilities/src/transform.cpp
         src/main/cpp/algorithm/utilities/src/utils.cc
         src/main/cpp/algorithm/object_detection/rcnn/src/object_detection.cc
+        src/main/cpp/algorithm/object_detection/rcnn/src/classify.cc
 
         src/main/cpp/dsm_strategy/utils/file/config.cc
         src/main/cpp/dsm_strategy/utils/file/file_read_write_utils.cc

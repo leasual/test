@@ -64,6 +64,21 @@ public:
     uint64_t get_tick_count();
 
     bool ReadFile(const char* lpszFileName, CFile& file, CFileMapping& fmap, DWORD dwMaxFileSize = MAX_SMALL_FILE_SIZE);
+
+    std::string  Byte2Hex(BYTE bArray[], int bArray_len)
+    {
+        std::string strHex;
+        int nIndex = 0;
+        for(int i=0; i<bArray_len; i++)
+        {
+            int high = bArray[0]/16, low = bArray[0]%16;
+            strHex[nIndex] = (high<10) ? ('0' + high) : ('A' + high - 10);
+            strHex[ nIndex + 1] = (low<10) ? ('0' + low) : ('A' + low - 10);
+            nIndex += 2;
+        }
+        return strHex;
+    }
+
 };
 
 
@@ -265,6 +280,41 @@ private:
     VNPTR	m_pTail;
     //Spinlock m_spinLock;  // 自旋锁
 };
+
+
+template<typename T, typename C, typename = enable_if_t<is_integral<T>::value  && (is_same<C, char>::value || is_same<C, wchar_t>::value)>>
+C* _n_2_c(T value, C* lpszDest, int radix)
+{
+    static const C* dig = "0123456789abcdefghijklmnopqrstuvwxyz";
+
+    bool neg = false;
+
+    if(is_signed<T>::value && value < 0)
+    {
+        value = -value;
+        neg	  = true;
+    }
+
+    int n = 0;
+
+    do
+    {
+        lpszDest[n++] = dig[value % radix];
+        value /= radix;
+    } while(value);
+
+    if(neg) lpszDest[n++] = '-';
+    lpszDest[n]			  = 0;
+
+    C c, *p, *q;
+    for(p = lpszDest, q = p + n - 1; p < q; ++p, --q)
+        c = *p, *p = *q, *q = c;
+
+    return lpszDest;
+}
+
+#define itoa(v, p, r)		_n_2_c<INT, char>((v), (p), (r))
+
 
 
 #endif //DSM_JTT808_UTIL_H

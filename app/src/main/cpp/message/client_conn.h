@@ -19,7 +19,7 @@
 class CClientConn
 {
 public:
-    CClientConn();
+    CClientConn(std::string strSimNo, std::string strDevMode);
     ~CClientConn();
 
     int Connect(std::string strServerIp, unsigned int nPort, bool bTimer=false);
@@ -45,44 +45,14 @@ public:
     bool IsLocationSet(); // GPS是否有值
     unsigned int GetClientHandle() {return m_nClientFd;}
 
-    void UpdateUpFileInfo(std::string strFileName, FileInfo fileInfo)
-    {
-        m_mapFileInfo.insert(std::make_pair(strFileName,fileInfo));
-    }
-
+    void UpdateUpFileInfo(std::string strFileName, FileInfo fileInfo);
     const std::map<std::string,FileInfo>& GetUpFileInfo(){ return  m_mapFileInfo;};
-
-    std::map<std::string,FileInfo> m_mapFileInfo;  // 需要上传的文件信息
-
-    bool UpdateUpFileStatus(std::string strFileName,euFileUpStatus st)
-    {
-        std::map<std::string,FileInfo>::iterator pIterFound =
-                m_mapFileInfo.find(strFileName);
-        if (pIterFound == m_mapFileInfo.end()) {
-            UT_ERROR("Update file[%s] status failed!",strFileName.c_str());
-            return false;
-        }else{
-            pIterFound->second.m_fileStatus = st;
-            UT_INFO("Update file[%s] status success!",strFileName.c_str());
-            return true;
-        }
-    }
-
-    bool DelFileItem(std::string strFileName)
-    {
-        std::map<std::string,FileInfo>::iterator pIterFound =
-                m_mapFileInfo.find(strFileName);
-        if (pIterFound == m_mapFileInfo.end()) {
-            UT_ERROR("Delete file item[%s] failed!",strFileName.c_str());
-            return false;
-        }else{
-            UT_INFO("Delete file item[%s] success!",strFileName.c_str());
-            m_mapFileInfo.erase(pIterFound);
-            return true;
-        }
-    }
-
-
+    bool UpdateUpFileStatus(std::string strFileName,euFileUpStatus st);
+    void ClearUpFileInfo();
+    FileInfo* GetFileItem(std::string strFileName);
+    bool DelFileItem(std::string strFileName);
+    const char* GetSimNo();
+    const char* GetDevModel();
 private:
 	// Callback
 	static En_HP_HandleResult __HP_CALL OnConnect(HP_Client pSender, HP_CONNID dwConnID);
@@ -116,6 +86,9 @@ private:
     BYTE m_btAlarmFlag[16]; // 报警标识号
     BYTE m_btAlarmId[32]; // 报警编号
 
+    std::string m_strSimNo;
+    std::string m_strDevModel;
+    std::map<std::string,FileInfo> m_mapFileInfo;  // 需要上传的文件信息
 	HpktInfo m_pkgInfo;
 };
 

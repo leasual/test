@@ -20,8 +20,8 @@
 #define SERVER_TIMEOUT				3 * SERVER_HEARTBEAT_INTERVAL    // 3倍的保活时间如果收不到回应则认为服务器离线
 #define CHECK_TIMER                 10*1000    // 10秒check一次timer
 #define LOC_UP_TIMER                20*1000    // 30秒上报一次位置信息
-#define MAX_SMALL_FILE_SIZE						0x3FFFFF  //最大传输4M大小的文件
 #define FILE_SIZE_PER_PACK          40 * 1024  //传文件时单个包最大传输40K
+#define MAX_SMALL_FILE_SIZE						0x3FFFFF  //最大传输4M大小的文件
 
 #define CHECK_IS_OK(expr)				{if(IS_NOT_OK(expr)) return FALSE;}
 #define CHECK_ERROR_FD(fd)				{if(IS_INVALID_FD(fd)) return FALSE;}

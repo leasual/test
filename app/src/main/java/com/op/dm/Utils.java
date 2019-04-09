@@ -1,11 +1,15 @@
 package com.op.dm;
 
+import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
 import android.os.StatFs;
 import android.os.storage.StorageManager;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
+import android.telephony.TelephonyManager;
 import android.util.Log;
 
 import java.io.File;
@@ -113,15 +117,12 @@ public class Utils {
     }
 
 
-
-
-
-        public  static void addModeles(Context context,int index){
+    public static void addModeles(Context context, int index) {
         try {
 
             long size = getSDAvailableSize(context);
-            if(size!= 0){
-                String path = BasePath + "/img"+index;
+            if (size != 0) {
+                String path = BasePath + "/img" + index;
                 initDir(path);
                 String pathDis = path + "/distract";
                 initDir(pathDis);
@@ -136,16 +137,16 @@ public class Utils {
                 String pathaUnknown = path + "/unknown";
                 initDir(pathaUnknown);
             }
-            String [] files = context.getAssets().list("");
-            String storePathRoot =  context.getExternalFilesDir(null).getAbsolutePath() == null? context.getFilesDir().getAbsolutePath() : context.getExternalFilesDir(null).getAbsolutePath();
+            String[] files = context.getAssets().list("");
+            String storePathRoot = context.getExternalFilesDir(null).getAbsolutePath() == null ? context.getFilesDir().getAbsolutePath() : context.getExternalFilesDir(null).getAbsolutePath();
             for (String dir :
                     files) {
-                if("images".equals(dir) || "webkit".equals(dir))
+                if ("images".equals(dir) || "webkit".equals(dir))
                     continue;
-                copyFilesFassets(context,dir,storePathRoot + File.separator + dir);
+                copyFilesFassets(context, dir, storePathRoot + File.separator + dir);
             }
             File feature = new File(storePathRoot + File.separator + "feature");
-            if(!feature.exists()){
+            if (!feature.exists()) {
                 feature.mkdir();
             }
         } catch (Exception e) {
@@ -156,15 +157,15 @@ public class Utils {
 
     private static void initDir(String path) {
         File images = new File(path);
-        if(!images.exists()){
+        if (!images.exists()) {
             images.mkdir();
         }
     }
 
     public static long getSDAvailableSize(Context context) {
         ArrayList<Volume> list = getVolume(context);
-        for (Volume v: list){
-            if(v.path.contains(Basecard)&& !v.state.contains("mounted")){
+        for (Volume v : list) {
+            if (v.path.contains(Basecard) && !v.state.contains("mounted")) {
                 return 0;
             }
 //            Log.e("存储 ------ ", v.path);
@@ -177,34 +178,35 @@ public class Utils {
 //            return 0;
 //        }
         File base = new File(BasePath);
-        if(!base.exists()){
+        if (!base.exists()) {
             return 0;
         }
         StatFs stat = new StatFs(BasePath);
         long blockSize = stat.getBlockSize();
-        long availableBlocks = (stat.getAvailableBlocks() * blockSize)/(1024*1024);
+        long availableBlocks = (stat.getAvailableBlocks() * blockSize) / (1024 * 1024);
 
 
         Log.e(" path size  ", " <> " + availableBlocks);
         return availableBlocks;
     }
 
-    public static void deleteFile(Context context){
-        String storePathRoot =  context.getExternalFilesDir(null).getAbsolutePath() == null? context.getFilesDir().getAbsolutePath() : context.getExternalFilesDir(null).getAbsolutePath();
+    public static void deleteFile(Context context) {
+        String storePathRoot = context.getExternalFilesDir(null).getAbsolutePath() == null ? context.getFilesDir().getAbsolutePath() : context.getExternalFilesDir(null).getAbsolutePath();
         File file = new File(storePathRoot);
         File[] files = file.listFiles();
-        for(File f: files){
-            if(!f.isDirectory()){
-                Log.e("删除中--- " ,f.getPath());
+        for (File f : files) {
+            if (!f.isDirectory()) {
+                Log.e("删除中--- ", f.getPath());
                 f.delete();
             }
         }
     }
 
-    public static void deleteFileAll(Context context){
-        String storePathRoot =  context.getExternalFilesDir(null).getAbsolutePath() == null? context.getFilesDir().getAbsolutePath() : context.getExternalFilesDir(null).getAbsolutePath();
+    public static void deleteFileAll(Context context) {
+        String storePathRoot = context.getExternalFilesDir(null).getAbsolutePath() == null ? context.getFilesDir().getAbsolutePath() : context.getExternalFilesDir(null).getAbsolutePath();
         File file = new File(storePathRoot);
         delete(file);
+
     }
 
     private static void delete(File file) {

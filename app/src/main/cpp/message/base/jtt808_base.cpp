@@ -108,7 +108,7 @@ int  JTT808PktBase::GenerateSeqNo()
     WORD nSeqNo = nIndex++ % MAXWORD;
     char buff[48] = {0};
     sprintf(buff,"%x",nSeqNo);
-    UT_TRACE("The seqNo is[%d] [%x]",nSeqNo,nSeqNo);
+    //UT_TRACE("The seqNo is[%d] [%x]",nSeqNo,nSeqNo);
     return nSeqNo;
 }
 
@@ -233,7 +233,7 @@ BYTE JTT808PktBase::MakeCheckProtocol(BYTE *pData,int nLen)
     {
         check ^= pData[i];
     }
-    UT_TRACE("check code[%x]",check);
+    //UT_TRACE("check code[%x]",check);
     return check;
 }
 

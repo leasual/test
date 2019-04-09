@@ -1,6 +1,7 @@
 //
 // Created by slam on 18-10-12.
 //
+#ifdef USE_DLIB
 
 #ifndef ALIGN_DLIB_MTCNN_UTILS_H
 #define ALIGN_DLIB_MTCNN_UTILS_H
@@ -33,9 +34,9 @@ void read_points(const std::string& points_path, std::vector<rectangle> &bboxes,
             std::istringstream ss(line);
             ss >> x >> y;
         }
-//        points.emplace_back(std::make_pair(round(std::stod(x)) + offset, round(std::stod(y)) + offset));
-//        x_vec.emplace_back(round(std::stod(x)));
-//        y_vec.emplace_back(round(std::stod(x)));
+        points.emplace_back(std::make_pair(round(std::stod(x)) + offset, round(std::stod(y)) + offset));
+        x_vec.emplace_back(round(std::stod(x)));
+        y_vec.emplace_back(round(std::stod(x)));
     }
     std::sort(x_vec.begin(), x_vec.end());
     std::sort(y_vec.begin(), y_vec.end());
@@ -108,3 +109,4 @@ float calc_iou(const cv::Rect2i &bbox1, const cv::Rect2i &bbox2) {
 // ----------------------------------------------------------------------------------------
 
 #endif //ALIGN_DLIB_MTCNN_UTILS_H
+#endif
