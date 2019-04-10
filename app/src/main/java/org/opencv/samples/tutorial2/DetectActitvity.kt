@@ -53,7 +53,7 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
     private var progressDialog: ProgressDialog? = null
     //这个优先级会有变动，为了不修改jni里返回值顺序和ui的顺序，引入这个数组，之后只改这里就可以修改警告播报优先级-> 从names[3],names[2],names[1]..这个顺序遍历names数组
     private val priority = arrayOf(3, 6, 0, 1, 2, 5, 4)
-    private val names = arrayOf("左顾右盼", "分神", "吸烟", "打电话", "画面异常","身份异常","打哈欠")
+    private val names = arrayOf("左顾右盼", "分神" , "吸烟", "打电话", "画面异常","身份异常","打哈欠")
     private val lastTime = arrayOf(0L, 0L, 0L, 0L, 0L, 0L, 0L)
     private val audio = arrayOf(R.raw.dis2,R.raw.fenshen, R.raw.chouyan, R.raw.dadianhua, R.raw.huamianyichang,R.raw.shenfenyichang, R.raw.yawn)
     private var views: Array<TextView>? = null
