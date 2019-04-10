@@ -219,9 +219,9 @@ Java_com_op_dm_ui_DetectActitvity_FindFeatures(JNIEnv *jniEnv, jobject obj,
     srand(time(0));
     if (totalFlow == nullptr) {
         totalFlow = new TotalFlow("/sdcard/Android/data/com.ut.sdk/files");
-        string path = "/storage/sdcard1/img"+ to_string(index) + "/";
+//        string path = "/storage/sdcard1/img"+ to_string(index) + "/";
 
-//        string path = "/sdcard/img"+ to_string(index) + "/";
+        string path = "/sdcard/img"+ to_string(index) + "/";
         totalFlow->path = path;
         totalFlow-> pathDis = path + "distract/";
         totalFlow-> pathFat = path +"fat/";

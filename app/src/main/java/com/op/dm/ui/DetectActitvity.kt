@@ -23,8 +23,6 @@ import android.util.Log
 import android.view.Surface
 import android.view.WindowManager
 import android.widget.TextView
-import com.horzon.parameters.HorzonParameters
-import com.horzon.parameters.RGBDataCallback
 import com.jiangdg.usbcamera.UVCCameraHelper
 import com.op.dm.Utils
 import com.op.dm.widget.BitmapRenderer
@@ -32,6 +30,7 @@ import com.serenegiant.usb.common.AbstractUVCCameraHandler
 import com.serenegiant.usb.widget.CameraViewInterface
 import com.serenegiant.usb.widget.UVCCameraTextureView
 import com.ut.sdk.R
+import com.ut.sdk.R.id.tutorial2_activity_surface_view
 import kotlinx.android.synthetic.main.tutorial2_surface_view.*
 import org.opencv.android.BaseLoaderCallback
 import org.opencv.android.CameraBridgeViewBase
@@ -230,12 +229,6 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2, 
         } else {
         }
 
-        var horzon = HorzonParameters(this)
-        horzon.startGetRGB {
-            Log.e("  RGB __ ", "" + it.size )
-        }
-
-
         mUVCCameraView = camera_view
         mUVCCameraView?.setCallback(this)
         mCameraHelper = UVCCameraHelper.getInstance()
@@ -249,7 +242,7 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2, 
         var now = System.currentTimeMillis() - before
         Log.e("创建bitmap ", ""+ now)
         mCameraHelper?.setOnPreviewFrameListener { nv21Yuv: IntArray, byteBuffer: ByteBuffer ->
-//            mUVCCameraView?.setDraw(true)
+            mUVCCameraView?.setDraw(true)
             //            Thread(Runnable {
             //                Log.e("mat size  ", "" + mRgba?.cols() + " nv21Yuv " + nv21Yuv.size)
 //                byteBuffer.clear()
@@ -293,7 +286,7 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2, 
                     }
                 }
 
-//                org.opencv.android.Utils.matToBitmap(rgb,bmResult)
+                org.opencv.android.Utils.matToBitmap(rgb,bmResult)
             }
         }
 //        with(tutorial2_activity_surface_view) {
@@ -332,10 +325,6 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2, 
         setting.setOnClickListener {
             startActivity(Intent(this@DetectActitvity, SettingActivity::class.java))
         }
-
-        surface_view.setEGLContextClientVersion(1)
-        surface_view.setRenderer( BitmapRenderer(resources))
-        surface_view.renderMode = GLSurfaceView.RENDERMODE_WHEN_DIRTY
 
     }
 
@@ -608,7 +597,7 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2, 
                     System.loadLibrary("native-lib")
                     mRgba = Mat()
                     rgb = Mat()
-                    tutorial2_activity_surface_view?.enableView()
+//                    tutorial2_activity_surface_view?.enableView()
                     if (!totalDone) {
                         val context = mAppContext
                         AsyncTaskInitFile().execute(context as DetectActitvity)
