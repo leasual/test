@@ -1,4 +1,5 @@
 #include "detector.h"
+#include <memory>
 
 MTCNNDetector::MTCNNDetector(const ProposalNetwork::Config &pConfig,
                              const RefineNetwork::Config &rConfig,
@@ -29,7 +30,7 @@ MTCNNDetector::MTCNNDetector(const std::string &mtcnn_dir, const float p_thresho
     _onet = std::unique_ptr<OutputNetwork>(new OutputNetwork(oConfig));
 }
 
-//std::vector<cv::Rect2i> MTCNNDetector::detectdone(const cv::Mat &img,
+//std::vector<cv::Rect2i> MTCNNDetector::detect(const cv::Mat &img,
 //                                        const float minFaceSize,
 //                                        const float scaleFactor) {
 //
@@ -94,21 +95,21 @@ std::vector<Face> MTCNNDetector::detect(const cv::Mat &img,
     // Run Proposal Network to find the initial set of faces
     std::vector<Face> faces = _pnet->run(rgbImg, minFaceSize, scaleFactor);
     if(faces.empty()){
-        std::cout << "pnet not detectdone face!" << std::endl;
+        std::cout << "pnet not detect face!" << std::endl;
         return std::vector<Face>();
     }
 
     // Run Refine network on the output of the Proposal network
     faces = _rnet->run(rgbImg, faces);
     if(faces.empty()){
-        std::cout << "rnet not detectdone face!" << std::endl;
+        std::cout << "rnet not detect face!" << std::endl;
         return std::vector<Face>();
     }
 
     // Run Output network on the output of the Refine network
     faces = _onet->run(rgbImg, faces);
     if(faces.empty()){
-        std::cout << "onet not detectdone face!" << std::endl;
+        std::cout << "onet not detect face!" << std::endl;
         return std::vector<Face>();
     }
 

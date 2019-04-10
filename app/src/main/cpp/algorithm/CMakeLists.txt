@@ -1,6 +1,6 @@
 option(USE_ALIGN            " " ON)
 option(USE_FACEID           " " ON)
-option(USE_FACE_DETECTION   " " ON)
+option(USE_FACE_DETECTION   " " OFF)
 option(USE_GAZE_TRACKING    " " OFF)
 option(USE_HEAD_POSE        " " ON)
 option(USE_OBJ_DETECTION    " " ON)
@@ -30,7 +30,12 @@ if(USE_OBJ_DETECTION)
     include(${CMAKE_CURRENT_LIST_DIR}/object_detection/CMakeLists.txt)
 endif()
 
+if(USE_TVM)
+    include(${CMAKE_CURRENT_LIST_DIR}/tvm_runner/CMakeLists.txt)
+endif()
+
 include(${CMAKE_CURRENT_LIST_DIR}/utilities/CMakeLists.txt)
+include(${CMAKE_CURRENT_LIST_DIR}/landmark/CMakeLists.txt)
 
 if(LIBRARIES)
     list(APPEND LIBRARIES ${ALGORITHM})

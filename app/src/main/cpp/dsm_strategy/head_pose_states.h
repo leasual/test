@@ -11,7 +11,8 @@ public:
     HeadPoseStatus():vert_upper_thres_(0.f), vert_bottom_thres_(0.f),
                      hori_right_thres_(0.f),hori_left_thres_(0.f){}
     void SetParam(float left_diff, float right_diff, float up_diff, float down_diff);
-    bool GetHeadStatus(float pitch, float yaw);
+    bool GetHeadLeftRightStatus(float yaw);
+    bool GetHeadUpDownStatus(float pitch);
 
 private:
     //垂直方向的两个临界值

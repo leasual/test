@@ -5,9 +5,11 @@
 #define DMS_ALIGN_METHOD_H
 #include <iostream>
 #include <opencv2/opencv.hpp>
+#ifdef USE_DLIB
 #include <dlib/image_processing/full_object_detection.h>
 #include <dlib/opencv.h>
 #include <dlib/image_processing/frontal_face_detector.h>
+#endif
 
 
 class AlignMethod{
@@ -17,7 +19,7 @@ public:
     virtual void set_im(const cv::Mat &im) = 0;
 //    virtual void set_pts(const std::vector<cv::Point2f> &pts){};
     virtual void set_pts(const std::vector<cv::Point2f> &pts) = 0;
-    virtual void set_shape(const dlib::full_object_detection &dlib_shape){};
+//    virtual void set_shape(const dlib::full_object_detection &dlib_shape){};
     virtual cv::Mat Align() = 0;
 };
 
@@ -37,6 +39,7 @@ private:
     cv::Size _size;
 };
 
+#ifdef USE_DLIB
 class DlibAlign : public AlignMethod{
 public:
     DlibAlign(const int size);
@@ -53,5 +56,6 @@ private:
     dlib::full_object_detection _dlib_shape;
     int _size;
 };
+#endif
 
 #endif //DMS_ALIGN_METHOD_H

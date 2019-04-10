@@ -12,11 +12,11 @@ void HeadPoseStatus::SetParam(float left_diff, float right_diff, float up_diff, 
     hori_right_thres_ = right_diff;
 }
 
-bool HeadPoseStatus::GetHeadStatus(float pitch, float yaw) {
-    bool pitch_state = pitch < vert_upper_thres_ or  pitch > vert_bottom_thres_;
-    bool yaw_state = yaw > hori_left_thres_ or yaw < hori_right_thres_;
-
-    return pitch_state or yaw_state;
+bool HeadPoseStatus::GetHeadLeftRightStatus(float yaw) {
+    return yaw > hori_left_thres_ or yaw < hori_right_thres_;
 }
 
+bool HeadPoseStatus::GetHeadUpDownStatus(float pitch) {
+    return pitch < vert_upper_thres_ or  pitch > vert_bottom_thres_;
+}
 

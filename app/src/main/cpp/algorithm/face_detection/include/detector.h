@@ -5,8 +5,7 @@
 #include "onet.h"
 #include "pnet.h"
 #include "rnet.h"
-#include <memory>
-
+#include <memory.h>
 class MTCNNDetector {
 private:
     std::unique_ptr<ProposalNetwork> _pnet;

@@ -101,7 +101,7 @@ cv::Vec2f PoseEye::estimate( vector<pair<float,float>>&ldmarklist,
     int64 t1=getTickCount();
     face_model->DetectLandmarksfx(graydata,*pParameters,withClnfs);
     int64 t2=getTickCount();
-//    cout<<"detectdone time:"<<(t2-t1)/getTickFrequency()<<endl;
+//    cout<<"detect time:"<<(t2-t1)/getTickFrequency()<<endl;
 
     pose_estimate =GetPose(*face_model, IfObt.fx, IfObt.fy, IfObt.cx, IfObt.cy);
 

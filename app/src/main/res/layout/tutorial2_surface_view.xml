@@ -1,12 +1,13 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="#444444">
 
     <com.serenegiant.usb.widget.UVCCameraTextureView
         android:id="@+id/camera_view"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:layout_centerHorizontal="true"
         />
 
 
@@ -17,6 +18,7 @@
         android:layout_marginLeft="30dp"
         android:layout_marginTop="30dp"
         android:orientation="vertical"
+
         android:visibility="visible">
 
         <TextView
@@ -89,5 +91,6 @@
         android:layout_alignParentRight="true"
         android:layout_marginTop="15dp"
         android:text="设置"
+        android:visibility="invisible"
         />
 </RelativeLayout>

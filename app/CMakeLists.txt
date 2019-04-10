@@ -21,6 +21,12 @@ include_directories(src/main/cpp/include/ncnn)
 add_library( lib_ncnn STATIC IMPORTED )
 set_target_properties(lib_ncnn PROPERTIES IMPORTED_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/src/main/jniLibs/${ANDROID_ABI}/libncnn.a)
 
+add_library( libdmlc STATIC IMPORTED )
+set_target_properties(libdmlc PROPERTIES IMPORTED_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/src/main/jniLibs/${ANDROID_ABI}/libdmlc.a)
+
+add_library( libtvm_runtime SHARED IMPORTED )
+set_target_properties(libtvm_runtime PROPERTIES IMPORTED_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/src/main/jniLibs/${ANDROID_ABI}/libtvm_runtime.so)
+
 include_directories(src/main/cpp/algorithm/align/include)
 include_directories(src/main/cpp/algorithm/face_detection/include)
 include_directories(src/main/cpp/algorithm/faceid/include)
@@ -29,6 +35,15 @@ include_directories(src/main/cpp/algorithm/head_pose/include)
 include_directories(src/main/cpp/algorithm/object_detection/include)
 include_directories(src/main/cpp/algorithm/object_detection/rcnn/include)
 include_directories(src/main/cpp/algorithm/utilities/include)
+include_directories(src/main/cpp/algorithm/tvm_runner)
+include_directories(src/main/cpp/algorithm/object_detection/tvm/include)
+include_directories(src/main/cpp/algorithm/landmark/tvm/include)
+
+include_directories(src/main/cpp/include/tvm/dlpack/include/dlpack)
+include_directories(src/main/cpp/include/tvm/dmlc-core/include/dmlc)
+include_directories(src/main/cpp/include/tvm/tvm/include/tvm/runtime)
+
+
 
 include_directories(src/main/cpp/dsm_strategy)
 include_directories(src/main/cpp/dsm_strategy/utils/file)
@@ -101,7 +116,13 @@ add_library( # Sets the name of the library.
         src/main/cpp/algorithm/utilities/src/utils.cc
         src/main/cpp/algorithm/object_detection/rcnn/src/object_detection.cc
 
+        src/main/cpp/algorithm/landmark/tvm/src/shape_predict.cc
 
+        src/main/cpp/algorithm/object_detection/tvm/src/classify.cc
+        src/main/cpp/algorithm/object_detection/tvm/src/object_detection.cc
+
+        src/main/cpp/algorithm/tvm_runner/tvm_data.cc
+        src/main/cpp/algorithm/tvm_runner/tvm_runner.cc
 
         src/main/cpp/dsm_strategy/utils/file/config.cc
         src/main/cpp/dsm_strategy/utils/file/file_read_write_utils.cc
@@ -143,8 +164,11 @@ target_link_libraries( # Specifies the target library.
                        libdlib
                        lib_ncnn
                        #libutils
+                        libdmlc
+                        #libtvm_runtime
                        lib_opencv
                        libmsg
                         ${log-lib}
                        ${android-lib}
+
                        )

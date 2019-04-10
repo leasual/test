@@ -111,11 +111,10 @@ Java_com_op_dm_ui_DetectActitvity_FindFeatures2(JNIEnv *jniEnv, jobject obj,
         else
             unknown = 0;
         result->GetDistraction(dis, *bboxd);
-        result->GetFatigue(fat, *bboxf);
+        result->GetFatigueFirst(fat, *bboxf);
         result->GetSmoke(smoke, *bboxs);
         result->GetCall(call, *bboxc);
         result->GetAbnormal(abnorm);
-        result->GetCalibration(cal);
 
         LOGE(" fat ,dis, id -------- %d,%d, %s",fat,dis,faceid.data());
 

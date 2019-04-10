@@ -30,7 +30,6 @@ import com.serenegiant.usb.common.AbstractUVCCameraHandler
 import com.serenegiant.usb.widget.CameraViewInterface
 import com.serenegiant.usb.widget.UVCCameraTextureView
 import com.ut.sdk.R
-import com.ut.sdk.R.id.tutorial2_activity_surface_view
 import kotlinx.android.synthetic.main.tutorial2_surface_view.*
 import org.opencv.android.BaseLoaderCallback
 import org.opencv.android.CameraBridgeViewBase

@@ -1,6 +1,7 @@
 //
 // Created by slam on 18-10-12.
 //
+#ifdef USE_DLIB
 
 #ifndef DMS_UTILS_H
 #define DMS_UTILS_H
@@ -10,7 +11,6 @@
 #include <dlib/image_processing.h>
 #include <dlib/image_processing/shape_predictor.h>
 #include <dlib/opencv.h>
-using namespace dlib;
 
 void read_lists(const std::string& path, std::vector<std::string> &file_paths);
 
@@ -26,4 +26,5 @@ void detect_shape(cv::Mat &cv_img, shape_predictor &sp, std::vector<rectangle> &
 float calc_iou(const cv::Rect2i &bbox1, const cv::Rect2i &bbox2) ;
 // ----------------------------------------------------------------------------------------
 
+#endif
 #endif //ALIGN_DLIB_MTCNN_UTILS_H
