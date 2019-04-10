@@ -126,13 +126,20 @@ Java_org_opencv_samples_tutorial2_DetectActitvity_FindFeatures2(JNIEnv *jniEnv, 
         else
             unknown = 0;
         result->GetDistraction(dis, *bboxd);//左右
-        result->GetFatigue(fat, *bboxf);//分神
+        result->GetFatigueFirst(fat, *bboxf);//分神
         result->GetSmoke(smoke, *bboxs);
         result->GetCall(call, *bboxc);
         result->GetAbnormal(abnorm);
         result->GetYawn(yawn);//haqi
 
+        LOGE(" fat dis yawn   -------- %d, %d ,%d ",fat, dis, yawn);
+        if(fat == 2 || dis==2 || call == 2 || smoke == 2|| abnorm == 2){
+
+
+        }
+
         if(picture && (fat == 2 || dis==2 || call == 2 || smoke == 2|| abnorm == 2)){
+
             auto diff = chrono::duration_cast<std::chrono::milliseconds>(
                     std::chrono::steady_clock::now() - old);
             if(diff.count() > 60000L){

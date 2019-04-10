@@ -29,6 +29,7 @@
 
 #include "config_tracker.h"
 #include "judger.h"
+#include "distract_judger.h"
 
 #include "head_pose_states.h"
 #include "eye_mouth_plus.h"
@@ -36,7 +37,6 @@
 using namespace std;
 using namespace cv;
 
-//TODO : 将值改成枚举类型
 class TotalFlow;
 class Strategy{
 public:
@@ -86,7 +86,9 @@ public:
 
     inline bool GetDistraction(int& val, cv::Rect& bbox ) const { return distraction_.GetValue(val, bbox);}
 
-    inline bool GetFatigue(int& val, cv::Rect& bbox) const { return fatigue_.GetValue(val, bbox);}
+    inline bool GetFatigueFirst(int& val, cv::Rect& bbox) const { return fatigue_first_.GetValue(val, bbox);}
+
+    inline bool GetFatigueSecond(int& val, cv::Rect& bbox) const { return fatigue_second_.GetValue(val, bbox);}
 
     inline bool GetSmoke(int& val, cv::Rect& bbox) const { return smoke_.GetValue(val, bbox);}
 
@@ -108,7 +110,9 @@ private:
 
     inline void SetDistraction(int val, cv::Rect& bbox) {distraction_.SetValue(val, bbox);}
 
-    inline void SetFatigue(int val, cv::Rect& bbox) {fatigue_.SetValue(val, bbox);}
+    inline void SetFatigueFirst(int val, cv::Rect& bbox) {fatigue_first_.SetValue(val, bbox);}
+
+    inline void SetFatigueSecond(int val, cv::Rect& bbox) {fatigue_second_.SetValue(val, bbox);}
 
     inline void SetSmoke(int val, cv::Rect& bbox) {smoke_.SetValue(val, bbox);}
 
@@ -120,7 +124,8 @@ private:
 
     inline bool ResetResult(){
         distraction_.ResetValue();
-        fatigue_.ResetValue();
+        fatigue_first_.ResetValue();
+        fatigue_second_.ResetValue();
         smoke_.ResetValue();
         call_.ResetValue();
         abnormal_.ResetValue();
@@ -132,7 +137,8 @@ private:
         interval_ = interval;
         speed_threshold_ = speed;
         distraction_.SetParam(interval_, speed_threshold_);
-        fatigue_.SetParam(interval_, speed_threshold_);
+        fatigue_first_.SetParam(interval_, speed_threshold_);
+        fatigue_second_.SetParam(interval_, speed_threshold_);
         smoke_.SetParam(interval_, speed_threshold_);
         call_.SetParam(interval_, speed_threshold_);
         abnormal_.SetParam(interval_, speed_threshold_);
@@ -142,7 +148,8 @@ private:
      void SetSpeed(size_t speed){
        current_speed_ = speed;
        distraction_.SetSpeed(current_speed_);
-       fatigue_.SetSpeed(current_speed_);
+       fatigue_first_.SetSpeed(current_speed_);
+       fatigue_second_.SetSpeed(current_speed_);
        smoke_.SetSpeed(current_speed_);
        call_.SetSpeed(current_speed_);
        abnormal_.SetSpeed(current_speed_);
@@ -156,8 +163,9 @@ private:
     std::vector<cv::Point2f> landmarks_;    //人脸关键点
     cv::Vec3f angles_;                      //人脸角度信息 0：上下， 1：左右
     std::string name_;                      //faceID策略
-    Strategy distraction_;                  //分神策略
-    Strategy fatigue_;                      //疲劳策略
+    Strategy distraction_;                  //左顾右盼策略
+    Strategy fatigue_first_;                //分神策略1
+    Strategy fatigue_second_;               //分神策略2
     Strategy smoke_;                        //抽烟策略
     Strategy call_;                         //打电话策略
     Strategy abnormal_;                     //驾驶员异常策略
@@ -252,10 +260,10 @@ private:
 
     Judger smoke_judger_;               //抽烟检测
     Judger call_judger_;                //打电话检测
-    Judger close_eye_judger_;           //闭眼检测
     Judger open_mouth_judger_;          //打哈欠检测
     Judger head_left_right_judger_;     //左顾右盼检测
-    Judger head_up_down_judger_;        //低头仰头检测
+    DistractJudger close_eye_judger_;           //闭眼检测
+    DistractJudger head_up_down_judger_;        //低头仰头检测
 
     /// 以下为在图像中检测到的有效信息,用于各种策略判断
     cv::Mat frame_;     ///< 摄像头读取的帧

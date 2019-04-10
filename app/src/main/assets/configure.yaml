@@ -1,0 +1,84 @@
+%YAML:1.0
+
+#左顾右盼的配置参数.
+distraction_threshold : 0.5          #判决时间， 单位:秒
+distraction_left_angle : 15        #基准向左偏移的角度,单位:度
+distraction_right_angle : -15      #基准向右偏移的角度,单位:度
+distraction_up_angle : -10         #基准向上偏移的角度,单位:度
+distraction_down_angle : 10        #基准向下偏移的角度,单位:度
+distraction_video_times : 5        #前后视频录制时间：单位秒，取值范围0~60，默认5
+distraction_photo_numbers : 3      #拍照张数：取值范围0~10，默认3，0表示不抓拍
+distraction_photo_interval : 2     #拍照间隔：单位100ms，取值范围1~5，默认2
+
+
+#打哈欠检测的配置参数.
+yawn_threshold : 0.5              #打哈欠判决时间,单位:秒
+
+#分神检测的配置参数.
+fatigue_threshold : 0.5           #判决时间,单位:秒
+fatigue_video_times : 5           #前后视频录制时间：单位秒，取值范围0~60，默认5
+fatigue_photo_numbers : 3         #拍照张数：取值范围0~10，默认3，0表示不抓拍
+fatigue_photo_interval : 2         #拍照间隔：单位100ms，取值范围1~5，默认2
+
+#抽烟检测的配置参数.
+smoke_threshold : 0.5             #判决时间,单位:秒
+smoke_alarm_interval : 180        #使能报警时间间隔：单位秒，范围0~3600，默认值180，表示在此时间间隔内仅触发一次吸烟报警
+smoke_video_times : 5             #前后视频录制时间：单位秒，取值范围0~60，默认5
+smoke_photo_numbers : 3           #拍照张数：取值范围0~10，默认3，0表示不抓拍
+smoke_photo_interval : 2          #拍照间隔：单位100ms，取值范围1~5，默认2
+
+#打电话的配置参数.
+call_threshold : 0.5              #判决时间,单位:秒
+call_alarm_interval : 180         #使能报警时间间隔：单位秒，范围0~3600，默认值180，表示在此时间间隔内仅触发一次吸烟报警
+call_video_times : 5              #前后视频录制时间：单位秒，取值范围0~60，默认5
+call_photo_numbers : 3            #拍照张数：取值范围0~10，默认3，0表示不抓拍
+call_photo_interval : 2            #拍照间隔：单位100ms，取值范围1~5，默认2
+
+#驾驶员异常
+abnormal_video_times : 5          #前后视频录制时间：单位秒，取值范围0~60，默认5
+abnormal_photo_numbers : 3        #拍照张数：取值范围0~10，默认3，0表示不抓拍
+abnormal_photo_interval : 2        #拍照间隔：单位100ms，取值范围1~5，默认2
+
+#报警设置
+speed_threshold : 60              #触发报警速度阈值
+alarm_interval : 0                #相同报警间隔,单位s（在该时间段内不会发出同样的报警）
+alarm_volume : 10                 #报警提醒音量
+
+#主动拍照设置
+photo_strategy : 0                #拍照策略（0：关闭拍照功能， 1：定时拍照， 2：定距拍照， 3：触发拍照）
+photo_time_interval : 3600        #定制拍照时间间隔：单位秒，取值范围0~60000，默认值3600
+photo_distance_interval : 200     #主动定距拍照间隔：单位米，范围0~60000，默认值200，0表示不抓拍
+photo_numbers : 3                 #每次主动拍照张数：取值范围1~10，默认值3
+photo_interval : 2                #每次主动拍照间隔：单位100ms，范围1~5，默认值2
+
+#拍照分辨率设置
+photo_resolution : 0              #拍照分辨率（0 : 352x288, 1 : 704x288, 2 : 704x576, 3 : 640x480,
+                                  #4 : 1280x720, 5 : 1920x1080）
+#视频录制分辨率设置
+video_resolution : 0              #视频录制分辨率（0 ： CIF(352x288), 1 : HD1(704x288), 2 : D1(704x576),
+                                  #3 : WD1(960x576), 4 : VGA(640x480), 5 : 720P(1280x720), 6 : 1080P(1920x1080)）
+
+
+#图像文件路径配 
+path_save_img : ""
+path_load_img : "/home/untouch/data/faceid_failed/"
+#path_load_img : "/home/untouch/data/dms_rjcsj/timezhui/069_test/"
+
+#是否使用摄像头
+camera_online : 1
+
+#在线摄像头ID
+camera_index : 0
+
+#离线/在线数据读取帧率
+camera_fps: 25
+
+#数据处理帧率
+process_fps: 6
+
+#保存结果
+write_result : 0
+path_save_result : "../assets/result.txt"
+
+#是否显示landmark和bbox
+debug : 0

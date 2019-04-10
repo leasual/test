@@ -87,6 +87,7 @@ add_library( # Sets the name of the library.
         src/main/cpp/dsm_strategy/eye_mouth_plus.cc
         src/main/cpp/dsm_strategy/head_pose_states.cc
         src/main/cpp/dsm_strategy/config_tracker.cc
+        src/main/cpp/dsm_strategy/distract_judger.cc
 
         src/main/cpp/total_flow.cc
 

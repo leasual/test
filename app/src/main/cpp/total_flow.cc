@@ -51,13 +51,15 @@ TotalFlow::TotalFlow(const std::string& path) :
     call_judger_.SetParam(config_.process_fps_ * 5,
                           config_.process_fps_ * config_.call_threshold_);
     close_eye_judger_.SetParam(config_.process_fps_ * 5,
-                               config_.process_fps_ * config_.fatigue_threshold_);
+                               config_.process_fps_ * config_.fatigue_threshold_,
+                               config_.process_fps_ * 2);
     open_mouth_judger_.SetParam(config_.process_fps_ * 5,
                                 config_.process_fps_ * config_.yawn_threshold_);
     head_left_right_judger_.SetParam(config_.process_fps_ * 5,
                                      config_.process_fps_ * config_.distraction_threshold_);
     head_up_down_judger_.SetParam(config_.process_fps_ * 5,
-                                  config_.process_fps_ * config_.fatigue_threshold_);
+                                  config_.process_fps_ * config_.fatigue_threshold_,
+                                  config_.process_fps_ * 2);
 }
 
 
@@ -301,7 +303,7 @@ void TotalFlow::ProcessPictureThread() {
 
                     int dis, fat, smoke, call, abnorm;
                     result_.GetDistraction(dis, bboxd);
-                    result_.GetFatigue(fat, bboxf);
+                    result_.GetFatigueFirst(fat, bboxf);
                     result_.GetSmoke(smoke, bboxs);
                     result_.GetCall(call, bboxc);
                     result_.GetAbnormal(abnorm);
@@ -392,7 +394,6 @@ void TotalFlow::ProcessPictureThread() {
     std::abort();
 }
 
-
 void TotalFlow::ProcessImageThread() {
     prctl(PR_SET_NAME, "DSM_Algorithm");
     while (true) {
@@ -407,7 +408,9 @@ void TotalFlow::ProcessImageThread() {
 //        std::cout << "process sleep : " << control_fps_cost-time_cost << std::endl;
         if(control_fps_cost > time_cost)
             std::this_thread::sleep_for(std::chrono::milliseconds(control_fps_cost-time_cost));
+        LOGE("----  %ld",(time_cost));
     }
+
     std::cout << "keep_running_flag_ : " << keep_running_flag_ << std::endl;
     std::abort();
 }
@@ -431,8 +434,10 @@ void TotalFlow::RunProcess() {
         lock_guard<mutex>lock_guard(result_mutex_);
         result_.SetSmoke(0, bbox);
         result_.SetCall(0,bbox);
-        result_.SetFatigue(0,bbox);
+        result_.SetFatigueFirst(0,bbox);
+        result_.SetFatigueSecond(0,bbox);
         result_.SetDistraction(0,bbox);
+        result_.SetYawn(0);
     }
 }
 
@@ -450,18 +455,21 @@ void TotalFlow::RunMainStep() {
     int smoke_value = smoke_judger_.Detect(smoke_state_);
     int call_value = call_judger_.Detect(call_state_);
     int distract_lr_value = head_left_right_judger_.Detect(head_lr_state);
-    int distract_ud_value = head_up_down_judger_.Detect(head_ud_state);
+//    int distract_ud_value = head_up_down_judger_.Detect(head_ud_state);
     int yawn_value = open_mouth_judger_.Detect(mouth_state);
     int fatigue_value = close_eye_judger_.Detect(eye_state);
 
-    fatigue_value |= distract_ud_value;
+//    fatigue_value = std::max(fatigue_value, distract_ud_value);
+    int fatigue_first = fatigue_value == 1;
+    int fatigue_second = fatigue_value == 2;
 
     cv::Rect bbox;
     lock_guard<std::mutex>lock_guard(result_mutex_);
     result_.SetSmoke(smoke_value, smoke_bbox_);
     result_.SetCall(call_value, call_bbox_);
     result_.SetDistraction(distract_lr_value, bbox);
-    result_.SetFatigue(fatigue_value,bbox);
+    result_.SetFatigueFirst(fatigue_first,bbox);
+    result_.SetFatigueSecond(fatigue_second,bbox);
     result_.SetYawn(yawn_value);
 }
 

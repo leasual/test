@@ -509,16 +509,16 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
                     }
 
                     if (cali && detectDone){
-                        if (index % 3 == 0){
+                        if (true){
                             var array = FindFeatures2(it1.nativeObjAddr, it.nativeObjAddr, register, save)
                             array?.let {
                                 if(it.size > 2)
                                     getStringResult(it)
                             }
                         }//减少uitext更新频率，没必要每帧都改变
-                        else{
-                            FindFeatures2(it1.nativeObjAddr, it.nativeObjAddr, register, save)
-                        }
+//                        else{
+//                            FindFeatures2(it1.nativeObjAddr, it.nativeObjAddr, register, save)
+//                        }
                     }
 
                 }
@@ -633,7 +633,7 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
             },8000)
 
             Handler().postDelayed({
-                Utils.deleteFile(integer)
+//                Utils.deleteFile(integer)
             },10000)
             Log.e(TAG, "AsyncTaskInitTotalFlow  successfully")
         }

@@ -202,12 +202,12 @@ public class Utils {
         }
     }
 
-    public static void deleteFileAll(Context context) {
-        String storePathRoot = context.getExternalFilesDir(null).getAbsolutePath() == null ? context.getFilesDir().getAbsolutePath() : context.getExternalFilesDir(null).getAbsolutePath();
-        File file = new File(storePathRoot);
-        delete(file);
-
-    }
+//    public static void deleteFileAll(Context context) {
+//        String storePathRoot = context.getExternalFilesDir(null).getAbsolutePath() == null ? context.getFilesDir().getAbsolutePath() : context.getExternalFilesDir(null).getAbsolutePath();
+//        File file = new File(storePathRoot);
+//        delete(file);
+//
+//    }
 
     private static void delete(File file) {
         File[] files = file.listFiles();
