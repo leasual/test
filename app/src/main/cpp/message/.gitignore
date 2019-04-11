@@ -1,0 +1,15 @@
+build
+build/*
+cmake-build-debug
+cmake-build-debug/*
+.idea/*
+.idea
+
+CMakeCache.txt
+CMakeFiles/*
+GPATH
+GRTAGS
+GTAGS
+Makefile
+
+dsm_jtt808
