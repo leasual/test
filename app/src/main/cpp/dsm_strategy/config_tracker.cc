@@ -1,8 +1,5 @@
 #include "config_tracker.h"
-#include "android/log.h"
-#define LOG_TAG2 "OpenCV-NDK-Native"
 
-#define LOGE1(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG2, __VA_ARGS__)
 //分神的配置参数
 float ConfigTracker::distraction_threshold_ = 0.f;
 int ConfigTracker::distraction_left_angle_ = 0;
@@ -96,7 +93,6 @@ void ConfigTracker::LoadData() {
     distraction_video_times_ = param<int>("distraction_video_times", 5);
     distraction_photo_numbers_ = param<int>("distraction_photo_numbers", 3);
     distraction_photo_interval_ = param<int>("distraction_photo_interval", 2);
-    LOGE1("distraction_photo_interval_");
 
 //#打哈欠检测的配置参数
     yawn_threshold_ = param<float>("yawn_threshold", 0.5);
@@ -106,47 +102,48 @@ void ConfigTracker::LoadData() {
     fatigue_video_times_ = param<int>("fatigue_video_times", 5);
     fatigue_photo_numbers_ = param<int>("fatigue_photo_numbers", 3);
     fatigue_photo_interval_ = param<int>("fatigue_photo_interval", 2);
-    LOGE1("2");
+
 //#抽烟检测的配置参数.
     smoke_threshold_ = param<float>("smoke_threshold", 0.5);
     smoke_alarm_interval_ = param<int>("smoke_alarm_interval", 180);
     smoke_video_times_ = param<int>("smoke_video_times", 5);
     smoke_photo_numbers_ = param<int>("smoke_photo_numbers", 3);
     smoke_photo_interval_ = param<int>("smoke_photo_interval", 2);
-    LOGE1("3");
+
 //#打电话的配置参数.
     call_threshold_ = param<float>("call_threshold", 0.5);
     call_alarm_interval_ = param<int>("call_alarm_interval", 180);
     call_video_times_ = param<int>("call_video_times", 5);
     call_photo_numbers_ = param<int>("call_photo_numbers", 3);
     call_photo_interval_ = param<int>("call_photo_interval", 2);
-    LOGE1("4");
+
 //#驾驶员异常
     abnormal_video_times_ = param<int>("abnormal_video_times", 5);
     abnormal_photo_numbers_ = param<int>("abnormal_photo_numbers", 3);
     abnormal_photo_interval_ = param<int>("abnormal_photo_interval", 2);
-    LOGE1("5");
+
 //#报警设置
     speed_threshold_ = param<int>("speed_threshold", 60);
     alarm_interval_ = param<int>("alarm_interval", 10);
     alarm_volume_ = param<int>("alarm_volume", 10);
-    LOGE1("6");
+
 //#主动拍照设置
     photo_strategy_ = param<int>("photo_strategy", 0);
     photo_time_interval_ = param<int>("photo_time_interval", 3600);
     photo_distance_interval_ = param<int>("photo_distance_interval", 200);
     photo_numbers_ = param<int>("photo_numbers", 3);
     photo_interval_ = param<int>("photo_interval", 2);
-    LOGE1("7");
+
 //#拍照分辨率设置
-//    photo_resolution_ = param<int>("photo_resolution", 0);
-//
-////#视频录制分辨率设置
-//    video_resolution_ = param<int>("video_resolution", 0);
-//
-////路径设置
+    photo_resolution_ = param<int>("photo_resolution", 0);
+
+//#视频录制分辨率设置
+    video_resolution_ = param<int>("video_resolution", 0);
+
+//路径设置
 //	path_save_img_ = param<std::string>("path_save_img","");
 //	path_load_img_ = param<std::string>("path_load_img","");
+
 //摄像头是否在线
 	camera_online_ = param<int>("camera_online",0);
 
@@ -155,23 +152,21 @@ void ConfigTracker::LoadData() {
 
 //摄像头帧率
     camera_fps_ = param<int>("camera_fps", 25);
-    LOGE1("8");
 
 //数据处理帧率
     process_fps_ = param<int>("process_fps", 25);
 
 // 保存结果标志位
     write_result_ = param<int>("write_result", 0);
-    LOGE1("9");
 
 //保存结果路径
 //    path_save_result_ = param<std::string>("path_save_result", "");
 
 // 保存结果标志位
-//    write_result_ = param<int>("write_result", 0);
+    write_result_ = param<int>("write_result", 0);
 
 //保存结果路径
 //    path_save_result_ = param<std::string>("path_save_result", "");
 
-//    debug_ = param<int>("debug", 0) == 1;
+    debug_ = param<int>("debug", 0) == 1;
 }

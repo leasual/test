@@ -21,6 +21,7 @@ import android.telephony.SubscriptionManager
 import android.telephony.TelephonyManager
 import android.text.TextUtils
 import android.util.Log
+import android.view.View
 import android.view.WindowManager
 import android.widget.TextView
 import com.op.dm.Utils
@@ -148,7 +149,7 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
         with(tutorial2_activity_surface_view) {
             visibility = CameraBridgeViewBase.VISIBLE
             setCvCameraViewListener(this@DetectActitvity)
-            setCameraIndex(1)
+            setCameraIndex(0)
             setMaxFrameSize(640, 480)
         }
 

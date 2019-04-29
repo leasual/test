@@ -26,8 +26,7 @@ include_directories(src/main/cpp/algorithm/face_detection/include)
 include_directories(src/main/cpp/algorithm/faceid/include)
 include_directories(src/main/cpp/algorithm/gaze_tracking/include)
 include_directories(src/main/cpp/algorithm/head_pose/include)
-include_directories(src/main/cpp/algorithm/landmark/dlib/include)
-include_directories(src/main/cpp/algorithm/object_detection/include)
+include_directories(src/main/cpp/algorithm/landmark/fast-rcnn/include)
 include_directories(src/main/cpp/algorithm/object_detection/rcnn/include)
 include_directories(src/main/cpp/algorithm/utilities/include)
 include_directories(src/main/cpp/dsm_strategy)
@@ -57,21 +56,37 @@ set_target_properties(libmsg PROPERTIES IMPORTED_LOCATION ${CMAKE_CURRENT_SOURCE
 # You can define multiple libraries, and CMake builds it for you.
 # Gradle automatically packages shared libraries with your APK.
 
+file(GLOB native_srcs "src/main/cpp/*.cpp" "src/main/cpp/*.cc")
+file(GLOB native_srcs2 "src/main/cpp/algorithm/align/src/*.cpp")
+file(GLOB native_srcs3 "src/main/cpp/algorithm/face_detection/src/*.cc")
+file(GLOB native_srcs4 "src/main/cpp/algorithm/faceid/src/*.cpp")
+#file(GLOB native_srcs5 "src/main/cpp/algorithm/gaze_tracking/src/*.cpp")
+file(GLOB native_srcs6 "src/main/cpp/algorithm/head_pose/src/*.cc")
+file(GLOB native_srcs7 "src/main/cpp/algorithm/landmark/fast-rcnn/src/*.cc")
+file(GLOB native_srcs8 "src/main/cpp/algorithm/object_detection/rcnn/src/*.cc")
+file(GLOB native_srcs9 "src/main/cpp/algorithm/utilities/src/*.cc" "src/main/cpp/algorithm/utilities/src/*.cpp")
+
+file(GLOB native_srcs10 "src/main/cpp/dsm_strategy/*.cpp" "src/main/cpp/dsm_strategy/*.cc")
+file(GLOB native_srcs11 "src/main/cpp/dsm_strategy/utils/file/*.cpp" "src/main/cpp/dsm_strategy/utils/file/*.cc")
+#file(GLOB native_srcs12 "src/main/cpp/dsm_strategy/utils/time/*.cpp" "src/main/cpp/dsm_strategy/utils/time/*.cc")
+
 
 add_library( # Sets the name of the library.
-             native-lib
-
-             # Sets the library as a shared library.
-             SHARED
-
-             # Provides a relative path to your source file(s).
-             # Associated headers in the same location as their source
-             # file are automatically included.
-            src/main/cpp/native-lib.cpp
-            src/main/cpp/interface.cc
-            src/main/cpp/jni_part.cpp
-            src/main/cpp/cameras.cc
-
+        native-lib
+        # Sets the library as a shared library.
+        SHARED
+        ${native_srcs}
+        ${native_srcs2}
+        ${native_srcs3}
+        ${native_srcs4}
+#        ${native_srcs5}
+        ${native_srcs6}
+        ${native_srcs7}
+        ${native_srcs8}
+        ${native_srcs9}
+        ${native_srcs10}
+        ${native_srcs11}
+#        ${native_srcs12}
         src/main/cpp/message/client_conn.cpp
         src/main/cpp/message/client_conn_manager.cpp
         src/main/cpp/message/hp_socket_helper.cpp
@@ -81,38 +96,6 @@ add_library( # Sets the name of the library.
         src/main/cpp/message/base/jtt808_base.cpp
         src/main/cpp/message/base/log4z.cpp
         src/main/cpp/message/base/util.cpp
-
-        src/main/cpp/dsm_strategy/judger.cc
-        src/main/cpp/dsm_strategy/smoke_judger.cc
-        src/main/cpp/dsm_strategy/eye_mouth_plus.cc
-        src/main/cpp/dsm_strategy/head_pose_states.cc
-        src/main/cpp/dsm_strategy/config_tracker.cc
-        src/main/cpp/dsm_strategy/distract_judger.cc
-
-        src/main/cpp/total_flow.cc
-
-        src/main/cpp/algorithm/align/src/align_method.cpp
-        src/main/cpp/algorithm/align/src/faceAlign.cpp
-#        src/main/cpp/algorithm/align/src/shape_predict_untouch.cc
-        src/main/cpp/algorithm/face_detection/src/detector.cc
-        src/main/cpp/algorithm/face_detection/src/onet.cc
-        src/main/cpp/algorithm/face_detection/src/pnet.cc
-        src/main/cpp/algorithm/face_detection/src/rnet.cc
-        src/main/cpp/algorithm/faceid/src/faceAttribute.cpp
-        src/main/cpp/algorithm/faceid/src/faceID.cpp
-        src/main/cpp/algorithm/head_pose/src/head_pose_estimator.cc
-        src/main/cpp/algorithm/landmark/dlib/src/shape_predict.cc
-        src/main/cpp/algorithm/utilities/src/transform.cpp
-        src/main/cpp/algorithm/utilities/src/utils.cc
-        src/main/cpp/algorithm/object_detection/rcnn/src/object_detection.cc
-        src/main/cpp/algorithm/object_detection/rcnn/src/classify.cc
-
-        src/main/cpp/dsm_strategy/utils/file/config.cc
-        src/main/cpp/dsm_strategy/utils/file/file_read_write_utils.cc
-        src/main/cpp/dsm_strategy/utils/file/file_system.cc
-        src/main/cpp/dsm_strategy/utils/file/file_utils.cc
-        src/main/cpp/dsm_strategy/utils/file/system_config.cc
-        src/main/cpp/dsm_strategy/utils/file/text_table_file.cc
         )
 
 

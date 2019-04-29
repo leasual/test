@@ -1,4 +1,5 @@
 #include "detector.h"
+#include <memory>
 
 MTCNNDetector::MTCNNDetector(const ProposalNetwork::Config &pConfig,
                              const RefineNetwork::Config &rConfig,

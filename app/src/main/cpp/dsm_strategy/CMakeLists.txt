@@ -9,6 +9,7 @@ set(SRCS ../total_flow.cc
         ../algorithm/utilities/src/transform.cpp
         ../algorithm/utilities/src/utils.cc
         judger.cc
+        distract_judger.cc
         eye_mouth_plus.cc
         head_pose_states.cc
         config_tracker.cc
