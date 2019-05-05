@@ -146,8 +146,13 @@ public class Utils {
                 copyFilesFassets(context, dir, storePathRoot + File.separator + dir);
             }
             File feature = new File(storePathRoot + File.separator + "feature");
+            File feature2 = new File(storePathRoot+"/second" + File.separator + "feature");
+
             if (!feature.exists()) {
                 feature.mkdir();
+            }
+            if (!feature2.exists()) {
+                feature2.mkdir();
             }
         } catch (Exception e) {
             e.printStackTrace();

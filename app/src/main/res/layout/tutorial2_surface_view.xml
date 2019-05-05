@@ -101,4 +101,26 @@
             <!--android:textSize="17sp"-->
             <!--android:textColor="@color/green" />-->
     </LinearLayout>
+    <Button
+        android:id="@+id/normal_btn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="正常模式"/>
+    <Button
+        android:id="@+id/fast_btn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_toRightOf="@id/normal_btn"
+        android:layout_marginLeft="5dp"
+        android:text="快速模式"/>
+    <TextView
+        android:id="@+id/mode_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:layout_toRightOf="@id/fast_btn"
+        android:layout_marginLeft="5dp"
+        android:textSize="18sp"
+        android:textColor="@color/green"
+        android:text="当前:正常模式"/>
 </RelativeLayout>

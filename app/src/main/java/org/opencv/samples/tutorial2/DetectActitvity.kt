@@ -33,6 +33,7 @@ import org.opencv.android.BaseLoaderCallback
 import org.opencv.android.CameraBridgeViewBase
 import org.opencv.android.LoaderCallbackInterface
 import org.opencv.android.OpenCVLoader
+import org.opencv.core.Core
 import org.opencv.core.Mat
 import org.opencv.imgproc.Imgproc
 import java.io.File
@@ -70,6 +71,7 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
     private var timer: Timer? = null
     private var timerTask: TimerTask? = null
     var page = 0
+    var mode = 0L
     var locationManager: LocationManager? = null
     var location: Location? = null
     var beginCali = false
@@ -120,10 +122,8 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
             // it returns a list with a SubscriptionInfo instance for each simcard
             // there is other methods to retrieve SubscriptionInfos (see [2])
            var sis:List<SubscriptionInfo?>? = sm.getActiveSubscriptionInfoList()
-
             // getting first SubscriptionInfo
            var si = sis?.get(0)
-
             // getting iccId
            var iccId = si?.getIccId()?:"8986043910180000000"
           if(iccId.length > 11){
@@ -139,12 +139,49 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         setContentView(R.layout.tutorial2_surface_view)
         views = arrayOf(dis, fat, smoke, call, abnm,unknown,yawn)
-
+        mode = getPreferences(Context.MODE_PRIVATE).getLong("mode",0L)
+        if(mode == 1L){
+            mode_text.text = "当前:快速模式"
+        }
 //        val cameraManager = getSystemService(Context.CAMERA_SERVICE) as CameraManager
 //        val cameraId = cameraManager.cameraIdList[0]
 //        cameraManager.cameraIdList.forEach {
 //            Log.e("  camera  inex ", it)
 //        }
+
+        normal_btn.setOnClickListener {
+            Thread {
+                var sp = getPreferences(Context.MODE_PRIVATE)
+                var ed = sp.edit()
+                ed.putLong("mode",0L)
+                ed.apply()
+            }.start()
+            setResult(RESULT_OK)
+            stop()
+            totalDone = false
+            mode = 0L
+            tutorial2_activity_surface_view.visibility = View.INVISIBLE
+            tutorial2_activity_surface_view.postDelayed({
+                finish()
+            },500)
+        }
+
+        fast_btn.setOnClickListener {
+            Thread {
+                var sp = getPreferences(Context.MODE_PRIVATE)
+                var ed = sp.edit()
+                ed.putLong("mode",1L)
+                ed.apply()
+            }.start()
+            setResult(RESULT_OK)
+            stop()
+            totalDone = false
+            mode = 1L
+            tutorial2_activity_surface_view.visibility = View.INVISIBLE
+            tutorial2_activity_surface_view.postDelayed({
+                finish()
+            },500)
+        }
 
         with(tutorial2_activity_surface_view) {
             visibility = CameraBridgeViewBase.VISIBLE
@@ -447,10 +484,11 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
 
     public override fun onDestroy() {
         super.onDestroy()
+        totalDone = false
         stop()
+        tutorial2_activity_surface_view.visibility = View.INVISIBLE
         tutorial2_activity_surface_view?.disableView()
 //        tutorial2_activity_surface_view2?.disableView()
-
 //        android.os.Process.killProcess(android.os.Process.myPid())
         players.forEach {
             it?.stop()
@@ -459,12 +497,12 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
         sdPlayer?.stop()
         sdPlayer?.release()
 //        timer?.purge()
+        timerTask?.cancel()
         timer?.cancel()
         Handler().post {
 //            Utils.deleteFileAll(this)
-            System.exit(0)
+//            System.exit(0)
         }
-
     }
 
     override fun onCameraViewStarted(width: Int, height: Int) {
@@ -485,8 +523,8 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
     override fun onCameraFrame(inputFrame: CameraBridgeViewBase.CvCameraViewFrame): Mat {
 
         totaltime = System.currentTimeMillis()- firsttime
-        if(totaltime > 1000*60*60*3)
-            finish()
+//        if(totaltime > 1000*60*60*3)
+//            finish()
 
         mRgba = inputFrame.rgba()
         mGray = inputFrame.gray()
@@ -643,8 +681,8 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
             for (index in 0..6) {
                 contexts[0].players[index] = MediaPlayer.create(contexts[0], contexts[0].audio[index])
             }
-            var tim = System.currentTimeMillis()/1000 + 1*60*60*24*10
-            contexts[0].FindFeatures(tim, contexts[0].page)
+//            var tim = System.currentTimeMillis()/1000 + 1*60*60*24*10
+            contexts[0].FindFeatures(contexts[0].mode, contexts[0].page)
 //            contexts[0].CHECK("")
 //            if(contexts[0].CHECK(contexts[0].checks()))
 //                contexts[0].FindFeatures(0, 0)
@@ -652,6 +690,12 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
 //                contexts[0].finish()
             return contexts[0]
         }
+    }
+
+    override fun onBackPressed() {
+        super.onBackPressed()
+        setResult(-2)
+        finish()
     }
 
     external fun stop()
