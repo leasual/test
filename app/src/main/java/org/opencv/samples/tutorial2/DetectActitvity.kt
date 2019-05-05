@@ -186,7 +186,7 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
         with(tutorial2_activity_surface_view) {
             visibility = CameraBridgeViewBase.VISIBLE
             setCvCameraViewListener(this@DetectActitvity)
-            setCameraIndex(0)
+            setCameraIndex(1)
             setMaxFrameSize(640, 480)
         }
 

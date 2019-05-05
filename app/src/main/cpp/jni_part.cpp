@@ -80,13 +80,13 @@ Java_org_opencv_samples_tutorial2_DetectActitvity_Cali(JNIEnv *jniEnv, jobject o
 JNIEXPORT void JNICALL
 Java_org_opencv_samples_tutorial2_DetectActitvity_Detect(JNIEnv *jniEnv, jobject obj, jlong copyMat,
                                                          jint index) {
-    LOGE("before!!! RegistFeature is %d", *featureNum);
+//    LOGE("before!!! RegistFeature is %d", *featureNum);
     bool ndone = (*featureNum < 25);
     if (totalFlow != nullptr && (*caliDone) && ndone) {
-        LOGE(" RegistFeature");
+//        LOGE(" RegistFeature");
         if (totalFlow->RegistFeature(*(Mat *) copyMat)) {
             *featureNum = *featureNum + 1;
-            LOGE(" RegistFeature is %d", *featureNum);
+//            LOGE(" RegistFeature is %d", *featureNum);
             if (*featureNum >= 25) {
                 jclass cl = jniEnv->FindClass("org/opencv/samples/tutorial2/DetectActitvity");
                 jmethodID meth = jniEnv->GetMethodID(cl, "RegistDone", "()V");
@@ -132,7 +132,7 @@ Java_org_opencv_samples_tutorial2_DetectActitvity_FindFeatures2(JNIEnv *jniEnv, 
         result->GetAbnormal(abnorm);
         result->GetYawn(yawn);//haqi
 
-        LOGE(" fat dis yawn   -------- %d, %d ,%d ",fat, dis, yawn);
+//        LOGE(" fat dis yawn   -------- %d, %d ,%d ",fat, dis, yawn);
         if(fat == 2 || dis==2 || call == 2 || smoke == 2|| abnorm == 2){
 
 
@@ -152,8 +152,8 @@ Java_org_opencv_samples_tutorial2_DetectActitvity_FindFeatures2(JNIEnv *jniEnv, 
                     warn = euSmoking;
                 if(dis ==2)
                     warn = euDistract;
-//                thread t(doi,warn);
-//                t.detach();
+                thread t(doi,warn);
+                t.detach();
             }
 
         }
@@ -220,14 +220,80 @@ string js2string(JNIEnv *env, jstring jStr){
 
 JNIEXPORT jboolean JNICALL
 Java_org_opencv_samples_tutorial2_DetectActitvity_CHECK(JNIEnv *jniEnv, jobject, jstring mac) {
-    return JNI_FALSE;
+//    return JNI_FALSE;
 
+        string mod = js2string(jniEnv, mac);
+        string sim = "0" + mod;
+    UT_TRACE("sim  model  is ! %s , %s " ,sim.c_str(),mod.c_str());
+    string s = "106.14.186.44";
+
+    CConfigFileReader::GetInstance()->LoadFromFile( "/sdcard/Android/data/com.ut.sdk/files/dsm_jtt808.cfg");
+    CDSMLog::GetInstance()->InitialiseLog4z("/sdcard/Android/data/com.ut.sdk/files/dsm_log.cfg");
+
+    if (!CDsmJTT808_API::GetInstance()->Inialise((char*)sim.c_str(), (char*)mod.c_str(),(char*)s.c_str(),7000)) {
+        UT_FATAL("Inialise failed!");
+        return JNI_FALSE;
+    }
+
+
+    if (!CDsmJTT808_API::GetInstance()->Connect()) {
+        UT_FATAL("Connect failed!");
+        return JNI_FALSE;
+    }
+
+    lati = new  long;
+    longi = new  long;
+    *lati = 0L;
+    *longi = 0L;
+    speed = new unsigned short;
+    hei = new unsigned int;
+    *speed = 10;
+    *hei = 10;
+
+//    VideoCapture cap(1);
+//    if (!cap.isOpened())
+//    {
+//        LOGE("is opened ");
+//        return JNI_FALSE;
+//    }
+//
+//    Mat frame;
+//    // 按Q键退出时，键盘需要调为英文模式
+//    while(1) {
+//        // 通过流操作符把视频转化为一帧帧图片
+//        cap >> frame;
+//        LOGE("is frame col %d", frame.cols);
+//        int  i = rand();
+//        imwrite("/storage/sdcard1/img101/temp/"+ to_string(i) +".jpg",frame);
+//    }
+
+//    VideoWriter video("/storage/sdcard1/img101/test.avi", CV_FOURCC('M', 'J', 'P', 'G'), 6.0, Size(640, 480));
+//    // 从一个文件夹下读取多张jpg图片
+//    String pattern = "/storage/sdcard1/img101/*.png";
+//    vector<String> fn;
+//
+//    glob(pattern, fn, false);
+//
+//    size_t count = fn.size();
+//    for (size_t i = 0; i < count; i++)
+//    {
+//        Mat image = imread(fn[i]);
+//        // 这个大小与VideoWriter构造函数中的大小一致。
+//        resize(image, image, Size(640, 480));
+//        // 流操作符，把图片传入视频
+//        video << image;
+//    }
+
+
+
+
+    return JNI_TRUE;
 }
 
 JNIEXPORT jboolean JNICALL
 Java_org_opencv_samples_tutorial2_DetectActitvity_OnMessage(JNIEnv *jniEnv, jobject, jlong lat,
                                                             jlong alt,jint he,jshort sp) {
-    return JNI_FALSE;
+//    return JNI_FALSE;
 
 
     CDsmJTT808_API::GetInstance()->OnTimer();
@@ -300,7 +366,7 @@ Java_org_opencv_samples_tutorial2_DetectActitvity_FindFeatures(JNIEnv *jniEnv, j
 }
 
 void doi(euAlarmType warn) {
-    return;
+//    return;
     old = chrono::_V2::steady_clock::now();
     totalFlow->stopQueue = true;
     size_t count = totalFlow->pictures.size();
@@ -318,7 +384,7 @@ void doi(euAlarmType warn) {
         video << image;
         totalFlow->pictures.pop();
     }
-//    sendData(filename,euVideo,warn);
+    sendData(filename,euVideo,warn);
     totalFlow->stopQueue =false;
 }
 
