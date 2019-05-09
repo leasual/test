@@ -6,7 +6,6 @@ import java.io.ByteArrayOutputStream
 import java.io.DataOutputStream
 import java.net.ServerSocket
 import java.net.Socket
-import kotlin.math.log
 
 
 class ImageServer {
