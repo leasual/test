@@ -93,7 +93,6 @@ Java_org_opencv_samples_tutorial2_DetectActitvity_Detect(JNIEnv *jniEnv, jobject
                 jniEnv->CallVoidMethod(obj, meth);
             }
         }
-
     }
 
 }
@@ -142,7 +141,7 @@ Java_org_opencv_samples_tutorial2_DetectActitvity_FindFeatures2(JNIEnv *jniEnv, 
 
             auto diff = chrono::duration_cast<std::chrono::milliseconds>(
                     std::chrono::steady_clock::now() - old);
-            if(diff.count() > 60000L){
+            if(diff.count() > 30000L){
                 euAlarmType warn = euAlarmInit;
                 if(fat ==2)
                     warn = euFatigue;
@@ -208,6 +207,8 @@ Java_org_opencv_samples_tutorial2_DetectActitvity_stop(JNIEnv *jniEnv, jobject) 
     delete bboxs;
     delete bboxf;
     delete bboxc;
+    CDsmJTT808_API::GetInstance()->StopTimer();
+    CDsmJTT808_API::GetInstance()->Destroy();
 //    std::abort();
 }
 

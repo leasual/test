@@ -51,15 +51,17 @@
         android:theme="@style/AppTheme"
         tools:ignore="GoogleAppIndexingWarning">
 
+
+
         <activity
-            android:name="org.opencv.samples.tutorial2.Mainactivity"
+            android:name="org.opencv.samples.tutorial2.DetectActitvity"
             android:screenOrientation="landscape">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name="org.opencv.samples.tutorial2.DetectActitvity"  android:launchMode="singleTop"/>
+
 
         <receiver android:name="com.op.MyReceiver"
             android:enabled="true"

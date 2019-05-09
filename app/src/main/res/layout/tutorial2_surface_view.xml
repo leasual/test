@@ -123,4 +123,5 @@
         android:textSize="18sp"
         android:textColor="@color/green"
         android:text="当前:正常模式"/>
+
 </RelativeLayout>

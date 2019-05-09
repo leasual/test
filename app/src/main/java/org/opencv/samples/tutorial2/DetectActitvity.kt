@@ -5,8 +5,10 @@ import android.app.Activity
 import android.app.AlertDialog
 import android.app.ProgressDialog
 import android.content.ContentValues
+import android.content.ContentValues.TAG
 import android.content.Context
 import android.content.SharedPreferences
+import android.graphics.Bitmap
 import android.hardware.Camera
 import android.icu.lang.UCharacter.GraphemeClusterBreak.L
 import android.location.*
@@ -24,10 +26,13 @@ import android.util.Log
 import android.view.View
 import android.view.WindowManager
 import android.widget.TextView
+import com.op.dm.ImageServer
+import com.op.dm.ImageServer2
 import com.op.dm.Utils
 import com.op.dm.Utils.getGpsLoaalTime
 import com.tencent.bugly.Bugly.init
 import com.ut.sdk.R
+import com.ut.sdk.R.id.tutorial2_activity_surface_view
 import kotlinx.android.synthetic.main.tutorial2_surface_view.*
 import org.opencv.android.BaseLoaderCallback
 import org.opencv.android.CameraBridgeViewBase
@@ -35,10 +40,13 @@ import org.opencv.android.LoaderCallbackInterface
 import org.opencv.android.OpenCVLoader
 import org.opencv.core.Core
 import org.opencv.core.Mat
+import org.opencv.core.MatOfByte
+import org.opencv.imgcodecs.Imgcodecs
 import org.opencv.imgproc.Imgproc
 import java.io.File
 import java.io.IOException
 import java.util.*
+import java.util.concurrent.Executors
 import kotlin.concurrent.timerTask
 
 /**
@@ -77,10 +85,14 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
     var beginCali = false
     var totaltime = 0L
     var firsttime = 0L
+    var imageServer: ImageServer? = null
+    var th = ImageTh()
     init {
         Log.i(TAG, "Instantiated new " + this.javaClass)
     }
 
+    var singleThreadExecutor = Executors.newSingleThreadExecutor()
+    var singleThreadExecutorDsm = Executors.newSingleThreadExecutor()
 
     var  locationListener = object: LocationListener {
         override fun onLocationChanged(location: Location?) {
@@ -143,11 +155,7 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
         if(mode == 1L){
             mode_text.text = "当前:快速模式"
         }
-//        val cameraManager = getSystemService(Context.CAMERA_SERVICE) as CameraManager
-//        val cameraId = cameraManager.cameraIdList[0]
-//        cameraManager.cameraIdList.forEach {
-//            Log.e("  camera  inex ", it)
-//        }
+
 
         normal_btn.setOnClickListener {
             Thread {
@@ -186,29 +194,13 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
         with(tutorial2_activity_surface_view) {
             visibility = CameraBridgeViewBase.VISIBLE
             setCvCameraViewListener(this@DetectActitvity)
-            setCameraIndex(1)
+            setCameraIndex(0)
             setMaxFrameSize(640, 480)
         }
 
-//        with(tutorial2_activity_surface_view2) {
-//            visibility = CameraBridgeViewBase.VISIBLE
-//            setCvCameraViewListener(object :CameraBridgeViewBase.CvCameraViewListener2{
-//                override fun onCameraViewStarted(width: Int, height: Int) {
-//                    mRgba2 = Mat()
-//                }
-//
-//                override fun onCameraViewStopped() {
-//                }
-//
-//                override fun onCameraFrame(inputFrame: CameraBridgeViewBase.CvCameraViewFrame?): Mat {
-//                    mRgba2 = inputFrame?.rgba()
-//                    return mRgba2!!
-//                }
-//
-//            })
-//            setCameraIndex(0)
-//            setMaxFrameSize(640, 480)
-//        }
+        Thread{
+            imageServer = ImageServer()
+        }.start()
 
         progressDialog = ProgressDialog(this)
         progressDialog?.setTitle("加载中,请稍后")
@@ -443,13 +435,15 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
 
     private fun writeViews() {
         views?.forEachIndexed { index, textView ->
-            with(textView) {
-                post {
-                    text = names[index] + " : " + strings[index]
-                    if (text.contains("报警")) {
-                        setTextColor(resources.getColor(R.color.red))
-                    } else
-                        setTextColor(resources.getColor(R.color.green))
+            runOnUiThread {
+                with(textView) {
+                    post {
+                        text = names[index] + " : " + strings[index]
+                        if (text.contains("报警")) {
+                            setTextColor(resources.getColor(R.color.red))
+                        } else
+                            setTextColor(resources.getColor(R.color.green))
+                    }
                 }
             }
         }
@@ -485,6 +479,7 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
     public override fun onDestroy() {
         super.onDestroy()
         totalDone = false
+        imageServer?.stop()
         stop()
         tutorial2_activity_surface_view.visibility = View.INVISIBLE
         tutorial2_activity_surface_view?.disableView()
@@ -504,13 +499,15 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
 //            System.exit(0)
         }
     }
-
+    var bm:Bitmap? = null
     override fun onCameraViewStarted(width: Int, height: Int) {
         mRgba = Mat()
         mGray = Mat()
+        bm = Bitmap.createBitmap(640, 480, Bitmap.Config.ARGB_8888)
         if (rgb == null) {
             rgb = Mat()
         }
+//        th.start()
     }
 
     override fun onCameraViewStopped() {
@@ -520,54 +517,109 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
             rgb?.release()
     }
     var lastdetect = 0L
+    var lastFrame = 0L
+    var lastFrameDsm = 0L
     override fun onCameraFrame(inputFrame: CameraBridgeViewBase.CvCameraViewFrame): Mat {
-
-        totaltime = System.currentTimeMillis()- firsttime
-//        if(totaltime > 1000*60*60*3)
-//            finish()
-
         mRgba = inputFrame.rgba()
         mGray = inputFrame.gray()
-        rgb?.let { it1 ->
-            Imgproc.cvtColor(mRgba, it1, Imgproc.COLOR_RGBA2RGB)
-            if (totalDone){
-                mRgba?.let {
 
-                    if(!cali && beginCali){
-                        Cali(it1.nativeObjAddr,0)
-                    }
+//        Log.e(" mat ch ", "" + mRgba?.channels() + " " + mRgba!!.cols() + "" + mRgba!!.rows())
+//        var size = (mRgba!!.cols().times(mRgba!!.cols())).times(mRgba!!.channels())
+//        var array = ByteArray(1024)
+//        mRgba!!.get(mRgba!!.rows(),mRgba!!.cols(),array)
+//        var now = System.currentTimeMillis() - lastFrame
+//        if( now < 20){
+//            return mRgba!!
+//        }
 
-                    if(cali && !detectDone){
-                        playDetecting()
-                        var now = System.currentTimeMillis()
-                        var diff = now - lastdetect
-                        if(diff > 200){
-                            Detect(it1.nativeObjAddr,0)
-                            lastdetect = now
-                        }
-                    }
+        singleThreadExecutor.execute {
+            var time = System.currentTimeMillis()
+//            org.opencv.android.Utils.matToBitmap(mGray?.clone(), bm!!)
+           var mb = MatOfByte()
+          Imgcodecs.imencode(".png", mGray!!, mb)
+//            Log.e("sendd "," " + (System.currentTimeMillis() - time))
+            imageServer?.sendMat(mb.toArray())
+        }
 
-                    if (cali && detectDone){
-                        if (true){
-                            var array = FindFeatures2(it1.nativeObjAddr, it.nativeObjAddr, register, save)
-                            array?.let {
-                                if(it.size > 2)
-                                    getStringResult(it)
+//        lastFrame = System.currentTimeMillis()
+//
+//        var now2 = System.currentTimeMillis() - lastFrameDsm
+//        if( now2 < 200){
+//            return mRgba!!
+//        }
+        return mRgba!!
+            rgb?.let { it1 ->
+                Imgproc.cvtColor(mRgba, it1, Imgproc.COLOR_RGBA2RGB)
+                if (totalDone){
+                    th.run = true
+
+                    mRgba?.let {
+
+                        if(!cali && beginCali){
+                            singleThreadExecutorDsm.execute {
+                                Cali(it1.nativeObjAddr, 0)
                             }
-                        }//减少uitext更新频率，没必要每帧都改变
+                        }
+
+                        if(cali && !detectDone){
+                            playDetecting()
+                            var now = System.currentTimeMillis()
+                            var diff = now - lastdetect
+                            if(diff > 200){
+                                singleThreadExecutorDsm.execute {
+                                    Detect(it1.nativeObjAddr, 0)
+                                    lastdetect = now
+                                }
+                            }
+                        }
+
+                        if (cali && detectDone){
+                            if (true){
+                                singleThreadExecutorDsm.execute {
+
+                                    var array = FindFeatures2(it1.nativeObjAddr, it.nativeObjAddr, register, save)
+                                    array?.let {
+                                        if (it.size > 2)
+                                            getStringResult(it)
+                                    }
+                                }
+                            }//减少uitext更新频率，没必要每帧都改变
 //                        else{
 //                            FindFeatures2(it1.nativeObjAddr, it.nativeObjAddr, register, save)
 //                        }
-                    }
+                        }
 
+                    }
+                }else
+                    th.run = true
+            }
+        lastFrameDsm = System.currentTimeMillis()
+//        return mRgba!!
+//        if (index >= 10000)
+//            index = 0
+//        index++
+        return rgb!!
+    }
+
+    inner class ImageTh: Thread() {
+        var run = false
+        var time = 0L
+        override fun run() {
+            while (true) {
+                var cost = System.currentTimeMillis() - time
+                if (run) {
+                    run = false
+                    time = System.currentTimeMillis()
+                    imageServer?.apply {
+                        //                        synchronized(mRgba!!) {
+//
+                        org.opencv.android.Utils.matToBitmap(mRgba?.clone(), bm!!)
+                        this.sendImage(bm!!)
+
+                    }
                 }
             }
-
         }
-        if (index >= 10000)
-            index = 0
-        index++
-        return mRgba!!
     }
 
     private val mLoaderCallback = object : BaseLoaderCallback(this) {
@@ -710,4 +762,5 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
     companion object {
         private const val TAG = "OCVSample::Activity"
     }
+
 }
