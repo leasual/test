@@ -8,7 +8,7 @@
 #define LOGD(...) ((void)__android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__))
 
 
-void sendData(string& szFilePath, euFileType type,euAlarmType warn);
+void sendData(const char* szFilePath, euFileType type,euAlarmType warn);
 
 void doi(euAlarmType warn);
 
@@ -108,7 +108,7 @@ Java_org_opencv_samples_tutorial2_DetectActitvity_FindFeatures2(JNIEnv *jniEnv, 
     if (totalFlow != nullptr && (*caliDone) && ((*featureNum) >= 25)) {
         totalFlow->Run(*(Mat *) copyMat, *result);
         totalFlow->isSave = picture == JNI_TRUE;
-        int yawn, dis, fat, smoke, call, abnorm, unknown;
+        int cal, dis, fat, smoke, call, abnorm, unknown;
         std::string showFaceid = "name : ";
         std::string distration = "dis  : ";
         std::string fatigue = "fat  : ";
@@ -125,33 +125,26 @@ Java_org_opencv_samples_tutorial2_DetectActitvity_FindFeatures2(JNIEnv *jniEnv, 
             unknown = 2;
         else
             unknown = 0;
-        result->GetDistraction(dis, *bboxd);//左右
-        result->GetFatigue(fat, *bboxf);//分神
+        result->GetDistraction(dis, *bboxd);
+        result->GetFatigue(fat, *bboxf);
         result->GetSmoke(smoke, *bboxs);
         result->GetCall(call, *bboxc);
         result->GetAbnormal(abnorm);
-        result->GetYawn(yawn);//haqi
+        result->GetCalibration(cal);
+
 
         if(picture && (fat == 2 || dis==2 || call == 2 || smoke == 2|| abnorm == 2)){
             auto diff = chrono::duration_cast<std::chrono::milliseconds>(
                     std::chrono::steady_clock::now() - old);
             if(diff.count() > 60000L){
-                euAlarmType warn = euAlarmInit;
-                if(fat ==2)
-                    warn = euFatigue;
-                if(call ==2)
-                    warn = euCall;
-                if(smoke ==2)
-                    warn = euSmoking;
-                if(dis ==2)
-                    warn = euDistract;
-//                thread t(doi,warn);
-//                t.detach();
+                thread t(doi,euFatigue);
+                t.detach();
+//                t.join();
             }
 
         }
 
-        re1 = jniEnv->NewIntArray(7);
+        re1 = jniEnv->NewIntArray(6);
         index2 = jniEnv->GetIntArrayElements(re1, NULL);
         index2[0] = dis;
         index2[1] = fat;
@@ -159,7 +152,6 @@ Java_org_opencv_samples_tutorial2_DetectActitvity_FindFeatures2(JNIEnv *jniEnv, 
         index2[3] = call;
         index2[4] = abnorm;
         index2[5] = unknown;
-        index2[6] = yawn;
         if (smoke != 0) {
             cv::rectangle(*(Mat *) addrRgba, *bboxs, cv::Scalar(255, 0, 0), 2);
         }
@@ -202,27 +194,11 @@ Java_org_opencv_samples_tutorial2_DetectActitvity_stop(JNIEnv *jniEnv, jobject) 
     delete bboxc;
 //    std::abort();
 }
-
-string js2string(JNIEnv *env, jstring jStr){
-  const char *cstr = env->GetStringUTFChars(jStr, NULL);
-  string str = string(cstr);
-  env->ReleaseStringUTFChars(jStr, cstr);
-  return str;
-}
-
 JNIEXPORT jboolean JNICALL
 Java_org_opencv_samples_tutorial2_DetectActitvity_CHECK(JNIEnv *jniEnv, jobject, jstring mac) {
-    return JNI_FALSE;
 
-        string mod = js2string(jniEnv, mac);
-        string sim = "0" + mod;
-    UT_TRACE("sim  model  is ! %s , %s " ,sim.c_str(),mod.c_str());
-    string s = "106.14.186.44";
 
-    CConfigFileReader::GetInstance()->LoadFromFile( "/sdcard/Android/data/com.ut.sdk/files/dsm_jtt808.cfg");
-    CDSMLog::GetInstance()->InitialiseLog4z("/sdcard/Android/data/com.ut.sdk/files/dsm_log.cfg");
-
-    if (!CDsmJTT808_API::GetInstance()->Inialise((char*)sim.c_str(), (char*)mod.c_str(),(char*)s.c_str(),7000)) {
+    if (!CDsmJTT808_API::GetInstance()->Inialise()) {
         UT_FATAL("Inialise failed!");
         return JNI_FALSE;
     }
@@ -285,8 +261,6 @@ Java_org_opencv_samples_tutorial2_DetectActitvity_CHECK(JNIEnv *jniEnv, jobject,
 JNIEXPORT jboolean JNICALL
 Java_org_opencv_samples_tutorial2_DetectActitvity_OnMessage(JNIEnv *jniEnv, jobject, jlong lat,
                                                             jlong alt,jint he,jshort sp) {
-    return JNI_FALSE;
-
 
     CDsmJTT808_API::GetInstance()->OnTimer();
     LOGE("affter on timer");
@@ -355,7 +329,6 @@ Java_org_opencv_samples_tutorial2_DetectActitvity_FindFeatures(JNIEnv *jniEnv, j
 }
 
 void doi(euAlarmType warn) {
-    return;
     old = chrono::_V2::steady_clock::now();
     totalFlow->stopQueue = true;
     size_t count = totalFlow->pictures.size();
@@ -365,30 +338,27 @@ void doi(euAlarmType warn) {
     VideoWriter video(filename, CV_FOURCC('M', 'J', 'P', 'G'), 5.0, Size(640, 480));
     for (size_t i = 0; i < count; i++) {
         Mat image = imread(totalFlow->pictures.front());
-        if(i ==3)
-            sendData(totalFlow->pictures.front(),euPIC,warn);
+        if(i == 0)
+            sendData(totalFlow->pictures.front().c_str(),euPIC,warn);
         // 这个大小与VideoWriter构造函数中的大小一致。
         resize(image, image, Size(640, 480));
         // 流操作符，把图片传入视频
         video << image;
         totalFlow->pictures.pop();
     }
-//    sendData(filename,euVideo,warn);
+    sendData(filename.c_str(),euVideo,warn);
     totalFlow->stopQueue =false;
 }
 
-void sendData(string& szFilePath, euFileType type,euAlarmType warn) {
-
-    LOGE("sss ---  %s,len=%d %d  %d ",szFilePath.c_str(),szFilePath.length(),type,warn);
+void sendData(const char* szFilePath, euFileType type,euAlarmType warn) {
     AlarmAccessory objAccess;
     objAccess.stFileType = type;
-//    const char* szFilePath1 = "/storage/sdcard1/img37/2019-04-04 17-01-30-594.png";
-    strcpy(objAccess.stFileName,szFilePath.c_str());
+//    const char* szFilePath = "/storage/sdcard1/img101/2010-01-01 08-47-35-250.png";
+    strcpy(objAccess.stFileName,szFilePath);
     //217088
     vector<AlarmAccessory> vAccessories;
     vAccessories.push_back(objAccess);
-    LOGE("before send data !@#$%%^^ _______");
-    CDsmJTT808_API::GetInstance()->SetGpsInfo(*lati, *longi, 20, 40, true, warn,DSM_ALARM_FLAG, vAccessories);
+    CDsmJTT808_API::GetInstance()->SetGpsInfo(*lati, *longi, 20, 40, true, warn, vAccessories);
 }
 
 

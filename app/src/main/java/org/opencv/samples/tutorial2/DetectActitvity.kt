@@ -7,17 +7,13 @@ import android.app.ProgressDialog
 import android.content.ContentValues
 import android.content.Context
 import android.content.SharedPreferences
-import android.hardware.Camera
-import android.icu.lang.UCharacter.GraphemeClusterBreak.L
 import android.location.*
-import android.media.CamcorderProfile
 import android.media.MediaPlayer
-import android.media.MediaRecorder
 import android.net.wifi.WifiManager
-import android.os.*
-import android.provider.MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO
-import android.telephony.SubscriptionInfo
-import android.telephony.SubscriptionManager
+import android.os.AsyncTask
+import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.telephony.TelephonyManager
 import android.text.TextUtils
 import android.util.Log
@@ -34,8 +30,6 @@ import org.opencv.android.LoaderCallbackInterface
 import org.opencv.android.OpenCVLoader
 import org.opencv.core.Mat
 import org.opencv.imgproc.Imgproc
-import java.io.File
-import java.io.IOException
 import java.util.*
 import kotlin.concurrent.timerTask
 
@@ -52,15 +46,15 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
     private var mGray: Mat? = null
     private var progressDialog: ProgressDialog? = null
     //这个优先级会有变动，为了不修改jni里返回值顺序和ui的顺序，引入这个数组，之后只改这里就可以修改警告播报优先级-> 从names[3],names[2],names[1]..这个顺序遍历names数组
-    private val priority = arrayOf(3, 6, 0, 1, 2, 5, 4)
-    private val names = arrayOf("左顾右盼", "分神", "吸烟", "打电话", "画面异常","身份异常","打哈欠")
-    private val lastTime = arrayOf(0L, 0L, 0L, 0L, 0L, 0L, 0L)
-    private val audio = arrayOf(R.raw.dis2,R.raw.fenshen, R.raw.chouyan, R.raw.dadianhua, R.raw.huamianyichang,R.raw.shenfenyichang, R.raw.yawn)
+    private val priority = arrayOf(3, 2, 0, 1, 4, 5)
+    private val names = arrayOf("分神", "疲劳", "吸烟", "打电话", "画面异常","身份异常")
+    private val lastTime = arrayOf(0L, 0L, 0L, 0L, 0L, 0L)
+    private val audio = arrayOf(R.raw.fenshen, R.raw.pilao, R.raw.chouyan, R.raw.dadianhua, R.raw.huamianyichang,R.raw.shenfenyichang)
     private var views: Array<TextView>? = null
-    private val strings = arrayOfNulls<String>(7)
+    private val strings = arrayOfNulls<String>(6)
     internal var totalDone = false
     internal var register = false
-    private var players = arrayOfNulls<MediaPlayer>(7)//每秒有n次检测，即时响应，分多个实例
+    private var players = arrayOfNulls<MediaPlayer>(6)//每秒有n次检测，即时响应，分多个实例
     private var sdPlayer: MediaPlayer? = null
     private var detectFacePlayer: MediaPlayer? = null
     private var caliPlayer: MediaPlayer? = null
@@ -78,6 +72,22 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
         Log.i(TAG, "Instantiated new " + this.javaClass)
     }
 
+    private fun getAndroidLowVersionMac(wifiManager: WifiManager): String {
+        try {
+            val wifiInfo = wifiManager.connectionInfo
+            val mac = wifiInfo.macAddress
+            return if (TextUtils.isEmpty(mac)) {
+                "null"
+            } else {
+                mac.substring(0, 5)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Log.e("mac", "get android low version mac error:" + e.message)
+            return "null"
+        }
+
+    }
 
     var  locationListener = object: LocationListener {
         override fun onLocationChanged(location: Location?) {
@@ -98,10 +108,6 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
     }
 
 
-    var modeln:String? = null
-    var simno :String? = null
-    var mMediaRecorder: MediaRecorder? = null
-    var mCamera: Camera? = null
 
 
     @SuppressLint("MissingPermission")
@@ -114,30 +120,15 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
         locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager?
         location = locationManager?.getLastKnownLocation(locationManager?.getBestProvider(getCriteria(), true))
 //        locationManager?.requestLocationUpdates(LocationManager.GPS_PROVIDER, 3000, 1f, locationListener)
-      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP_MR1) {
-          var sm =  SubscriptionManager.from(this)
-            // it returns a list with a SubscriptionInfo instance for each simcard
-            // there is other methods to retrieve SubscriptionInfos (see [2])
-           var sis:List<SubscriptionInfo?>? = sm.getActiveSubscriptionInfoList()
+        var telemamanger = getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
+        var  getSimSerialNumber:String? = telemamanger.getSimSerialNumber();
+        var getSimNumber :String? = telemamanger.getLine1Number();
 
-            // getting first SubscriptionInfo
-           var si = sis?.get(0)
-
-            // getting iccId
-           var iccId = si?.getIccId()?:"8986043910180000000"
-          if(iccId.length > 11){
-              modeln = iccId.substring(0,11)
-              simno = "0"+ modeln
-              Log.e("  model  inex ", modeln + " - " + simno)
-          }
-
-       } else {
-           TODO("VERSION.SDK_INT < LOLLIPOP_MR1")
-       }
+        Log.e(" ka hao !! ", getSimNumber?:"null" + " --  " + getSimSerialNumber?:"null")
 
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         setContentView(R.layout.tutorial2_surface_view)
-        views = arrayOf(dis, fat, smoke, call, abnm,unknown,yawn)
+        views = arrayOf(dis, fat, smoke, call, abnm)
 
 //        val cameraManager = getSystemService(Context.CAMERA_SERVICE) as CameraManager
 //        val cameraId = cameraManager.cameraIdList[0]
@@ -145,10 +136,11 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
 //            Log.e("  camera  inex ", it)
 //        }
 
+
         with(tutorial2_activity_surface_view) {
             visibility = CameraBridgeViewBase.VISIBLE
             setCvCameraViewListener(this@DetectActitvity)
-            setCameraIndex(1)
+            setCameraIndex(0)
             setMaxFrameSize(640, 480)
         }
 
@@ -200,69 +192,6 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
     var alti = 0
     var speeds :Short = 0
 
-    private fun releaseMediaRecorder() {
-        if (mMediaRecorder != null) {
-            mMediaRecorder?.reset()   // clear recorder configuration
-            mMediaRecorder?.release() // release the recorder object
-            mMediaRecorder = null
-            mCamera?.lock()           // lock camera for later use
-        }
-    }
-
-    private fun prepareVideoRecorder(): Boolean {
-        mCamera = Camera.open(0)
-        mCamera?.let {
-            mMediaRecorder = MediaRecorder()
-
-            // Step 1: Unlock and set camera to MediaRecorder
-            mCamera?.unlock()
-            mMediaRecorder?.setCamera(mCamera)
-
-            // Step 2: Set sources
-//            mMediaRecorder?.setAudioSource(MediaRecorder.AudioSource.DEFAULT)
-            mMediaRecorder?.setVideoSource(MediaRecorder.VideoSource.CAMERA)
-
-            // Step 3: Set a CamcorderProfile (requires API Level 8 or higher)
-            mMediaRecorder?.setProfile(CamcorderProfile.get(CamcorderProfile.QUALITY_480P))
-
-            val mediaStorageDir = File(Environment.getExternalStoragePublicDirectory(
-                    Environment.DIRECTORY_PICTURES), "MyCameraApp")
-            if (!mediaStorageDir.exists()) {
-                if (!mediaStorageDir.mkdirs()) {
-                    Log.e("MyCameraApp", "failed to create directory")
-                    return false
-                }
-            }
-            val mediaFile: File
-            mediaFile = File(mediaStorageDir.path + File.separator +
-                    "qianshe" + ".mp4")
-
-            //        mMediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
-            //        mMediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.DEFAULT);
-            // Step 4: Set output file
-            mMediaRecorder?.setOutputFile(mediaFile.toString())
-            //        mMediaRecorder.setVideoFrameRate(25);
-
-            // Step 5: Set the preview output
-//        mMediaRecorder?.setPreviewDisplay(mPreview.getHolder().getSurface())
-
-            // Step 6: Prepare configured MediaRecorder
-            try {
-                mMediaRecorder?.prepare()
-            } catch (e: IllegalStateException) {
-                Log.d(TAG, "IllegalStateException preparing MediaRecorder: " + e.message)
-                releaseMediaRecorder()
-                return false
-            } catch (e: IOException) {
-                Log.d(TAG, "IOException preparing MediaRecorder: " + e.message)
-                releaseMediaRecorder()
-                return false
-            }
-        }
-        return true
-    }
-
-
     @SuppressLint("MissingPermission")
     private fun getLastKnownLocation(): Location? {
 //        val locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
@@ -285,15 +214,18 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
 
                     }
                 }
-            Log.e(ContentValues.TAG, " time is " + getGpsLoaalTime(l.time ?: 0) + " type- "+provider)
-            Log.e(ContentValues.TAG, " gps is " + l.latitude + "  " + l.longitude + " type- "+provider + " speed " + l.speed)
+                Log.e(ContentValues.TAG, " time is " + getGpsLoaalTime(l.time ?: 0) + " type- "+provider)
+                Log.e(ContentValues.TAG, " gps is " + l.latitude + "  " + l.longitude + " type- "+provider + " speed " + l.speed)
 
             }
         }
         return bestLocation
     }
 
-
+    private fun checks(): String {
+        var mac = getAndroidLowVersionMac(applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager)
+        return mac
+    }
 
     private fun getStringResult(result: IntArray?) {
         result?.let { array ->
@@ -329,10 +261,6 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
         if(index == 5)
             return
         var time = System.currentTimeMillis() - lastTime[0]
-        var playing = false
-        players.forEach {
-
-        }
         if (time > 4000) {
             players[index]?.apply {
                 if (!this.isPlaying) {
@@ -460,7 +388,7 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
 //        timer?.purge()
         timer?.cancel()
         Handler().post {
-//            Utils.deleteFileAll(this)
+            //            Utils.deleteFileAll(this)
             System.exit(0)
         }
 
@@ -545,6 +473,7 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
                             locationManager?.requestLocationUpdates(LocationManager.GPS_PROVIDER, 3000, 1f, locationListener)
                             locationManager?.requestLocationUpdates(LocationManager.PASSIVE_PROVIDER, 3000, 1f, locationListener)
                             locationManager?.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 3000, 1f, locationListener)
+
                             getLastKnownLocation()
                         }
 
@@ -552,16 +481,6 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
                     var timer = Timer()
                     timer.schedule(timerTask,3000,5000)
 
-
-//                    if(prepareVideoRecorder()){
-//                        mMediaRecorder?.start()
-//                    }
-//
-//                    Handler().postDelayed({
-//                        mMediaRecorder?.stop()
-//                        releaseMediaRecorder() // release the MediaRecorder object
-//                        mCamera?.lock()
-//                    },8000)
 
                     if (!totalDone) {
                         val context = mAppContext
@@ -579,15 +498,11 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
         override fun onPostExecute(integer: DetectActitvity) {
             super.onPostExecute(integer)
             Log.e(TAG, "AsyncTaskInitFile  successfully")
-
-            integer.modeln?.let { integer.CHECK(it) }
-
-            Handler().postDelayed({
-                AsyncTaskInitTotalFlow().execute(integer)
-            },2000)
+            AsyncTaskInitTotalFlow().execute(integer)
+            integer.CHECK("")
 
             var timerTask =  timerTask {
-//                integer.runOnUiThread {
+                //                integer.runOnUiThread {
 //                }
                 integer.OnMessage(integer.lati, integer.longi,integer.alti, integer.speeds)
 
@@ -633,13 +548,13 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
             },8000)
 
             Handler().postDelayed({
-                Utils.deleteFile(integer)
+                //                Utils.deleteFile(integer)
             },10000)
             Log.e(TAG, "AsyncTaskInitTotalFlow  successfully")
         }
 
         override fun doInBackground(vararg contexts: DetectActitvity): DetectActitvity {
-            for (index in 0..6) {
+            for (index in 0..5) {
                 contexts[0].players[index] = MediaPlayer.create(contexts[0], contexts[0].audio[index])
             }
             var tim = System.currentTimeMillis()/1000 + 1*60*60*24*10
