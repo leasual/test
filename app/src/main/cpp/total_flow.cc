@@ -408,9 +408,7 @@ void TotalFlow::ProcessImageThread() {
 //        std::cout << "process sleep : " << control_fps_cost-time_cost << std::endl;
         if(control_fps_cost > time_cost)
             std::this_thread::sleep_for(std::chrono::milliseconds(control_fps_cost-time_cost));
-        LOGE("----  %ld",(time_cost));
     }
-
     std::cout << "keep_running_flag_ : " << keep_running_flag_ << std::endl;
     std::abort();
 }
@@ -455,11 +453,11 @@ void TotalFlow::RunMainStep() {
     int smoke_value = smoke_judger_.Detect(smoke_state_);
     int call_value = call_judger_.Detect(call_state_);
     int distract_lr_value = head_left_right_judger_.Detect(head_lr_state);
-//    int distract_ud_value = head_up_down_judger_.Detect(head_ud_state);
+    int distract_ud_value = head_up_down_judger_.Detect(head_ud_state);
     int yawn_value = open_mouth_judger_.Detect(mouth_state);
     int fatigue_value = close_eye_judger_.Detect(eye_state);
 
-//    fatigue_value = std::max(fatigue_value, distract_ud_value);
+    fatigue_value = std::max(fatigue_value, distract_ud_value);
     int fatigue_first = fatigue_value == 1;
     int fatigue_second = fatigue_value == 2;
 

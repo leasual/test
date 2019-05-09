@@ -7,7 +7,6 @@
 
 
 #include "base/config_file.h"
-//#include "hp_socket_helper.h"
 #include "client_conn_manager.h"
 #include "singleton.h"
 
@@ -17,39 +16,86 @@ class CDsmJTT808_API :
 {
 public:
     //CDsmJTT808_API() {m_listener = NULL; m_client = NULL;}
-    CDsmJTT808_API() {}
+    CDsmJTT808_API() {m_bInialised = false;}
     ~CDsmJTT808_API() {}
 
-    bool Inialise(char* strSimNo, char* strDevModel, char* strIp, int nPort)
-    {
-//        char* szServerIp = CConfigFileReader::GetInstance()->GetConfigName("server_ip");
-//        char* szServerPort = CConfigFileReader::GetInstance()->GetConfigName("server_port");
-//        if (NULL == szServerIp || NULL == szServerPort)
+//    bool Inialise(char* szSimNo, char* szDevModel, char* szIp, int nPort)
+//    {
+//        if (NULL == szSimNo || NULL == szDevModel || NULL == szIp)
 //            return false;
+//
+//        CDSMLog::GetInstance()->InitialiseLog4z("./dsm_log.cfg");
+//        UT_TRACE("Server IP[%s] Port[%d]",szIp,nPort);
+//
+//        // 连接Server
+//        m_strIp = szIp;
+//        m_nPort = nPort;
+//        m_strSimNo = szSimNo;
+//        m_strDevModel = szDevModel;
+//
+//        CClientConnManager::GetInstance()->InialiseConnect(m_strIp,m_nPort,m_strSimNo,m_strDevModel);
+//        m_bInialised = true;
+//        return true;
+//    }
+//
+//    bool Connect()
+//    {
+//        if (!m_bInialised)
+//            return false;
+//
+//        m_nClientFd = CClientConnManager::GetInstance()->Connect();
+//        if (m_nClientFd != -1) {
+//            UT_TRACE("Connect to server IP[%s] Port[%d] success!",m_strIp.c_str(),m_nPort);
+//            return true;
+//        } else {
+//            UT_TRACE("Connect to server IP[%s] Port[%d] failed!",m_strIp.c_str(),m_nPort);
+//        }
+//        return false;
+//    }
 
-        if (NULL == strSimNo || NULL == strDevModel || NULL == strIp)
-            return false;
-
-        UT_TRACE("Server IP[%s] Port[%d]",strIp,nPort);
-
-        // 连接Server
-        m_strIp = strIp;
-        m_nPort = 7000;
-        m_strSimNo = strSimNo;
-        m_strDevModel = strDevModel;
-        return true;
+    void SetGpsInfo(uint64_t latitude,uint64_t longitude,uint32_t  height,WORD speed,WORD stDirection,bool bAlarm)
+    {
+        UT_INFO("Set Gps information.");
+        std::shared_ptr<UploadGPSInfo> spGpsInfo =
+                std::make_shared<UploadGPSInfo>(latitude,longitude,height,speed,stDirection,bAlarm,0);
+        CClientConnManager::GetInstance()->SetLocation(spGpsInfo);
     }
 
-    bool Connect()
+    void SetGPSAlarmInfo(UploadGPSInfo& gpsInfo,std::shared_ptr<UploadADASAlarmInfo> adasAlarmInfo,
+                         std::vector<AlarmAccessory>& accessories)
     {
-        m_nClientFd = CClientConnManager::GetInstance()->Connect(m_strSimNo,m_strDevModel,m_strIp,m_nPort,true);
-        if (m_nClientFd != -1) {
-            UT_TRACE("Connect to server IP[%s] Port[%d] success!",m_strIp.c_str(),m_nPort);
-            return true;
-        } else {
-            UT_TRACE("Connect to server IP[%s] Port[%d] failed!",m_strIp.c_str(),m_nPort);
+        DevUploadGPSAlarmInfo * gpsAlarmInfo(nullptr);
+        gpsAlarmInfo = new DevUploadGPSAlarmInfo(gpsInfo,adasAlarmInfo,accessories);
+        CClientConnManager::GetInstance()->SetAlarmInfo(gpsAlarmInfo);
+    }
+
+
+    void SetGPSAlarmInfo(UploadGPSInfo& gpsInfo,std::shared_ptr<UploadDSMAlarmInfo> dsmAlarmInfo,
+                         std::vector<AlarmAccessory>& accessories)
+    {
+        DevUploadGPSAlarmInfo * gpsAlarmInfo(nullptr);
+        gpsAlarmInfo = new DevUploadGPSAlarmInfo(gpsInfo,dsmAlarmInfo,accessories);
+        CClientConnManager::GetInstance()->SetAlarmInfo(gpsAlarmInfo);
+    }
+
+    void Start(char* szSimNo, char* szDevModel, char* szIp, int nPort)
+    {
+        if (NULL == szSimNo || NULL == szDevModel || NULL == szIp) {
+            UT_FATAL("Function parameter is NULL");
+            return;
         }
-        return false;
+
+        CDSMLog::GetInstance()->InitialiseLog4z("./dsm_log.cfg");
+        UT_TRACE("Server IP[%s] Port[%d]",szIp,nPort);
+
+        // 连接Server
+        m_strIp = szIp;
+        m_nPort = nPort;
+        m_strSimNo = szSimNo;
+        m_strDevModel = szDevModel;
+
+        m_nClientFd = CClientConnManager::GetInstance()->StartNewConnect(m_strIp,m_nPort,m_strSimNo,m_strDevModel);
+        //CClientConnManager::GetInstance()->Inialise(m_strIp,m_nPort,m_strSimNo,m_strDevModel);
     }
 
     void StartTimer()
@@ -65,41 +111,33 @@ public:
     void OnTimer()
     {
         uint64_t curr_tick = CUtil::GetInstance()->get_tick_count();
-        CClientConnManager::GetInstance()->OnTimer(curr_tick);
-        DWORD millSecond = 1000;
+        //CClientConnManager::GetInstance()->OnTimer(curr_tick);
+        //DWORD millSecond = 100;
 
-        if (CClientConnManager::GetInstance()->GetClientConnStatus(m_nClientFd) == NET_DISCONNECTED) {
-            // 重新连接
-            UT_TRACE("Start reconnect...");
-            m_nClientFd = CClientConnManager::GetInstance()->ClientReconnect(m_nClientFd,m_strSimNo,m_strDevModel,m_strIp,m_nPort);
-        }
-
-        enNetStatus euStatus = CClientConnManager::GetInstance()->GetClientConnStatus(m_nClientFd);
-        if (euStatus == NET_CONNECTED) {
-            // 已经建立连接成功了,但是还没有注册成功,发起注册
-            CClientConnManager::GetInstance()->DoRegister(m_nClientFd);
-        }
-
-        if (euStatus >= NET_REGISTED && euStatus != NET_AUTHENTICATED) {
-            // 已经注册成功了,但是还没有监权成功,发起监权
-            CClientConnManager::GetInstance()->DoAuth(m_nClientFd);
-        }
-
-        usleep(millSecond * 1000); // 让出millSecond毫秒的时间片
+//        if (CClientConnManager::GetInstance()->GetClientConnStatus(m_nClientFd) == NET_DISCONNECTED) {
+//            // 重新连接
+//            UT_TRACE("Start reconnect...");
+//            m_nClientFd = CClientConnManager::GetInstance()->ClientReconnect(m_nClientFd,m_strSimNo,m_strDevModel,m_strIp,m_nPort);
+//        }
+//
+//        enNetStatus euStatus = CClientConnManager::GetInstance()->GetClientConnStatus(m_nClientFd);
+//        if (euStatus == NET_CONNECTED) {
+//            // 已经建立连接成功了,但是还没有注册成功,发起注册
+//            CClientConnManager::GetInstance()->DoRegister(m_nClientFd);
+//        }
+//
+//        if (euStatus >= NET_REGISTED && euStatus != NET_AUTHENTICATED) {
+//            // 已经注册成功了,但是还没有监权成功,发起监权
+//            CClientConnManager::GetInstance()->DoAuth(m_nClientFd);
+//        }
+//        usleep(millSecond * 1000); // 让出millSecond毫秒的时间片
     }
 
-    void SetGpsInfo(uint64_t latitude,uint64_t longitude,uint32_t  height,WORD speed, bool bAlarm,euAlarmType alarmType,int alarmChannel,std::vector<AlarmAccessory>& accessories)
-    {
-        CClientConnManager::GetInstance()->SetLocation(m_nClientFd,latitude,longitude,height,speed,bAlarm,
-                                                       alarmType,alarmChannel,accessories);
-    }
 
     void UnInialise()
     {
         //DestroyHPSocketObjects();
         m_nClientFd = -1;
-//        m_listener = NULL;
-//        m_client = NULL;
     }
 
 //    int  ClientSend_API(const BYTE* buff, size_t nBuffLen)
@@ -123,8 +161,7 @@ private:
     unsigned int m_nPort;
     std::string m_strSimNo;
     std::string m_strDevModel;
-//    HP_TcpPullClientListener m_listener;
-//    HP_TcpPullClient m_client;
+    bool m_bInialised;
 };
 
 

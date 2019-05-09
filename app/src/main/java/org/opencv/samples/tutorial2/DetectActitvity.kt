@@ -194,7 +194,7 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
         with(tutorial2_activity_surface_view) {
             visibility = CameraBridgeViewBase.VISIBLE
             setCvCameraViewListener(this@DetectActitvity)
-            setCameraIndex(0)
+            setCameraIndex(1)
             setMaxFrameSize(640, 480)
         }
 
@@ -368,10 +368,10 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
                 if (!this.isPlaying) {
                     lastTime[0] = System.currentTimeMillis()
                     start()
+                    Log.e("sss", "playWarnning ---")
                 }
             }
         }
-        Log.e("sss", "playWarnning ---")
     }
     var cali = false
     var detectDone = false
@@ -532,14 +532,14 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
 //            return mRgba!!
 //        }
 
-        singleThreadExecutor.execute {
-            var time = System.currentTimeMillis()
-//            org.opencv.android.Utils.matToBitmap(mGray?.clone(), bm!!)
-           var mb = MatOfByte()
-          Imgcodecs.imencode(".png", mGray!!, mb)
-//            Log.e("sendd "," " + (System.currentTimeMillis() - time))
-            imageServer?.sendMat(mb.toArray())
-        }
+//        singleThreadExecutor.execute {
+//            var time = System.currentTimeMillis()
+////            org.opencv.android.Utils.matToBitmap(mGray?.clone(), bm!!)
+//           var mb = MatOfByte()
+//          Imgcodecs.imencode(".png", mGray!!, mb)
+////            Log.e("sendd "," " + (System.currentTimeMillis() - time))
+//            imageServer?.sendMat(mb.toArray())
+//        }
 
 //        lastFrame = System.currentTimeMillis()
 //
@@ -547,7 +547,7 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
 //        if( now2 < 200){
 //            return mRgba!!
 //        }
-        return mRgba!!
+//        return mRgba!!
             rgb?.let { it1 ->
                 Imgproc.cvtColor(mRgba, it1, Imgproc.COLOR_RGBA2RGB)
                 if (totalDone){
@@ -575,13 +575,12 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
 
                         if (cali && detectDone){
                             if (true){
-                                singleThreadExecutorDsm.execute {
-
-                                    var array = FindFeatures2(it1.nativeObjAddr, it.nativeObjAddr, register, save)
-                                    array?.let {
-                                        if (it.size > 2)
-                                            getStringResult(it)
-                                    }
+//                                singleThreadExecutorDsm.execute {
+//                                }
+                                var array = FindFeatures2(it1.nativeObjAddr, mRgba!!.nativeObjAddr, register, save)
+                                array?.let {
+                                    if (it.size > 2)
+                                        getStringResult(it)
                                 }
                             }//减少uitext更新频率，没必要每帧都改变
 //                        else{
@@ -598,7 +597,7 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
 //        if (index >= 10000)
 //            index = 0
 //        index++
-        return rgb!!
+        return mRgba!!
     }
 
     inner class ImageTh: Thread() {
@@ -678,14 +677,16 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
             },2000)
 
             var timerTask =  timerTask {
-//                integer.runOnUiThread {
-//                }
-                integer.OnMessage(integer.lati, integer.longi,integer.alti, integer.speeds)
-
+                integer.OnMessage(integer.lati, integer.longi,integer.alti, integer.speeds,false)
             }
             var timer = Timer()
-            timer.schedule(timerTask,5000,3000)
+            timer.schedule(timerTask,5000,900)
 
+            var timerTaskGps =  timerTask {
+                integer.OnMessage(integer.lati, integer.longi,integer.alti, integer.speeds,true)
+            }
+            var timer2 = Timer()
+            timer2.schedule(timerTaskGps,5000,30000)
 
         }
 
@@ -752,7 +753,7 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
 
     external fun stop()
     external fun CHECK(mac: String): Boolean
-    external fun OnMessage(lati: Long,alti: Long,height:Int,speed:Short): Boolean
+    external fun OnMessage(lati: Long,alti: Long,height:Int,speed:Short,gps:Boolean): Boolean
     //    external fun CHECK(mac:String)
     external fun FindFeatures(matAddrGr: Long, index: Int)
     external fun Cali(matAddrGr: Long, index: Int)

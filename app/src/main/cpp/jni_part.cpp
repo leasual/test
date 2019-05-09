@@ -4,13 +4,14 @@
 #include "total_flow.h"
 #include <vector>
 #include "dsm_jtt808_api.h"
+#include "ut_timer.h"
 
 #define LOGD(...) ((void)__android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__))
 
 
-void sendData(string& szFilePath, euFileType type,euAlarmType warn);
+void sendData(string& szFilePath, euFileType type,euDSMAlarmType warn);
 
-void doi(euAlarmType warn);
+void doi(euDSMAlarmType warn);
 
 template<typename T>
 std::string to_string(T value) {
@@ -41,7 +42,7 @@ Java_org_opencv_samples_tutorial2_DetectActitvity_stop(JNIEnv *jniEnv, jobject);
 
 JNIEXPORT jboolean JNICALL
 Java_org_opencv_samples_tutorial2_DetectActitvity_OnMessage(JNIEnv *jniEnv, jobject, jlong lati,
-                                                            jlong alti ,jint,jshort);
+                                                            jlong alti ,jint,jshort,jboolean);
 
 JNIEXPORT jboolean JNICALL
 Java_org_opencv_samples_tutorial2_DetectActitvity_CHECK(JNIEnv *jniEnv, jobject, jstring);
@@ -105,6 +106,7 @@ Java_org_opencv_samples_tutorial2_DetectActitvity_FindFeatures2(JNIEnv *jniEnv, 
     jintArray re1;
     jint *index2;
     if (totalFlow != nullptr && (*caliDone) && ((*featureNum) >= 25)) {
+//        UT_TRACE("before Run  ");
         totalFlow->Run(*(Mat *) copyMat, *result);
         totalFlow->isSave = picture == JNI_TRUE;
         int yawn, dis, fat, smoke, call, abnorm, unknown;
@@ -137,13 +139,13 @@ Java_org_opencv_samples_tutorial2_DetectActitvity_FindFeatures2(JNIEnv *jniEnv, 
 
         }
 
-        if(picture && (fat == 2 || dis==2 || call == 2 || smoke == 2|| abnorm == 2)){
+        if(picture && (fat == 2 || dis==2 || call == 2 || smoke == 2|| abnorm == 2 || yawn == 2)){
 
             auto diff = chrono::duration_cast<std::chrono::milliseconds>(
                     std::chrono::steady_clock::now() - old);
-            if(diff.count() > 30000L){
-                euAlarmType warn = euAlarmInit;
-                if(fat ==2)
+            if(diff.count() > 10000L){
+                euDSMAlarmType warn = euDsmAlarmInit;
+                if(fat ==2 || yawn == 2)
                     warn = euFatigue;
                 if(call ==2)
                     warn = euCall;
@@ -154,8 +156,9 @@ Java_org_opencv_samples_tutorial2_DetectActitvity_FindFeatures2(JNIEnv *jniEnv, 
                 thread t(doi,warn);
                 t.detach();
             }
-
         }
+
+//        UT_TRACE("before Run result ");
 
         re1 = jniEnv->NewIntArray(7);
         index2 = jniEnv->GetIntArrayElements(re1, NULL);
@@ -167,10 +170,11 @@ Java_org_opencv_samples_tutorial2_DetectActitvity_FindFeatures2(JNIEnv *jniEnv, 
         index2[5] = unknown;
         index2[6] = yawn;
         if (smoke != 0) {
-            cv::rectangle(*(Mat *) addrRgba, *bboxs, cv::Scalar(255, 0, 0), 2);
+            cv::rectangle(*(Mat *) addrRgba, *bboxs, cv::Scalar(255, 1, 1), 1);
         }
         if (call != 0) {
-            cv::rectangle(*(Mat *) addrRgba, *bboxc, cv::Scalar(255, 0, 0), 2);
+             LOGE(" call box   --------  %d ",bboxc->width);
+            cv::rectangle(*(Mat *) addrRgba, *bboxc, cv::Scalar(255, 1, 1), 1);
         }
 //        if( fat != 0){
 //            cv::rectangle(*(Mat*)addrRgba,*bboxf,cv::Scalar(255,0,0),2);
@@ -187,10 +191,11 @@ Java_org_opencv_samples_tutorial2_DetectActitvity_FindFeatures2(JNIEnv *jniEnv, 
         jniEnv->ReleaseIntArrayElements(re1, index2, 0);
     }
 
-    cv::putText(*(Mat *) addrRgba, to_string(totalFlow->isSave), cv::Point(220, 80), 1, 1,
-                cv::Scalar(122, 255, 50));
+//    cv::putText(*(Mat *) addrRgba, to_string(totalFlow->isSave), cv::Point(220, 80), 1, 1,
+//                cv::Scalar(122, 255, 50));
+//    cv::putText(*(Mat *) copyMat, to_string(totalFlow->isSave), cv::Point(220, 80), 1, 1,
+//                cv::Scalar(122, 255, 50));
 //    cv::putText(*(Mat*)addrRgba, to_string(totalFlow->keep_running_flag_), cv::Point(220,130),1,1,cv::Scalar(122,255,50));
-
 
 
     return re1;
@@ -231,16 +236,18 @@ Java_org_opencv_samples_tutorial2_DetectActitvity_CHECK(JNIEnv *jniEnv, jobject,
     CConfigFileReader::GetInstance()->LoadFromFile( "/sdcard/Android/data/com.ut.sdk/files/dsm_jtt808.cfg");
     CDSMLog::GetInstance()->InitialiseLog4z("/sdcard/Android/data/com.ut.sdk/files/dsm_log.cfg");
 
-    if (!CDsmJTT808_API::GetInstance()->Inialise((char*)sim.c_str(), (char*)mod.c_str(),(char*)s.c_str(),7000)) {
-        UT_FATAL("Inialise failed!");
-        return JNI_FALSE;
-    }
+    CDsmJTT808_API::GetInstance()->Start((char*)mod.c_str(),(char*)sim.c_str(),(char*)s.c_str(), 7000);
 
-
-    if (!CDsmJTT808_API::GetInstance()->Connect()) {
-        UT_FATAL("Connect failed!");
-        return JNI_FALSE;
-    }
+//    if (!CDsmJTT808_API::GetInstance()->Inialise((char*)sim.c_str(), (char*)mod.c_str(),(char*)s.c_str(),7000)) {
+//        UT_FATAL("Inialise failed!");
+//        return JNI_FALSE;
+//    }
+//
+//
+//    if (!CDsmJTT808_API::GetInstance()->Connect()) {
+//        UT_FATAL("Connect failed!");
+//        return JNI_FALSE;
+//    }
 
     lati = new  long;
     longi = new  long;
@@ -293,11 +300,8 @@ Java_org_opencv_samples_tutorial2_DetectActitvity_CHECK(JNIEnv *jniEnv, jobject,
 
 JNIEXPORT jboolean JNICALL
 Java_org_opencv_samples_tutorial2_DetectActitvity_OnMessage(JNIEnv *jniEnv, jobject, jlong lat,
-                                                            jlong alt,jint he,jshort sp) {
-//    return JNI_FALSE;
-
-
-    CDsmJTT808_API::GetInstance()->OnTimer();
+                                                            jlong alt,jint he,jshort sp, jboolean gps) {
+    UTTimer::GetInstance()->CheckTimer();
     LOGE("affter on timer");
     if(lati== nullptr){
         lati = new long;
@@ -309,22 +313,16 @@ Java_org_opencv_samples_tutorial2_DetectActitvity_OnMessage(JNIEnv *jniEnv, jobj
     *longi = (long)alt;
     *hei = (unsigned int)he;
     *speed = (unsigned short)sp;
+
+    if(gps){
+        CDsmJTT808_API::GetInstance()->SetGpsInfo(*lati,*longi,*hei,*speed,0,false);
+    }
     return JNI_TRUE;
 }
 
 JNIEXPORT void JNICALL
 Java_org_opencv_samples_tutorial2_DetectActitvity_FindFeatures(JNIEnv *jniEnv, jobject obj,
                                                                jlong addrGray, jint index) {
-//    CreateHPSocketObjects();
-//      OnCmdStart();
-//    OnCmdSend();
-//    OnCmdStop();
-//    DestroyHPSocketObjects();
-
-//    DSM_JTT808_Start("112.64.116.41",20005,0);
-//    DSM_JTT808_Event_Callback(1,1,"http://220.194.43.233:8080/1.jpeg");
-//    sleep(5);
-//    DSM_JTT808_Stop(1);
 
     LOGE(" mode is %ld", addrGray);
     srand(time(0));
@@ -366,8 +364,16 @@ Java_org_opencv_samples_tutorial2_DetectActitvity_FindFeatures(JNIEnv *jniEnv, j
 
 }
 
-void doi(euAlarmType warn) {
-//    return;
+void sendData(string& szFilePath,euDSMAlarmType warn ,vector<AlarmAccessory> acc) {
+
+    LOGE("sss ---  %s,len=%d %d  ",szFilePath.c_str(),szFilePath.length(),warn);
+    UploadGPSInfo gpsInfo2(*lati,*longi,*hei,*speed,180, true,DSM_ALARM_FLAG);
+    std::shared_ptr<UploadDSMAlarmInfo>  dsmAlarmInfo(new UploadDSMAlarmInfo(0,warn,euAlarmGrade2,5));
+    CDsmJTT808_API::GetInstance()->SetGPSAlarmInfo(gpsInfo2,dsmAlarmInfo,acc);
+
+}
+
+void doi(euDSMAlarmType warn) {
     old = chrono::_V2::steady_clock::now();
     totalFlow->stopQueue = true;
     size_t count = totalFlow->pictures.size();
@@ -375,33 +381,37 @@ void doi(euAlarmType warn) {
     string filename = totalFlow->currentPath + "w"+ to_string(index)+ "g.avi";
     LOGE("current video path %s",filename.c_str());
     VideoWriter video(filename, CV_FOURCC('M', 'J', 'P', 'G'), 5.0, Size(640, 480));
+    string pic;
     for (size_t i = 0; i < count; i++) {
         Mat image = imread(totalFlow->pictures.front());
         if(i ==3)
-            sendData(totalFlow->pictures.front(),euPIC,warn);
+            pic = totalFlow->pictures.front();
         // 这个大小与VideoWriter构造函数中的大小一致。
         resize(image, image, Size(640, 480));
         // 流操作符，把图片传入视频
         video << image;
         totalFlow->pictures.pop();
     }
-    sendData(filename,euVideo,warn);
+
+    AlarmAccessory objAccess;
+    objAccess.stFileType = euPIC;
+    strcpy(objAccess.stFileName,pic.c_str());
+
+    AlarmAccessory objAccess2;
+    objAccess2.stFileType = euVideo;
+    strcpy(objAccess2.stFileName,filename.c_str());
+
+
+    vector<AlarmAccessory> vAccessories;
+    vAccessories.push_back(objAccess);
+    vAccessories.push_back(objAccess2);
+
+    LOGE("before send data !@#$%%^^ _______");
+    sendData(filename,warn,vAccessories);
     totalFlow->stopQueue =false;
 }
 
-void sendData(string& szFilePath, euFileType type,euAlarmType warn) {
 
-    LOGE("sss ---  %s,len=%d %d  %d ",szFilePath.c_str(),szFilePath.length(),type,warn);
-    AlarmAccessory objAccess;
-    objAccess.stFileType = type;
-//    const char* szFilePath1 = "/storage/sdcard1/img37/2019-04-04 17-01-30-594.png";
-    strcpy(objAccess.stFileName,szFilePath.c_str());
-    //217088
-    vector<AlarmAccessory> vAccessories;
-    vAccessories.push_back(objAccess);
-    LOGE("before send data !@#$%%^^ _______");
-    CDsmJTT808_API::GetInstance()->SetGpsInfo(*lati, *longi, 20, 40, true, warn,DSM_ALARM_FLAG, vAccessories);
-}
 
 
 

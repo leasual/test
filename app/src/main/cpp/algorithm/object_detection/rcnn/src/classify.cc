@@ -76,7 +76,8 @@ void Classification::Detect(ncnn::Net &net, cv::Mat &bgr, std::vector<ObjInfo> &
     target_h = 240;
     cv::Mat input_img;
     try {
-        cv::resize(bgr, input_img, cv::Size(target_w, target_h));
+        cv::cvtColor(bgr,input_img,CV_BGR2GRAY);
+        cv::resize(input_img, input_img, cv::Size(target_w, target_h));
     }catch (...){
         std::cout << "fuck" << std::endl;
         return;
@@ -84,7 +85,7 @@ void Classification::Detect(ncnn::Net &net, cv::Mat &bgr, std::vector<ObjInfo> &
 
 //    cv::imshow("showimage", input_img);
 //    cv::waitKey(0);
-    ncnn::Mat in = ncnn::Mat::from_pixels(input_img.data, ncnn::Mat::PIXEL_BGR, target_w, target_h);
+    ncnn::Mat in = ncnn::Mat::from_pixels(input_img.data, ncnn::Mat::PIXEL_GRAY, target_w, target_h);
 
     ncnn::Mat im_info(3);
     im_info[0] = org_h;
@@ -131,7 +132,7 @@ void Classification::Detect(ncnn::Net &net, cv::Mat &bgr, std::vector<ObjInfo> &
     std::vector<ObjInfo> class_candidates;
     for (int i = 0; i < rois.c; i++) {
         ncnn::Extractor ex2 = net.create_extractor();
-
+        ex2.set_num_threads(1);
         // get single roi
         ncnn::Mat roi = rois.channel(i);
 
@@ -206,6 +207,7 @@ void Classification::Detect(ncnn::Net &net, cv::Mat &bgr, std::vector<ObjInfo> &
 
 
 int Classification::FilterBboxWithCls_new(ncnn::Net& cls_net,cv::Mat& img,std::vector<ObjInfo>& class_candidate) {
+
     std::vector<cv::Rect> result;
     int max_index = 0;
 
@@ -229,15 +231,17 @@ int Classification::FilterBboxWithCls_new(ncnn::Net& cls_net,cv::Mat& img,std::v
 
         cv::Mat roiied_image = img(rect).clone();
         cv::resize(roiied_image,roiied_image,cv::Size(48,48));
-        ncnn::Mat in = ncnn::Mat::from_pixels(roiied_image.data, ncnn::Mat::PIXEL_BGR, 48, 48);
+        cv::cvtColor(roiied_image,roiied_image,CV_BGR2GRAY);
+        ncnn::Mat in = ncnn::Mat::from_pixels(roiied_image.data, ncnn::Mat::PIXEL_GRAY, 48, 48);
         ncnn::Extractor ex1 = cls_net.create_extractor();
+        ex1.set_num_threads(1);
         ex1.input("data", in);
 
         ncnn::Mat pred;
         ex1.extract("pred", pred);
 
         double max_prob = -1;
-        for (int i = 0; i < pred.total(); i++) {
+        for (size_t i = 0; i < pred.total(); i++) {
             if (pred[i] > max_prob) {
                 max_index = i;
                 max_prob = pred[i];

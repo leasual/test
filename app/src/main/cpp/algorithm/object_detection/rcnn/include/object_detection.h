@@ -20,11 +20,11 @@ public:
     explicit ObjectDetect(const std::string & model);
     std::shared_ptr<ObjectResult> Detect(const cv::Mat& image);
 private:
-    size_t index(){ index_ = ++index_ % 3; return index_;}
-private:
     size_t index_;
     std::shared_ptr<std::vector<std::shared_ptr<Classification>>>classification_;
     std::shared_ptr<ObjectResult> object_result_;
+private:
+    size_t index();
 };
 
 class ObjectResult{

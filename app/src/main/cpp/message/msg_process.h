@@ -29,6 +29,7 @@ public:
 	int DevGetParameterResp(WORD serialID,BYTE argNum,STR_PARAMETER *dev_arg);
 	int DevGetAttriResp(STR_DEV_ATTR attr);
 	int DevLocationUp(CClientConn* pClientConn); // 位置上报
+    int DevAlarmInfoUp(CClientConn* pClientConn); //报警信息上报
 	int DevCommResp(CClientConn* pClientConn,WORD serialID,WORD answerID,BYTE result);  // 终端通用应答
 	int DevAlarmAccessoryUp(CClientConn*,BYTE*, BYTE*); // 报警附件上传指令
 	int DevFileUpload(CClientConn*,FileInfo*); // 终端文件上传指令
@@ -37,7 +38,8 @@ private:
 	void _ConstructDevRegisterPkt(const char*szModuleId,char* szSimNo);
 	void _ConstructDevHeartBeatPkt(char* szSimNo);
 	void _ConstructDevAuthPkt(const char* authentication_code,char* szSimNo);
-    void _ConstructLocInfoPkt(DevLocInfo* pDevLocInfo,char* szSimNo); //构造位置基本信息汇报报文
+    void _ConstructAlarmInfoPkt(CClientConn* pClientConn,DevUploadGPSAlarmInfo* pGPSAlarmInfo,char* szSimNo); //构造位置基本信息汇报报文
+    void _ConstructLocInfoPkt(CClientConn* pClientConn,UploadGPSInfo* pGPSInfo,char* szSimNo); //构造位置基本信息汇报报文
 	void _ConstructPktHeader(WORD nCmd, WORD nBodyLen,char* szSimNo); // 构造指令头
 	int _ProcessGeneralResp(CClientConn* pClientConn,BYTE *pGeneralResp, int nLen);  // 处理通用应答的返回结果
 	int _ProcessRegisterResp(BYTE *pRegResp, int nLen);  //处理注册回应的消息

@@ -4,22 +4,26 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+//#include <sstream>
 
 #include "client_conn.h"
 #include "base/dsm_log.h"
 #include "base/type_def.h"
 #include "msg_process.h"
 #include "client_conn_manager.h"
+#include "ut_timer.h"
 
 
-CClientConn::CClientConn(std::string strSimNo, std::string strDevMode):m_nClientFd(-1),
-                            m_nServerPort(0),
-                            m_conn_status(NET_DISCONNECTED),// 初始状态置为连接断开
-                            m_latitude(0),
-                            m_longitude(0),
-                            m_height(0),
-							m_next_timer_tick(0),
-						    m_bTimer(true)
+CClientConn::CClientConn():
+        m_euConnType(euConnectInit),
+        m_nClientFd(-1),
+        m_nServerPort(0),
+        m_conn_status(NET_DISCONNECTED),// 初始状态置为连接断开
+        m_latitude(0),
+        m_longitude(0),
+        m_height(0),
+		m_bTimer(true),
+		m_bInialised(false)
 {
     uint64_t nCurrentTick = CUtil::GetInstance()->get_tick_count();
     m_last_send_loc_tick = nCurrentTick;
@@ -41,17 +45,55 @@ CClientConn::CClientConn(std::string strSimNo, std::string strDevMode):m_nClient
 
 	HP_TcpClient_SetKeepAliveTime(m_client, 0);
 
-	m_strSimNo = strSimNo,
+	keepAlive_tiemr_callBack =
+			std::bind(&CClientConn::_DoHeartBeat,this,std::placeholders::_1);
+
+	server_timeout_callBack =
+			std::bind(&CClientConn::_CheckServerTimeout,this,std::placeholders::_1);
+}
+
+bool CClientConn::Inialise(const std::string& strServerIp, unsigned int nPort,const std::string& strSimNo,
+						  const std::string& strDevMode,const euConnType& connType)
+{
+	m_euConnType = connType;
+	m_strSimNo = strSimNo;
 	m_strDevModel = strDevMode;
-	//m_strSimNo = CConfigFileReader::GetInstance()->GetConfigName("sim_no");
-	//m_strDevModel = CConfigFileReader::GetInstance()->GetConfigName("dev_model");
+	m_strServerIp = strServerIp;
+	m_nServerPort = nPort;
+	m_bInialised = true;
+
+	if (connType == euConnectPlt) {
+        //UTTimer::GetInstance()->AddTimer(&keepAlive_tiemr_callBack,SERVER_HEARTBEAT_INTERVAL);
+        UTTimer::GetInstance()->AddTimer(&server_timeout_callBack,SERVER_TIMEOUT);
+	}
+	return true;
 }
 
 CClientConn::~CClientConn()
 {
 	ReleaseHPSocket();
 	m_nClientFd = -1;
+	if (m_euConnType == euConnectPlt) {
+		UTTimer::GetInstance()->RemoveTimer(&keepAlive_tiemr_callBack);
+		UTTimer::GetInstance()->RemoveTimer(&server_timeout_callBack);		
+	}
+
 	//UT_TRACE("Release client[fd=%d] connect.",m_nClientFd);
+}
+
+void CClientConn::AddKeepAliveTimer()
+{
+	if (m_euConnType == euConnectPlt) {
+		UTTimer::GetInstance()->AddTimer(&keepAlive_tiemr_callBack,SERVER_HEARTBEAT_INTERVAL);
+	}
+}
+
+void CClientConn::RemoveKeepAliveTimer()
+{
+    if (m_euConnType == euConnectPlt) {
+        UT_TRACE("Start remove keep aliver timer.");
+        UTTimer::GetInstance()->RemoveTimer(&keepAlive_tiemr_callBack);
+    }
 }
 
 
@@ -96,7 +138,9 @@ En_HP_HandleResult CClientConn::OnSend(HP_Client pSender, HP_CONNID dwConnID, co
 
 En_HP_HandleResult CClientConn::OnClose(HP_Client pSender, HP_CONNID dwConnID, En_HP_SocketOperation enOperation, int iErrorCode)
 {
+    UT_TRACE("-->Recived OnClose single!");
 	CClientConnManager::GetInstance()->UpdateConnStatus(dwConnID, NET_DISCONNECTED);
+
 	return HR_OK;
 }
 
@@ -107,21 +151,23 @@ En_HP_HandleResult CClientConn::OnClose(HP_Client pSender, HP_CONNID dwConnID, E
  * @param bTimer  是否需要启动定时器
  * @return
  */
-int CClientConn::Connect(std::string strServerIp, unsigned int nPort, bool bTimer)
+int CClientConn::Connect()
 {
-    m_nServerPort = nPort;
-    m_strServerIp = strServerIp;
+	if (!m_bInialised) {
+		UT_FATAL("Connect to server before inialised.");
+		return -1;
+	}
 
 	UT_TRACE("StartTcpClient server ip addr %s port %d ", m_strServerIp.c_str(), m_nServerPort);
 	if (HP_Client_Start(m_client, m_strServerIp.c_str(), m_nServerPort, 0)) {
 		UT_TRACE("Start serverip ....ok.");
 		m_nClientFd = (WORD)HP_Client_GetConnectionID(m_client);
 		UT_TRACE("Connect successful,peer handle[%d]", m_nClientFd);
-		m_bTimer = bTimer;
-		if (m_bTimer) {
-			// 是否启动timer
-			m_next_timer_tick = CUtil::GetInstance()->get_tick_count() + CHECK_TIMER;
-		}
+//		m_bTimer = true;
+//		if (m_bTimer) {
+//			// 是否启动timer
+//			m_next_timer_tick = CUtil::GetInstance()->get_tick_count() + CHECK_TIMER;
+//		}
 		UpdateConnStatus(NET_CONNECTED);
 		return m_nClientFd;
 	}
@@ -144,6 +190,11 @@ int CClientConn::Connect(std::string strServerIp, unsigned int nPort, bool bTime
     //}
 }
 
+void CClientConn::Reset()
+{
+	m_mapFileInfo.clear();
+}
+
 int  CClientConn::ClientSend(const BYTE* buff, size_t nBuffLen)
 {
 	if (NULL == buff || nBuffLen <= 0) {
@@ -161,15 +212,12 @@ int  CClientConn::ClientSend(const BYTE* buff, size_t nBuffLen)
 	return 1;
 }
 
-int CClientConn::Inialise(std::string strServerIp, unsigned int nPort,unsigned int nClientFd)
+int CClientConn::UpdateConnectFd(int nClientFd)
 {
-    m_nServerPort = nPort;
-    m_strServerIp = strServerIp;
-
     if (nClientFd != -1) {
         m_nClientFd = nClientFd;
         UpdateConnStatus(NET_CONNECTED);
-    }else {
+    } else {
         UpdateConnStatus(NET_DISCONNECTED);
         m_nClientFd = -1;
     }
@@ -186,6 +234,8 @@ void CClientConn::ReleaseHPSocket()
 void CClientConn::ProcessMsg(BYTE* buf, size_t nLen)
 {
     m_last_recv_tick = CUtil::GetInstance()->get_tick_count();
+
+	UT_TRACE("-->The last received time:%s",CUtil::GetInstance()->GetCurrentTm().c_str());
     CMsgProcess::GetInstance()->ProcessMsg(this,buf,nLen);
 }
 
@@ -199,46 +249,79 @@ void CClientConn::UpdateKeepAliveTick(uint64_t keepAliveTm)
 }
 
 
-void CClientConn::OnTimer(uint64_t curr_tick)
+//void CClientConn::OnTimer(uint64_t curr_tick)
+//{
+////	if (!m_bTimer || curr_tick < m_next_timer_tick)
+////		return;
+//
+//	if (curr_tick < m_next_timer_tick)
+//		return;
+//
+//    UT_TRACE("Client[%d] to server {Type[%d] IP[%s] Port[%d]} OnTimer", m_nClientFd,m_euConnType,m_strServerIp.c_str(), m_nServerPort);
+//    if (m_euConnType == euConnectPlt  && curr_tick > m_last_keepAlive_send_tick + SERVER_HEARTBEAT_INTERVAL) {
+//        // 超时发送保活报文
+//        UT_TRACE("Send HeartBeat pkt.");
+//        CMsgProcess::GetInstance()->DevHeartBeat(this); // 发保活报文
+//        UpdateKeepAliveTick(CUtil::GetInstance()->get_tick_count());// 更新發包的時間
+//    }
+//
+//    //通过更新收到包的时间来确定服务端是否掉线.
+//    if ((curr_tick > m_last_recv_tick + SERVER_TIMEOUT)) {
+//    	if (GetConnStatus() != NET_DISCONNECTED) {
+//			UT_ERROR("Connect to  server Type[%d] timeout",m_euConnType);
+//			UpdateConnStatus(NET_DISCONNECTED); // 更新状态至"掉线"
+//			HP_Client_Stop(m_client);
+//			UpdateRecvPktTick(CUtil::GetInstance()->get_tick_count());
+//    	}
+//    }
+//
+//	if (m_euConnType == euConnectPlt  && (curr_tick > m_last_send_loc_tick + LOC_UP_TIMER)) {
+//    	if (GetConnStatus() >= NET_AUTHENTICATED) {
+//			if ((curr_tick > m_last_send_loc_tick + LOC_UP_TIMER)) {
+//				UT_TRACE("Send device location pkt.");
+//				this->DoLocationUp();
+//				m_last_send_loc_tick = CUtil::GetInstance()->get_tick_count();
+//			}
+//    	}
+//    }
+//
+//    m_next_timer_tick = CUtil::GetInstance()->get_tick_count() + CHECK_TIMER;
+//}
+
+void CClientConn::_DoHeartBeat(uint64_t curr_tick)
 {
-	if (!m_bTimer || curr_tick < m_next_timer_tick)
-		return;
+	UT_TRACE("Start _DoHeartBeat");
+	CMsgProcess::GetInstance()->DevHeartBeat(this);
+}
 
-    UT_TRACE("Connect Fd[%d]  IP[%s] Port[%d]  OnTimer", m_nClientFd,m_strServerIp.c_str(), m_nServerPort);
-    if (curr_tick > m_last_keepAlive_send_tick + SERVER_HEARTBEAT_INTERVAL) {
-        // 超时发送保活报文
-        UT_TRACE("Send HeartBeat pkt.");
-        CMsgProcess::GetInstance()->DevHeartBeat(this); // 发保活报文
-        UpdateKeepAliveTick(CUtil::GetInstance()->get_tick_count());// 更新發包的時間
-    }
-
+void CClientConn::_CheckServerTimeout(uint64_t curr_tick)
+{
+	UT_TRACE("-->_CheckServerTimeout:%s",CUtil::GetInstance()->GetCurrentTm().c_str());
     //通过更新收到包的时间来确定服务端是否掉线.
-    if ((curr_tick > m_last_recv_tick + SERVER_TIMEOUT) && GetConnStatus() != NET_DISCONNECTED) {
-        UT_ERROR("connect to  server timeout");
-        UpdateConnStatus(NET_DISCONNECTED); // 更新状态至"掉线"
-        //CDsmJTT808_API::GetInstance()->StopTcpClient_API();// 关闭socket连接
-		HP_Client_Stop(m_client);
-        UpdateRecvPktTick(CUtil::GetInstance()->get_tick_count());
-    }
+    if ((curr_tick > m_last_recv_tick + SERVER_TIMEOUT)) {
+        if (GetConnStatus() != NET_DISCONNECTED) {
+            UT_ERROR("Connect to  server Type[%d] timeout",m_euConnType);
+            UpdateConnStatus(NET_DISCONNECTED); // 更新状态至"掉线"
+            HP_Client_Stop(m_client);
+            UpdateRecvPktTick(CUtil::GetInstance()->get_tick_count());
 
-    if (GetConnStatus() >= NET_AUTHENTICATED) {
-        if ((curr_tick > m_last_send_loc_tick + LOC_UP_TIMER) ) {
-            UT_TRACE("Send device location pkt.");
-            this->DoLocationUp();
-            m_last_send_loc_tick = CUtil::GetInstance()->get_tick_count();
+			// 立即启动重新连接的操作
+			CClientConnManager::GetInstance()->AddCheckConnectTimer();
+            if (GetConnType() == euConnectPlt) {
+                this->RemoveKeepAliveTimer();  // 已经掉线,不需要再发保活报文
+                CClientConnManager::GetInstance()->RemoveGpsUpLoadTimer();
+                CClientConnManager::GetInstance()->RemoveAlarmUpLoadTimer();
+            }
         }
     }
-
-    m_next_timer_tick = CUtil::GetInstance()->get_tick_count() + CHECK_TIMER;
 }
 
-
-void CClientConn::SetLocationInfo(uint64_t latitude,uint64_t longitude,uint32_t  height)
-{
-    m_latitude = latitude;
-    m_longitude = longitude;
-    m_height = height;
-}
+//void CClientConn::SetLocationInfo(uint64_t latitude,uint64_t longitude,uint32_t  height)
+//{
+//    m_latitude = latitude;
+//    m_longitude = longitude;
+//    m_height = height;
+//}
 
 /**
  * 更新最近一次接收报文的时间
@@ -282,12 +365,6 @@ void CClientConn::DoAuth()
     CMsgProcess::GetInstance()->DevAuthentication(this);
 }
 
-void CClientConn::DoHeartBeat()
-{
-    UT_TRACE("Start DoHeartBeat");
-    CMsgProcess::GetInstance()->DevHeartBeat(this);
-}
-
 void CClientConn::DoLocationUp()
 {
     UT_TRACE("Start DoLocationUp");
@@ -296,9 +373,23 @@ void CClientConn::DoLocationUp()
 //        return;
 //    }
 
-	CMsgProcess::GetInstance()->DevLocationUp(this);
+    if (GetConnStatus() >= NET_AUTHENTICATED)
+	    CMsgProcess::GetInstance()->DevLocationUp(this);
 }
 
+
+void CClientConn::DoAlarmInfoUp()
+{
+	UT_TRACE("Start DoAlarmInfoUp");
+	if (GetConnStatus() >= NET_AUTHENTICATED)
+	    CMsgProcess::GetInstance()->DevAlarmInfoUp(this);
+}
+
+
+void CClientConn::SetAlarmFlag(const std::string& refAlarmFalg)
+{
+    m_strAlarmFlag = refAlarmFalg;
+}
 
 const char* CClientConn::GetSimNo()
 {
@@ -336,21 +427,21 @@ bool CClientConn::IsLocationSet()
 }
 
 
-bool CClientConn::UpdateUpFileStatus(std::string strFileName,euFileUpStatus st)
+bool CClientConn::UpdateUpFileStatus(const std::string& strFileName,const euFileUpStatus& st)
 {
 	std::map<std::string,FileInfo>::iterator pIterFound =
 			m_mapFileInfo.find(strFileName);
 	if (pIterFound == m_mapFileInfo.end()) {
 		UT_ERROR("Update file[%s] status failed!",strFileName.c_str());
 		return false;
-	}else{
+	} else {
 		pIterFound->second.m_fileStatus = st;
 		UT_INFO("Update file[%s] status success!",strFileName.c_str());
 		return true;
 	}
 }
 
-FileInfo* CClientConn::GetFileItem(std::string strFileName)
+FileInfo* CClientConn::GetUpFileInfo(const std::string &strFileName)
 {
 	std::map<std::string,FileInfo>::iterator pIterFound =
 			m_mapFileInfo.find(strFileName);
@@ -363,7 +454,7 @@ FileInfo* CClientConn::GetFileItem(std::string strFileName)
 	}
 }
 
-void CClientConn::UpdateUpFileInfo(std::string strFileName, FileInfo fileInfo)
+void CClientConn::UpdateUpFileInfo(const std::string& strFileName, const FileInfo& fileInfo)
 {
 	m_mapFileInfo.insert(std::make_pair(strFileName,fileInfo));
 }
@@ -373,7 +464,16 @@ void CClientConn::ClearUpFileInfo()
 	m_mapFileInfo.clear();
 }
 
-bool CClientConn::DelFileItem(std::string strFileName)
+
+void CClientConn::PrintFileStatus()
+{
+    std::map<std::string,FileInfo>::iterator pIter = m_mapFileInfo.begin();
+    for(;pIter != m_mapFileInfo.end();pIter++) {
+        UT_TRACE("File[%s] up_status[%d]",pIter->first.c_str(),pIter->second.m_fileStatus);
+    }
+}
+
+bool CClientConn::DelFileInfo(const std::string &strFileName)
 {
 	std::map<std::string,FileInfo>::iterator pIterFound =
 			m_mapFileInfo.find(strFileName);

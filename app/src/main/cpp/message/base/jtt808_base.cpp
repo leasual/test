@@ -95,7 +95,7 @@ bool JTT808PktBase::GetOneRawPacket()
 //
 // 生成流水号
 //
-int  JTT808PktBase::GenerateSeqNo()
+WORD  JTT808PktBase::GenerateSeqNo()
 {
 //    srand(time(NULL));
 //    int nSeqNo = rand()%(0xFFFF - 0x0001) + 0x0001;
@@ -126,6 +126,28 @@ void JTT808PktBase::Str2BCD(char*t, char* str)
     }
     *t = 0;
 }
+
+DWORD JTT808PktBase::BCD2ASC (const BYTE *bcd,BYTE *asc, DWORD len)
+{
+    BYTE bcd2ascii[16] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
+    BYTE c = 0;
+    BYTE i;
+
+    for(i = 0; i < len; i++) {
+        //first BCD
+        c = *bcd >> 4;
+        *asc++ = bcd2ascii[c];
+
+        //second
+        c = *bcd & 0x0f;
+        *asc++ = bcd2ascii[c];
+        bcd++;
+    }
+
+    return 0;
+}
+
+
 
 //
 // 取得一个转义后的报文

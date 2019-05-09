@@ -124,6 +124,8 @@ public class Utils {
             if (size != 0) {
                 String path = BasePath + "/img" + index;
                 initDir(path);
+                String pathvideo = BasePath + "/img";
+                initDir(pathvideo);
                 String pathDis = path + "/distract";
                 initDir(pathDis);
                 String pathCall = path + "/call";

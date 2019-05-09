@@ -7,7 +7,8 @@
 
 #include <stdint.h>
 #include <vector>
-#include <string>
+#include <memory>
+
 #define ADAS_ALARM_FLAG 0x64      //高级驾驶辅助系统
 #define DSM_ALARM_FLAG  0x65      //驾驶员状态监控系统
 #define TPMS_ALARM_FLAG 0x66      //轮胎气压监测系统
@@ -79,64 +80,61 @@ enum euFileUpStatus
 };
 
 //报警事件类型
-enum euAlarmType
+enum euDSMAlarmType
 {
-    euAlarmInit = 0,
+    euDsmAlarmInit = 0,
     euFatigue, // 疲劳
     euCall, // 打电话
     euSmoking, //抽烟
     euDistract, // 分神
 };
 
-
-// 报警附件结构体定义
-struct AlarmAccessory
+enum euADASAlarmType
 {
-    char stFileName[256]; // 报警文件路径
-    euFileType stFileType;  // 报警文件类型:0-图片 2-视频
-    char stPltFileName[50];  // 平台文件名称
-    AlarmAccessory()
-    {
-        memset(stFileName,0,256);
-        memset(stPltFileName,0,50);
-    }
+    euAdasAlarmInit = 0,
+    euFrontCrash,    // 1前向碰撞报警
+    euDeviateLane,   // 2车道偏离报警
+    euDistNear,  // 3车距过近报警
+    euBumpPeople,  // 4行人碰撞报警
+    euChangLaneFrequently, // 5 频繁变道
+    euIdentiOver,  // 6 道路标识超限
+    euBarrier,  // 7 障碍物报警
 };
-/**
- * 终端上传的位置信息,如果有报警信息,还需要带上报警信息
- */
-struct DevLocInfo
+
+//连接类型
+enum euConnType
 {
-    uint64_t stLatitude;      // 纬度
-    uint64_t stLongitude;     // 经度
-    uint32_t  stHeight;       // 高度
-    WORD stSpeed;  // 速度
-    bool stHasAlarm; // 是否有报警信息
-    euAlarmType stAlaryType; // 报警事件类型
-    int stAlarmChannel; // 报警通道号
-    std::vector<AlarmAccessory>  stAccessories; // 附件数量
-
-    DevLocInfo():stLatitude(0),stLongitude(0),stHeight(0),stSpeed(0),stHasAlarm(false),stAlaryType(euAlarmInit),stAlarmChannel(DSM_ALARM_FLAG)
-    {
-
-    }
-
-    DevLocInfo(uint64_t latitude,uint64_t longitude,uint32_t  height,WORD speed,bool bAlarm,
-               euAlarmType alarmType, int alarmChannel, std::vector<AlarmAccessory>& accessories)
-    {
-        stLatitude = latitude;
-        stLongitude = longitude;
-        stHeight = height;
-        stSpeed = speed;
-        stHasAlarm = bAlarm;
-        stAccessories = accessories;
-        stAlaryType = alarmType;
-        stAlarmChannel = alarmChannel;
-    }
-
-    ~DevLocInfo()
-    {
-        stAccessories.clear();
-    }
+    euConnectInit = 0,
+    euConnectPlt,       // 平台的连接类型
+    euConnectAccessory, // 附件服务器的连接类型
 };
+
+
+//报警级别
+enum euAlarmGradeType
+{
+    euAlarmGradeInit = 0,
+    euAlarmGrade1, // 一级
+    euAlarmGrade2, // 二级
+};
+
+enum euADASAlarmDeviationType
+{
+    euADASAlarmDeviationInit = 0,
+    euLeftDevication,    // 1前向碰撞报警
+    euRightDevication,    // 1前向碰撞报警
+    //UINT8_t stDeviationType; // 9 -> 偏离类型 0x01:左侧偏离 0x02:右侧偏离 仅报警类型为 0x02 时有效
+};
+
+enum euADASAlarmRoadSignType
+{
+    euADASAlarmRoadSignInit = 0,
+    euRoadSignSpeed,    // 1前向碰撞报警
+    euRoadSignHeight,    // 1前向碰撞报警
+    euRoadSignWight,    // 1前向碰撞报警
+    //UINT8_t stRoadSignType;  // 10 -> 道路标志识别类型, 0x01:限速标志 0x02:限高标志 0x03:限重标志 仅报警类型为 0x06 和 0x10 时有效
+};
+
+
 
 #endif //DSM_JTT808_TYPEDEF_H

@@ -62,3 +62,22 @@ bool CUtil::ReadFile(const char* lpszFileName, CFile& file, CFileMapping& fmap, 
     }
     return false;
 }
+
+
+unsigned short CUtil::crc16_ccitt(const char *buf, int len)
+{
+    int counter;
+    unsigned short crc = 0;
+    for( counter = 0; counter < len; counter++)
+        crc = (crc<<8) ^ crc16tab[((crc>>8) ^ *buf++)&0x00FF];
+    return crc;
+}
+
+
+const std::string&& CUtil::GetCurrentTm()
+{
+    auto t = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+    std::stringstream ss("");
+//    ss << std::put_time(std::localtime(&t),"%F %T");
+    return std::move(ss.str());
+}

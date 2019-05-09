@@ -5,8 +5,9 @@
 #ifndef DSM_JTT808_MSG_DEF_H
 #define DSM_JTT808_MSG_DEF_H
 
-#include "public_def.h"
 #include <algorithm>
+#include "public_def.h"
+#include "log4z.h"
 
 template <class T>
 void endswap(T *objp)
@@ -410,8 +411,8 @@ struct JTT808Body_PositionUP_Extra
     BYTE extra_len; // 附加信息长度
 };
 
-/*! 苏标 驾驶员状态监测报警 */
-struct JTT808_SU_Body_DSM_Alarm
+/*! 苏标 驾驶员状态监测报警(DSM) */
+struct JTT808_SU_DSM_Alarm
 {
     DWORD dwAlarmId;       // 0->
     BYTE btStatus;  // 4->
@@ -457,8 +458,54 @@ struct JTT808_SU_Body_DSM_Alarm
         endswap(&high);
     }
 };
+#define LEN_DSM_ALARM sizeof(JTT808_SU_DSM_Alarm)
 
-#define LEN_SU808_ALARM sizeof(JTT808_SU_Body_DSM_Alarm)
+
+
+/*! 苏标 高级驾驶辅助系统报警(ADAS) */
+struct JTT808_SU_ADAS_Alarm {
+    DWORD dwAlarmId;       // 0->
+    BYTE btStatus;  // 4->
+    BYTE btAlarmType;  // 5->报警类型:0x01:前向碰撞报警 0x02:车道偏离报警 0x03:车距过近报警 0x04:行人碰撞报警 0x06:道路标识超限报警 ...
+    BYTE btAlarmGrade;  // 6->报警等级:0x01:一级报警 0x02:二级报警
+    BYTE btFrontSpeed; // 7 -> 前车车速 单位 Km/h。范围 0~250,仅报警类型为 0x01 和 0x02 时有效
+    BYTE btFrontDistance; // 8 -> 前车/行人 距离,单位 100ms,范围 0~100,仅报警类型为 0x01、0x02\ 0x04时有效
+    BYTE btDeviationType; // 9 -> 偏离类型 0x01:左侧偏离 0x02:右侧偏离 仅报警类型为 0x02 时有效
+    BYTE btRoadSignType;  // 10 -> 道路标志识别类型, 0x01:限速标志 0x02:限高标志 0x03:限重标志 仅报警类型为 0x06 和 0x10 时有效
+    BYTE btRoadSignData;  // 11 -> 识别到道路标志的数据
+    BYTE btSpeed;  // 12 -> 车速
+    WORD height;  // 13 -> 高度
+    DWORD latitude ;    // 15 -> 纬度
+    DWORD longitude;    // 19 -> 经度
+    BCD time[6];        //23 -> 时间
+    WORD status;      // 29 -> 车辆状态
+    BYTE btAlarmFlag[16]; // 31 -> 报警标识号
+
+    void SetAlarmId(DWORD dwAlarm)
+    {
+        dwAlarmId = dwAlarm;
+        endswap(&dwAlarmId);
+    }
+
+    void SetLatitude(DWORD dwLatitude)
+    {
+        latitude = dwLatitude;
+        endswap(&latitude);
+    }
+
+    void SetLongitude(DWORD dwLongitude)
+    {
+        longitude = dwLongitude;
+        endswap(&longitude);
+    }
+
+    void SetHeight(WORD nHeight)
+    {
+        height = nHeight;
+        endswap(&height);
+    }
+};
+#define LEN_ADAS_ALARM sizeof(JTT808_SU_ADAS_Alarm)
 
 
 //附件上传请求指令 (平台发给终端侧的)
@@ -505,7 +552,7 @@ struct JTT808_SU_Accessory_up
 #define HEX_VALUE_TO_CHAR(n)			(n <= 9 ? n + '0' : (n <= 'F' ? n + 'A' - 0X0A : n + 'a' - 0X0A))
 
 /*! 苏标 报警标识号格式 */
-struct JTT808_SU_Body_DSM_Alarm_Flag
+struct JTT808_SU_Alarm_Flag
 {
     BYTE dev_ID[7];  // 0 -> 终端 ID ,7 个字节,由大写字母和数字组成
     BCD time[6];        //7 -> 时间
@@ -518,23 +565,71 @@ struct JTT808_SU_Body_DSM_Alarm_Flag
         memcpy(dev_ID,id,7);
     }
 
+    void Format(BYTE* pBody)
+    {
+        if (NULL == pBody)
+            return;
+
+        int nOffset = 0;
+        memset(dev_ID,0,7);
+        memcpy(dev_ID,pBody+nOffset,7);
+        nOffset += 7;
+
+        memset(time,0,6);
+        memcpy(time,pBody+nOffset,6);
+        nOffset += 6;
+
+        btSeqNo = *((BYTE*)(pBody + nOffset));
+        nOffset += 1;
+
+        btAccessories = *((BYTE*)(pBody + nOffset));
+        nOffset += 1;
+
+        btReserved = *((BYTE*)(pBody + nOffset));
+        nOffset += 1;
+    }
+
     std::string FormatToString()
     {
-        char buf[17]={0};
-        sprintf(buf,"%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c",
-                HEX_VALUE_TO_CHAR(dev_ID[0]),HEX_VALUE_TO_CHAR(dev_ID[1]),HEX_VALUE_TO_CHAR(dev_ID[2]),
-                HEX_VALUE_TO_CHAR(dev_ID[3]),HEX_VALUE_TO_CHAR(dev_ID[4]),HEX_VALUE_TO_CHAR(dev_ID[5]),
-                HEX_VALUE_TO_CHAR(dev_ID[6]),(time[0]),(time[1]),
-                (time[2]),(time[3]),(time[4]),
-                (time[5]),HEX_VALUE_TO_CHAR(btSeqNo),HEX_VALUE_TO_CHAR(btAccessories),
-                HEX_VALUE_TO_CHAR(btReserved)
-        );
+        char buf[1]={0};
+        std::string strTemp;
+        for (int i = 0; i < 7; i++)
+        {
+            sprintf(buf,"%c",(unsigned char)dev_ID[i]);
+            strTemp.append(buf);
+        }
 
-        buf[16]=0;
-        return (char*)buf;
+        char tmp[18] = {0};
+        const BYTE *bcd = time;
+        BYTE *asc = (BYTE*)tmp;
+        BYTE bcd2ascii[16] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
+        BYTE c = 0;
+        BYTE i;
+        for(i = 0; i < 6; i++) {
+            //first BCD
+            c = *bcd >> 4;
+            *asc++ = bcd2ascii[c];
+
+            //second
+            c = *bcd & 0x0f;
+            *asc++ = bcd2ascii[c];
+            bcd++;
+        }
+        strTemp.append((char*)tmp);
+
+        sprintf(buf,"%hhu",btSeqNo);
+        strTemp.append(buf);
+
+        sprintf(buf,"%hhu",btAccessories);
+        strTemp.append(buf);
+
+        sprintf(buf,"%hhu",btReserved);
+        strTemp.append(buf);
+
+        return strTemp;
     }
 };
-#define LEN_SU808_ALARM_FLAG  sizeof(JTT808_SU_Body_DSM_Alarm_Flag)  // 报警标识的长度
+#define LEN_SU808_ALARM_FLAG  sizeof(JTT808_SU_Alarm_Flag)  // 报警标识的长度
 
 // 设备报警附件上传指令
 struct JTT808_SU_DEV_ACCESSORY_UP
@@ -609,8 +704,6 @@ struct PltFileUpCompleteAck
     }
 };
 
-
-
 #pragma pack( pop )
 
 #define OFFSET(TYPE, MEMBER, OFF) \
@@ -621,6 +714,195 @@ struct PltFileUpCompleteAck
 struct HpktInfo {
 	bool is_header;
 	int length;
+};
+
+
+
+// 报警附件结构体定义
+struct AlarmAccessory
+{
+    char stFileName[256]; // 报警文件路径
+    euFileType stFileType;  // 报警文件类型:0-图片 2-视频
+    char stPltFileName[50];  // 平台文件名称
+    AlarmAccessory()
+    {
+        memset(stFileName,0,256);
+        memset(stPltFileName,0,50);
+    }
+};
+
+
+/**
+ * 终端上传的位置信息,如果有报警信息,还需要带上报警信息
+ */
+struct DevLocInfo
+{
+    uint64_t stLatitude;      // 纬度
+    uint64_t stLongitude;     // 经度
+    uint32_t  stHeight;       // 高度
+    WORD stSpeed;  // 速度
+    bool stHasAlarm; // 是否有报警信息
+    euDSMAlarmType stDsmAlarmType; // DSM报警事件类型
+    euADASAlarmType stAdasAlarmType; // Alarm报警事件类型
+    int stAlarmChannel; // 报警通道号
+    std::vector<AlarmAccessory>  stAccessories; // 附件数量
+
+    DevLocInfo():stLatitude(0),stLongitude(0),stHeight(0),stSpeed(0),
+                 stHasAlarm(false),stDsmAlarmType(euDsmAlarmInit),stAdasAlarmType(euAdasAlarmInit),stAlarmChannel(DSM_ALARM_FLAG)
+    {
+
+    }
+
+    DevLocInfo(uint64_t latitude,uint64_t longitude,uint32_t  height,WORD speed,bool bAlarm,
+               euDSMAlarmType dsmAlarmType, euADASAlarmType adasAlarmType,int alarmChannel, std::vector<AlarmAccessory>& accessories)
+    {
+        stLatitude = latitude;
+        stLongitude = longitude;
+        stHeight = height;
+        stSpeed = speed;
+        stHasAlarm = bAlarm;
+        stAccessories = accessories;
+        stDsmAlarmType = dsmAlarmType;
+        stAdasAlarmType = adasAlarmType;
+        stAlarmChannel = alarmChannel;
+    }
+
+    ~DevLocInfo()
+    {
+        stAccessories.clear();
+    }
+};
+
+
+struct UploadGPSInfo
+{
+    uint64_t stLatitude;      // 纬度
+    uint64_t stLongitude;     // 经度
+    uint32_t  stHeight;       // 高度
+    WORD stSpeed;             // 速度
+    WORD stDirection;         // 方向 0-359,正北为 0,顺时针
+
+    bool stHasAlarm;          // 是否有报警信息
+    int stAlarmChannel;       // 报警通道号
+
+    UploadGPSInfo():stLatitude(0)
+            ,stLongitude(0)
+            ,stHeight(0)
+            ,stSpeed(0)
+            ,stDirection(0)
+            ,stHasAlarm(false)
+            ,stAlarmChannel(DSM_ALARM_FLAG){}
+
+    UploadGPSInfo(  uint64_t latitude,uint64_t longitude,uint32_t  height,WORD speed,WORD direction,bool bAlarm, int alarmChannel )
+            :stLatitude(latitude)
+            ,stLongitude(longitude)
+            ,stHeight(height)
+            ,stSpeed(speed)
+            ,stDirection(direction)
+            ,stHasAlarm(bAlarm)
+            ,stAlarmChannel(alarmChannel){ }
+
+
+    ~UploadGPSInfo(){
+        //UT_TRACE("Deconstruct UploadGPSInfo.");
+    }
+};
+
+
+struct UploadADASAlarmInfo
+{
+    uint8_t stStatus;  // 4->
+    euADASAlarmType stAlarmType;  // 5->报警类型:0x01:前向碰撞报警 0x02:车道偏离报警 0x03:车距过近报警 0x04:行人碰撞报警 0x06:道路标识超限报警 ...
+    euAlarmGradeType stAlarmGrade;  // 6->报警等级:0x01:一级报警 0x02:二级报警
+    uint8_t stFrontSpeed; // 7 -> 前车车速 单位 Km/h。范围 0~250,仅报警类型为 0x01 和 0x02 时有效
+    uint8_t stFrontDistance; // 8 -> 前车/行人 距离,单位 100ms,范围 0~100,仅报警类型为 0x01、0x02\ 0x04时有效
+    euADASAlarmDeviationType stDeviationType; // 9 -> 偏离类型 0x01:左侧偏离 0x02:右侧偏离 仅报警类型为 0x02 时有效
+    euADASAlarmRoadSignType stRoadSignType;  // 10 -> 道路标志识别类型, 0x01:限速标志 0x02:限高标志 0x03:限重标志 仅报警类型为 0x06 和 0x10 时有效
+    uint8_t stRoadSignData;  // 11 -> 识别到道路标志的数据
+
+    UploadADASAlarmInfo():
+            stStatus(0)
+            ,stAlarmType(euAdasAlarmInit)
+            ,stAlarmGrade(euAlarmGrade1)
+            ,stFrontSpeed(0)
+            ,stFrontDistance(0)
+            ,stDeviationType(euADASAlarmDeviationInit)
+            ,stRoadSignType(euADASAlarmRoadSignInit)
+            ,stRoadSignData(0){}
+
+    UploadADASAlarmInfo(uint8_t status, euADASAlarmType alarmType, euAlarmGradeType alarmGrade,uint8_t frontSpeed, uint8_t frontDistance,
+                        euADASAlarmDeviationType alarmDeviation, euADASAlarmRoadSignType alarmRoadSign, uint8_t roadSignData ):
+            stStatus(status)
+            ,stAlarmType(alarmType)
+            ,stAlarmGrade(alarmGrade)
+            ,stFrontSpeed(frontSpeed)
+            ,stFrontDistance(frontDistance)
+            ,stDeviationType(alarmDeviation)
+            ,stRoadSignType(alarmRoadSign)
+            ,stRoadSignData(roadSignData){}
+};
+
+struct UploadDSMAlarmInfo
+{
+    uint8_t btStatus;  // 4->
+    euDSMAlarmType btAlarmType;  // 5->报警类型:0x01:疲劳驾驶报警 0x02:接打电话报警 0x03:抽烟报警 0x04:分神驾驶报警
+    euAlarmGradeType btAlarmGrade;  // 6->报警等级:0x01:一级报警 0x02:二级报警
+    uint8_t btFatiqueDegree; // 7->疲劳程度 1~10数值越大表示疲劳程度越严重
+
+    UploadDSMAlarmInfo():
+            btStatus(0)
+            ,btAlarmType(euDsmAlarmInit)
+            ,btAlarmGrade(euAlarmGradeInit)
+            ,btFatiqueDegree(0){}
+
+    UploadDSMAlarmInfo(uint8_t status,euDSMAlarmType alarmType,euAlarmGradeType alarmGrade,uint8_t fatiqueDegree):
+            btStatus(status)
+            ,btAlarmType(euDsmAlarmInit)
+            ,btAlarmGrade(alarmGrade)
+            ,btFatiqueDegree(fatiqueDegree){}
+
+};
+
+
+struct AppendAlarmInfoUnion
+{
+    std::shared_ptr<UploadADASAlarmInfo>  spADASAlarm;
+    std::shared_ptr<UploadDSMAlarmInfo>  spDSMAlarm;
+
+    //AppendAlarmInfoUnion():spADASAlarm(nullptr){}
+
+};
+
+
+struct DevUploadGPSAlarmInfo
+{
+    UploadGPSInfo stGPSInfo;
+    std::shared_ptr<AppendAlarmInfoUnion>  stAlarmUnion;  // 报警信息指针
+    std::vector<AlarmAccessory>  stAccessories;           // 附件
+    DevUploadGPSAlarmInfo():stGPSInfo(UploadGPSInfo()) {
+    }
+
+    DevUploadGPSAlarmInfo( UploadGPSInfo gpsInfo,std::shared_ptr<UploadADASAlarmInfo> adasAlarmInfo,
+                           std::vector<AlarmAccessory>& accessories ){
+        stAlarmUnion.reset(new AppendAlarmInfoUnion()) ;
+        stGPSInfo = gpsInfo;
+        stAlarmUnion->spADASAlarm=adasAlarmInfo;
+        stAccessories  = accessories;
+    }
+
+    DevUploadGPSAlarmInfo( UploadGPSInfo gpsInfo,std::shared_ptr<UploadDSMAlarmInfo> dsmAlarmInfo,
+                           std::vector<AlarmAccessory>& accessories ){
+
+        stAlarmUnion.reset(new AppendAlarmInfoUnion()) ;
+        stGPSInfo = gpsInfo;
+        stAlarmUnion->spDSMAlarm = dsmAlarmInfo;
+        stAccessories  = accessories;
+    }
+
+    ~DevUploadGPSAlarmInfo(){
+        stAccessories.clear();
+		UT_TRACE("Deconstructor DevUploadGPSAlarmInfo");
+    }
 };
 
 #endif //DSM_JTT808_MSG_DEF_H

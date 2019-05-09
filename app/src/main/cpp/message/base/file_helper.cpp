@@ -6,7 +6,6 @@
 std::string GetCurrentDirectory()
 {
 	char szPath[MAX_PATH];
-
 	if(getcwd(szPath, sizeof(szPath) - 1) == nullptr)
 		szPath[0] = 0;
 
@@ -41,7 +40,6 @@ BOOL SetCurrentPathToModulePath(pid_t pid)
 	size_t pos = strPath.rfind('/');
 	if(pos == std::string::npos)
 		return FALSE;
-
 
 	return chdir(strPath.substr(0,pos+1).c_str());
 }
@@ -140,14 +138,13 @@ BOOL CFile::IsLink(LPCTSTR lpszFilePath)
 
 BOOL CFileMapping::Map(LPCTSTR lpszFilePath, SIZE_T dwSize, SIZE_T dwOffset, int iProtected, int iFlag)
 {
-    CHECK_ERROR(!IsValid(), ERROR_INVALID_STATE);
+    if (IsValid())
+    	return FALSE;
 
     FD fd = INVALID_FD;
-
     if(lpszFilePath != nullptr)
     {
         int iFileFlag = O_RDONLY;
-
         if(iProtected & PROT_WRITE)
         {
             if(iProtected & PROT_READ)
@@ -162,7 +159,6 @@ BOOL CFileMapping::Map(LPCTSTR lpszFilePath, SIZE_T dwSize, SIZE_T dwOffset, int
     }
 
     BOOL isOK = Map(fd, dwSize, dwOffset, iProtected, iFlag);
-
     if (fd != -1)
         close(fd);
 
@@ -171,22 +167,29 @@ BOOL CFileMapping::Map(LPCTSTR lpszFilePath, SIZE_T dwSize, SIZE_T dwOffset, int
 
 BOOL CFileMapping::Map(FD fd, SIZE_T dwSize, SIZE_T dwOffset, int iProtected, int iFlag)
 {
-    CHECK_ERROR(!IsValid(), ERROR_INVALID_STATE);
+	if (IsValid())
+		return FALSE;
 
     if(fd == -1)
     {
-        CHECK_EINVAL((iFlag & MAP_ANONYMOUS) && (dwSize > 0));
+    	if ((iFlag & MAP_ANONYMOUS) && (dwSize > 0)) {
+    		return FALSE;
+    	}
+        //CHECK_EINVAL((iFlag & MAP_ANONYMOUS) && (dwSize > 0));
     }
     else
     {
-        CHECK_EINVAL((iFlag & MAP_ANONYMOUS) == 0);
+    	//存在文件句柄,不应该设置MAP_ANONYMOUS标志
+        //CHECK_EINVAL((iFlag & MAP_ANONYMOUS) == 0);
+		if ((iFlag & MAP_ANONYMOUS) != 0)
+			return FALSE;
 
         struct stat st;
-
         if (fstat(fd, &st) < 0)
             return  FALSE;
 
-        CHECK_ERROR(S_ISREG(st.st_mode), ERROR_BAD_FILE_TYPE);
+        if (!S_ISREG(st.st_mode))
+        	return FALSE;
 
         if(dwSize == 0)
             dwSize = st.st_size;
@@ -205,13 +208,13 @@ BOOL CFileMapping::Map(FD fd, SIZE_T dwSize, SIZE_T dwOffset, int iProtected, in
 
 BOOL CFileMapping::Unmap()
 {
-    CHECK_ERROR(IsValid(), ERROR_INVALID_STATE);
+    if (!IsValid())
+		return  FALSE;
 
     if(munmap(m_pv, m_dwSize) == 0)
     {
         m_pv	 = INVALID_MAP_ADDR;
         m_dwSize = 0;
-
         return TRUE;
     }
 
@@ -220,7 +223,8 @@ BOOL CFileMapping::Unmap()
 
 BOOL CFileMapping::MSync(int iFlag, SIZE_T dwSize)
 {
-    CHECK_ERROR(IsValid(), ERROR_INVALID_STATE);
+    if (!IsValid())
+    	return FALSE;
 
     if(dwSize == 0) dwSize = m_dwSize;
 

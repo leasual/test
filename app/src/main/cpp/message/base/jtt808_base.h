@@ -18,7 +18,7 @@ public:
     virtual bool ReceiveData(BYTE *buffer, int bufferlen);
     virtual void ProcessData() ;
 
-protected:
+public:
     void ScanInvalidData();
     void Scan(int iScan = 1);
     bool GetOneRawPacket();
@@ -26,8 +26,9 @@ protected:
     void RecvBufferTransfer();    //下行包去掉转义
     void ReqBufferTransfer();  //上行包加入转义
     BYTE BCDtoNumber(const BYTE& bcd); /*Util  : BCD->NUM */
-    int  GenerateSeqNo();
+    WORD  GenerateSeqNo();
     void Str2BCD(char*t, char* str);
+    DWORD BCD2ASC (const BYTE *bcd,BYTE *asc, DWORD len);
     BYTE MakeCheckProtocol(BYTE *pData,int nLen);
 
 protected:

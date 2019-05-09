@@ -24,9 +24,9 @@ ObjectDetect::ObjectDetect(const std::string &path_root):
     cls_param = path_root + "/object_detection/cls.param";
     cls_model = path_root + "/object_detection/cls.bin";
 
-    smoke_classify->InitModel(smoke_param, smoke_model, cls_param, cls_model, 0.8f);
-    call_classify->InitModel(call_param, call_model, cls_param, cls_model, 0.9f);
-    face_classify->InitModel(face_param, face_model, cls_param, cls_model, 0.6f);
+    smoke_classify->InitModel(smoke_param, smoke_model, cls_param, cls_model, 0.9f);
+    call_classify->InitModel(call_param, call_model, cls_param, cls_model, 0.974f);
+    face_classify->InitModel(face_param, face_model, cls_param, cls_model, 0.9f);
 
     classification_->push_back(smoke_classify);
     classification_->push_back(call_classify);
@@ -49,6 +49,11 @@ std::shared_ptr<ObjectResult> ObjectDetect::Detect(const cv::Mat &image) {
     return object_result_;
 }
 
+size_t ObjectDetect::index() {
+     ++index_;
+     index_ %= 3;
+     return index_;
+}
 
 bool ObjectResult::smoke() const {
     return result_[0].score_ != 0.f;

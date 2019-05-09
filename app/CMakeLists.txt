@@ -69,6 +69,9 @@ file(GLOB native_srcs9 "src/main/cpp/algorithm/utilities/src/*.cc" "src/main/cpp
 file(GLOB native_srcs10 "src/main/cpp/dsm_strategy/*.cpp" "src/main/cpp/dsm_strategy/*.cc")
 file(GLOB native_srcs11 "src/main/cpp/dsm_strategy/utils/file/*.cpp" "src/main/cpp/dsm_strategy/utils/file/*.cc")
 #file(GLOB native_srcs12 "src/main/cpp/dsm_strategy/utils/time/*.cpp" "src/main/cpp/dsm_strategy/utils/time/*.cc")
+file(GLOB native_srcs13 "src/main/cpp/message/*.cpp")
+file(GLOB native_srcs14 "src/main/cpp/message/api/*.cpp")
+file(GLOB native_srcs15 "src/main/cpp/message/base/*.cpp")
 
 
 add_library( # Sets the name of the library.
@@ -87,15 +90,9 @@ add_library( # Sets the name of the library.
         ${native_srcs10}
         ${native_srcs11}
 #        ${native_srcs12}
-        src/main/cpp/message/client_conn.cpp
-        src/main/cpp/message/client_conn_manager.cpp
-        src/main/cpp/message/hp_socket_helper.cpp
-        src/main/cpp/message/msg_process.cpp
-        src/main/cpp/message/base/config_file.cpp
-        src/main/cpp/message/base/file_helper.cpp
-        src/main/cpp/message/base/jtt808_base.cpp
-        src/main/cpp/message/base/log4z.cpp
-        src/main/cpp/message/base/util.cpp
+        ${native_srcs13}
+        ${native_srcs14}
+        ${native_srcs15}
         )
 
 
