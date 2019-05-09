@@ -55,6 +55,7 @@ import kotlin.concurrent.timerTask
 
 
 class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
+
     internal var index = 0
     var rgb: Mat? = null
     private var mRgba: Mat? = null
