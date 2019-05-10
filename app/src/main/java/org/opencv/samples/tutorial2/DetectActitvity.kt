@@ -175,51 +175,51 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 ,
 
     @SuppressLint("MissingPermission")
     private fun getSimId() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP_MR1) {
-            var sm = SubscriptionManager.from(this)
-            // it returns a list with a SubscriptionInfo instance for each simcard
-            // there is other methods to retrieve SubscriptionInfos (see [2])
-            var sis: List<SubscriptionInfo?>? = sm.getActiveSubscriptionInfoList()
-            // getting first SubscriptionInfo
-            var si = sis?.get(0)
-            // getting iccId
-            var iccId = si?.getIccId() ?: "8986043910180000000"
-//            var iccId = si?.getIccId() ?: "8986a4c910180000000"
-            Log.e("  iccid  is  ", iccId)
-            if (iccId.length > 11) {
-                var builder = StringBuilder()
-                iccId.toCharArray().forEach {
-                    if(!it.isDigit()){
-                        Log.e(" isDigit ",it.toString())
-                        builder.append(it.toUpperCase())
-                    }else
-                        builder.append(it)
-                }
-
-                modeln = builder.toString().substring(0, 11)
-                simno = "0" + modeln
-                Log.e("  model  inex ", modeln + " - " + simno)
-                mode_text.visibility = View.VISIBLE
-                mode_text.text = "sim: $modeln --dev: $simno"
-            }
-
-        } else {
-            var iccId ="8986043910180000000"
-            if (iccId.length > 11) {
-                modeln = iccId.substring(0, 11)
-                simno = "0" + modeln
-                Log.e("  model  inex ", modeln + " - " + simno)
-                mode_text.text = modeln + " -- " + simno
-            }
-        }
-
-//        var iccId ="8986043910180000000"
-//        if (iccId.length > 11) {
-//            modeln = iccId.substring(0, 11)
-//            simno = "0" + modeln
-//            Log.e("  model  inex ", modeln + " - " + simno)
-//            mode_text.text = modeln + " -- " + simno
+//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP_MR1) {
+//            var sm = SubscriptionManager.from(this)
+//            // it returns a list with a SubscriptionInfo instance for each simcard
+//            // there is other methods to retrieve SubscriptionInfos (see [2])
+//            var sis: List<SubscriptionInfo?>? = sm.getActiveSubscriptionInfoList()
+//            // getting first SubscriptionInfo
+//            var si = sis?.get(0)
+//            // getting iccId
+//            var iccId = si?.getIccId() ?: "8986043910180000000"
+////            var iccId = si?.getIccId() ?: "8986a4c910180000000"
+//            Log.e("  iccid  is  ", iccId)
+//            if (iccId.length > 11) {
+//                var builder = StringBuilder()
+//                iccId.toCharArray().forEach {
+//                    if(!it.isDigit()){
+//                        Log.e(" isDigit ",it.toString())
+//                        builder.append(it.toUpperCase())
+//                    }else
+//                        builder.append(it)
+//                }
+//
+//                modeln = builder.toString().substring(0, 11)
+//                simno = "0" + modeln
+//                Log.e("  model  inex ", modeln + " - " + simno)
+//                mode_text.visibility = View.VISIBLE
+//                mode_text.text = "sim: $modeln --dev: $simno"
+//            }
+//
+//        } else {
+//            var iccId ="8986043910180000000"
+//            if (iccId.length > 11) {
+//                modeln = iccId.substring(0, 11)
+//                simno = "0" + modeln
+//                Log.e("  model  inex ", modeln + " - " + simno)
+//                mode_text.text = modeln + " -- " + simno
+//            }
 //        }
+
+        var iccId ="8986043910180000000"
+        if (iccId.length > 11) {
+            modeln = iccId.substring(0, 11)
+            simno = "0" + modeln
+            Log.e("  model  inex ", modeln + " - " + simno)
+            mode_text.text = modeln + " -- " + simno
+        }
 
     }
 
