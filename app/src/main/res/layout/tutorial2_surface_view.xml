@@ -1,19 +1,14 @@
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
+
 
     <org.opencv.android.JavaCameraView
         android:id="@+id/tutorial2_activity_surface_view"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         />
-    <!--<org.opencv.android.JavaCameraView-->
-        <!--android:id="@+id/tutorial2_activity_surface_view2"-->
-        <!--android:layout_width="wrap_content"-->
-        <!--android:layout_height="wrap_content"-->
-        <!--android:visibility="gone"-->
-        <!--android:layout_alignParentRight="true"/>-->
+
 
     <LinearLayout
         android:layout_width="wrap_content"
@@ -122,6 +117,21 @@
         android:layout_marginLeft="5dp"
         android:textSize="18sp"
         android:textColor="@color/green"
+        android:visibility="invisible"
         android:text="当前:正常模式"/>
+    <FrameLayout
+        android:id="@+id/surfacev"
+        android:layout_marginTop="10dp"
+        android:layout_width="wrap_content"
+        android:layout_gravity="right"
+        android:layout_height="wrap_content">
 
-</RelativeLayout>
+    </FrameLayout>
+    <ImageView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="right"
+        android:visibility="gone"
+        android:id="@+id/test_img"/>
+
+</FrameLayout>

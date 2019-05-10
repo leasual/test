@@ -53,11 +53,11 @@ public:
 //        return false;
 //    }
 
-    void SetGpsInfo(uint64_t latitude,uint64_t longitude,uint32_t  height,WORD speed,WORD stDirection,bool bAlarm)
+    void SetGpsInfo(uint64_t latitude,uint64_t longitude,uint32_t  height,WORD speed,WORD stDirection)
     {
         UT_INFO("Set Gps information.");
         std::shared_ptr<UploadGPSInfo> spGpsInfo =
-                std::make_shared<UploadGPSInfo>(latitude,longitude,height,speed,stDirection,bAlarm,0);
+                std::make_shared<UploadGPSInfo>(latitude,longitude,height,speed,stDirection,false,0);
         CClientConnManager::GetInstance()->SetLocation(spGpsInfo);
     }
 

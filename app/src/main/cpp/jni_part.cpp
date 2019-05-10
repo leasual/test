@@ -5,7 +5,7 @@
 #include <vector>
 #include "dsm_jtt808_api.h"
 #include "ut_timer.h"
-
+#include <opencv2/highgui.hpp>
 #define LOGD(...) ((void)__android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__))
 
 
@@ -74,6 +74,7 @@ Java_org_opencv_samples_tutorial2_DetectActitvity_Cali(JNIEnv *jniEnv, jobject o
             jmethodID meth = jniEnv->GetMethodID(cl, "caliDone", "()V");
             jniEnv->CallVoidMethod(obj, meth);
 //            LOGE(" Calibration is %d", *caliDone);
+
         }
     }
 }
@@ -106,6 +107,7 @@ Java_org_opencv_samples_tutorial2_DetectActitvity_FindFeatures2(JNIEnv *jniEnv, 
     jintArray re1;
     jint *index2;
     if (totalFlow != nullptr && (*caliDone) && ((*featureNum) >= 25)) {
+
 //        UT_TRACE("before Run  ");
         totalFlow->Run(*(Mat *) copyMat, *result);
         totalFlow->isSave = picture == JNI_TRUE;
@@ -236,7 +238,7 @@ Java_org_opencv_samples_tutorial2_DetectActitvity_CHECK(JNIEnv *jniEnv, jobject,
     CConfigFileReader::GetInstance()->LoadFromFile( "/sdcard/Android/data/com.ut.sdk/files/dsm_jtt808.cfg");
     CDSMLog::GetInstance()->InitialiseLog4z("/sdcard/Android/data/com.ut.sdk/files/dsm_log.cfg");
 
-    CDsmJTT808_API::GetInstance()->Start((char*)mod.c_str(),(char*)sim.c_str(),(char*)s.c_str(), 7000);
+    CDsmJTT808_API::GetInstance()->Start((char*)sim.c_str(),(char*)mod.c_str(),(char*)s.c_str(), 7000);
 
 //    if (!CDsmJTT808_API::GetInstance()->Inialise((char*)sim.c_str(), (char*)mod.c_str(),(char*)s.c_str(),7000)) {
 //        UT_FATAL("Inialise failed!");
@@ -315,7 +317,7 @@ Java_org_opencv_samples_tutorial2_DetectActitvity_OnMessage(JNIEnv *jniEnv, jobj
     *speed = (unsigned short)sp;
 
     if(gps){
-        CDsmJTT808_API::GetInstance()->SetGpsInfo(*lati,*longi,*hei,*speed,0,false);
+        CDsmJTT808_API::GetInstance()->SetGpsInfo(*lati,*longi,*hei,*speed,0);
     }
     return JNI_TRUE;
 }

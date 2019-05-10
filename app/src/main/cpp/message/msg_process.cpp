@@ -177,7 +177,6 @@ int CMsgProcess::DevAlarmInfoUp(CClientConn* pClientConn)
     //if (CClientConnManager::GetInstance()->m_queueAlarm.FetchFront(&pDevGPSAlarm)) {
         _ConstructAlarmInfoPkt(pClientConn,pDevGPSAlarm,(char*)pClientConn->GetSimNo());
         _SendToPlt(pClientConn);
-        //delete pDevLoc;
     } else {
         CClientConnManager::GetInstance()->RemoveAlarmUpLoadTimer();
     }
@@ -951,7 +950,6 @@ void CMsgProcess::_ConstructAlarmInfoPkt(CClientConn* pClientConn,DevUploadGPSAl
     int nBodyLen = 0;
     JTT808Body_PositionUP* pLocUpPkt = (JTT808Body_PositionUP*)(m_szReqOneBuffer + JTT808MsgHead::HEADERSIZE);
     pLocUpPkt->ResetAlarmFlag();
-    //pLocUpPkt->EnableFatigueFlag();
     pLocUpPkt->ResetStatus();
     pLocUpPkt->SetLatitude(pGPSAlarmInfo->stGPSInfo.stLatitude);
     pLocUpPkt->SetLongitude(pGPSAlarmInfo->stGPSInfo.stLongitude);
@@ -1114,7 +1112,6 @@ void CMsgProcess::_ConstructAlarmInfoPkt(CClientConn* pClientConn,DevUploadGPSAl
     m_reqPtrOffset++;
     UT_TRACE("m_reqPtrOffset=%d",m_reqPtrOffset);
     UT_DUMP(m_szReqOneBuffer,m_reqPtrOffset);
-
 
 	// 缓存报警消息
 	CClientConnManager::GetInstance()->CacheAlarmUpLoadInfo(JTT_DEV_LOC_REP,nSeqNo,&pGPSAlarmInfo);

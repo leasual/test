@@ -4,12 +4,13 @@ import android.graphics.Bitmap
 import android.util.Log
 import java.io.ByteArrayOutputStream
 import java.io.DataOutputStream
+import java.lang.Exception
 import java.net.ServerSocket
 import java.net.Socket
 
 
 class ImageServer {
-    var port = 30000
+    var port = 8888
     var serverSocket: ServerSocket? = null
     var socket: Socket? = null
     var thread:Thread? = null
@@ -45,12 +46,18 @@ class ImageServer {
             if (!this.isConnected){
                 return
             }
-            val stream = DataOutputStream(this.getOutputStream())
+            try {
+                val stream = DataOutputStream(this.getOutputStream())
 //            val bout = ByteArrayOutputStream()
 //            bout.write(data)
-            stream.writeInt(data.size)
-            stream.write(data,0,data.size)
-            Log.e("sendd ","" + data.size)
+                stream.writeInt(data.size)
+                stream.write(data,0,data.size)
+                Log.e("sendd ","" + data.size)
+            }catch (e:Exception){
+                socket?.close()
+                socket = serverSocket?.accept()
+            }
+
         }
     }
 

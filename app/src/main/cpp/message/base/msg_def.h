@@ -793,7 +793,7 @@ struct UploadGPSInfo
             ,stHasAlarm(false)
             ,stAlarmChannel(DSM_ALARM_FLAG){}
 
-    UploadGPSInfo(  uint64_t latitude,uint64_t longitude,uint32_t  height,WORD speed,WORD direction,bool bAlarm, int alarmChannel )
+    UploadGPSInfo(uint64_t latitude,uint64_t longitude,uint32_t  height,WORD speed,WORD direction,bool bAlarm, int alarmChannel )
             :stLatitude(latitude)
             ,stLongitude(longitude)
             ,stHeight(height)
@@ -857,7 +857,7 @@ struct UploadDSMAlarmInfo
 
     UploadDSMAlarmInfo(uint8_t status,euDSMAlarmType alarmType,euAlarmGradeType alarmGrade,uint8_t fatiqueDegree):
             btStatus(status)
-            ,btAlarmType(euDsmAlarmInit)
+            ,btAlarmType(alarmType)
             ,btAlarmGrade(alarmGrade)
             ,btFatiqueDegree(fatiqueDegree){}
 

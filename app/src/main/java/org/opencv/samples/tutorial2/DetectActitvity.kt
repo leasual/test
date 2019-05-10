@@ -9,7 +9,10 @@ import android.content.ContentValues.TAG
 import android.content.Context
 import android.content.SharedPreferences
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.PixelFormat
 import android.hardware.Camera
+import android.hardware.camera2.CameraManager
 import android.icu.lang.UCharacter.GraphemeClusterBreak.L
 import android.location.*
 import android.media.CamcorderProfile
@@ -23,8 +26,8 @@ import android.telephony.SubscriptionManager
 import android.telephony.TelephonyManager
 import android.text.TextUtils
 import android.util.Log
-import android.view.View
-import android.view.WindowManager
+import android.view.*
+import android.widget.FrameLayout
 import android.widget.TextView
 import com.op.dm.ImageServer
 import com.op.dm.ImageServer2
@@ -39,12 +42,14 @@ import org.opencv.android.CameraBridgeViewBase
 import org.opencv.android.LoaderCallbackInterface
 import org.opencv.android.OpenCVLoader
 import org.opencv.core.Core
+import org.opencv.core.CvType
 import org.opencv.core.Mat
 import org.opencv.core.MatOfByte
 import org.opencv.imgcodecs.Imgcodecs
 import org.opencv.imgproc.Imgproc
 import java.io.File
 import java.io.IOException
+import java.lang.StringBuilder
 import java.util.*
 import java.util.concurrent.Executors
 import kotlin.concurrent.timerTask
@@ -53,13 +58,15 @@ import kotlin.concurrent.timerTask
  * Created by chris on 1/4/19.
  */
 
-
-class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
-
+class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 , SurfaceHolder.Callback{
+    var openFront = false
+    var switchMode = false
+    var openTransfer = false
+    var camerFront =0
+    var camerFace = 1
     internal var index = 0
     var rgb: Mat? = null
     private var mRgba: Mat? = null
-    private var mRgba2: Mat? = null
     private var mGray: Mat? = null
     private var progressDialog: ProgressDialog? = null
     //这个优先级会有变动，为了不修改jni里返回值顺序和ui的顺序，引入这个数组，之后只改这里就可以修改警告播报优先级-> 从names[3],names[2],names[1]..这个顺序遍历names数组
@@ -87,67 +94,30 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
     var totaltime = 0L
     var firsttime = 0L
     var imageServer: ImageServer? = null
-    var th = ImageTh()
+
+
+
     init {
         Log.i(TAG, "Instantiated new " + this.javaClass)
     }
-
     var singleThreadExecutor = Executors.newSingleThreadExecutor()
     var singleThreadExecutorDsm = Executors.newSingleThreadExecutor()
 
-    var  locationListener = object: LocationListener {
-        override fun onLocationChanged(location: Location?) {
-        }
-
-        override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) {
-            var loc: Location? = getLastKnownLocation()
-            Log.e(ContentValues.TAG, "onLocationChanged time is " + getGpsLoaalTime(loc?.time ?: 0))
-            Log.e(ContentValues.TAG, "onLocationChanged lat is " + loc?.latitude)
-        }
-
-        override fun onProviderEnabled(provider: String?) {
-        }
-
-        override fun onProviderDisabled(provider: String?) {
-        }
-
-    }
-
-
     var modeln:String? = null
     var simno :String? = null
-    var mMediaRecorder: MediaRecorder? = null
-    var mCamera: Camera? = null
+
 
 
     @SuppressLint("MissingPermission")
     public override fun onCreate(savedInstanceState: Bundle?) {
         Log.i(TAG, "called onCreate")
         super.onCreate(savedInstanceState)
-//        var mac = checks()
-//        Log.e("mac  dizhi   " , mac)
+
         firsttime = System.currentTimeMillis()
         locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager?
         location = locationManager?.getLastKnownLocation(locationManager?.getBestProvider(getCriteria(), true))
-//        locationManager?.requestLocationUpdates(LocationManager.GPS_PROVIDER, 3000, 1f, locationListener)
-      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP_MR1) {
-          var sm =  SubscriptionManager.from(this)
-            // it returns a list with a SubscriptionInfo instance for each simcard
-            // there is other methods to retrieve SubscriptionInfos (see [2])
-           var sis:List<SubscriptionInfo?>? = sm.getActiveSubscriptionInfoList()
-            // getting first SubscriptionInfo
-           var si = sis?.get(0)
-            // getting iccId
-           var iccId = si?.getIccId()?:"8986043910180000000"
-          if(iccId.length > 11){
-              modeln = iccId.substring(0,11)
-              simno = "0"+ modeln
-              Log.e("  model  inex ", modeln + " - " + simno)
-          }
 
-       } else {
-           TODO("VERSION.SDK_INT < LOLLIPOP_MR1")
-       }
+
 
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         setContentView(R.layout.tutorial2_surface_view)
@@ -157,51 +127,27 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
             mode_text.text = "当前:快速模式"
         }
 
-
-        normal_btn.setOnClickListener {
-            Thread {
-                var sp = getPreferences(Context.MODE_PRIVATE)
-                var ed = sp.edit()
-                ed.putLong("mode",0L)
-                ed.apply()
+//        val cameraManager = getSystemService(Context.CAMERA_SERVICE) as CameraManager
+//        val cameraId = cameraManager.cameraIdList[0]
+//        cameraManager.cameraIdList.forEach {
+//            Log.e("  camera  inex ", it)
+//        }
+        if (openTransfer){
+            Thread{
+                imageServer = ImageServer()
             }.start()
-            setResult(RESULT_OK)
-            stop()
-            totalDone = false
-            mode = 0L
-            tutorial2_activity_surface_view.visibility = View.INVISIBLE
-            tutorial2_activity_surface_view.postDelayed({
-                finish()
-            },500)
         }
-
-        fast_btn.setOnClickListener {
-            Thread {
-                var sp = getPreferences(Context.MODE_PRIVATE)
-                var ed = sp.edit()
-                ed.putLong("mode",1L)
-                ed.apply()
-            }.start()
-            setResult(RESULT_OK)
-            stop()
-            totalDone = false
-            mode = 1L
-            tutorial2_activity_surface_view.visibility = View.INVISIBLE
-            tutorial2_activity_surface_view.postDelayed({
-                finish()
-            },500)
-        }
+        getSimId()
+        initModeSwitch()
 
         with(tutorial2_activity_surface_view) {
             visibility = CameraBridgeViewBase.VISIBLE
             setCvCameraViewListener(this@DetectActitvity)
-            setCameraIndex(1)
+            setCameraIndex(camerFace)
             setMaxFrameSize(640, 480)
         }
 
-        Thread{
-            imageServer = ImageServer()
-        }.start()
+
 
         progressDialog = ProgressDialog(this)
         progressDialog?.setTitle("加载中,请稍后")
@@ -226,72 +172,124 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
         timer = Timer()
         timer?.schedule(timerTask, 0, 3000)
     }
+
+    @SuppressLint("MissingPermission")
+    private fun getSimId() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP_MR1) {
+            var sm = SubscriptionManager.from(this)
+            // it returns a list with a SubscriptionInfo instance for each simcard
+            // there is other methods to retrieve SubscriptionInfos (see [2])
+            var sis: List<SubscriptionInfo?>? = sm.getActiveSubscriptionInfoList()
+            // getting first SubscriptionInfo
+            var si = sis?.get(0)
+            // getting iccId
+            var iccId = si?.getIccId() ?: "8986043910180000000"
+//            var iccId = si?.getIccId() ?: "8986a4c910180000000"
+            Log.e("  iccid  is  ", iccId)
+            if (iccId.length > 11) {
+                var builder = StringBuilder()
+                iccId.toCharArray().forEach {
+                    if(!it.isDigit()){
+                        Log.e(" isDigit ",it.toString())
+                        builder.append(it.toUpperCase())
+                    }else
+                        builder.append(it)
+                }
+
+                modeln = builder.toString().substring(0, 11)
+                simno = "0" + modeln
+                Log.e("  model  inex ", modeln + " - " + simno)
+                mode_text.visibility = View.VISIBLE
+                mode_text.text = "sim: $modeln --dev: $simno"
+            }
+
+        } else {
+            var iccId ="8986043910180000000"
+            if (iccId.length > 11) {
+                modeln = iccId.substring(0, 11)
+                simno = "0" + modeln
+                Log.e("  model  inex ", modeln + " - " + simno)
+                mode_text.text = modeln + " -- " + simno
+            }
+        }
+
+//        var iccId ="8986043910180000000"
+//        if (iccId.length > 11) {
+//            modeln = iccId.substring(0, 11)
+//            simno = "0" + modeln
+//            Log.e("  model  inex ", modeln + " - " + simno)
+//            mode_text.text = modeln + " -- " + simno
+//        }
+
+    }
+
+    private fun initModeSwitch() {
+        if(!switchMode){
+            normal_btn.visibility = View.INVISIBLE
+            fast_btn.visibility = View.INVISIBLE
+        }
+        normal_btn.setOnClickListener {
+            Thread {
+                var sp = getPreferences(Context.MODE_PRIVATE)
+                var ed = sp.edit()
+                ed.putLong("mode", 0L)
+                ed.apply()
+            }.start()
+            setResult(RESULT_OK)
+            stop()
+            totalDone = false
+            mode = 0L
+            tutorial2_activity_surface_view.visibility = View.INVISIBLE
+            tutorial2_activity_surface_view.postDelayed({
+                finish()
+            }, 500)
+        }
+
+        fast_btn.setOnClickListener {
+            Thread {
+                var sp = getPreferences(Context.MODE_PRIVATE)
+                var ed = sp.edit()
+                ed.putLong("mode", 1L)
+                ed.apply()
+            }.start()
+            setResult(RESULT_OK)
+            stop()
+            totalDone = false
+            mode = 1L
+            tutorial2_activity_surface_view.visibility = View.INVISIBLE
+            tutorial2_activity_surface_view.postDelayed({
+                finish()
+            }, 500)
+        }
+    }
+
+    var  locationListener = object: LocationListener {
+        override fun onLocationChanged(location: Location?) {
+        }
+
+        override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) {
+            var loc: Location? = getLastKnownLocation()
+            Log.e(ContentValues.TAG, "onLocationChanged time is " + getGpsLoaalTime(loc?.time ?: 0))
+            Log.e(ContentValues.TAG, "onLocationChanged lat is " + loc?.latitude)
+        }
+
+        override fun onProviderEnabled(provider: String?) {
+        }
+
+        override fun onProviderDisabled(provider: String?) {
+        }
+
+    }
+
+
     var lati = 0L
     var longi= 0L
     var alti = 0
     var speeds :Short = 0
 
-    private fun releaseMediaRecorder() {
-        if (mMediaRecorder != null) {
-            mMediaRecorder?.reset()   // clear recorder configuration
-            mMediaRecorder?.release() // release the recorder object
-            mMediaRecorder = null
-            mCamera?.lock()           // lock camera for later use
-        }
-    }
 
-    private fun prepareVideoRecorder(): Boolean {
-        mCamera = Camera.open(0)
-        mCamera?.let {
-            mMediaRecorder = MediaRecorder()
 
-            // Step 1: Unlock and set camera to MediaRecorder
-            mCamera?.unlock()
-            mMediaRecorder?.setCamera(mCamera)
 
-            // Step 2: Set sources
-//            mMediaRecorder?.setAudioSource(MediaRecorder.AudioSource.DEFAULT)
-            mMediaRecorder?.setVideoSource(MediaRecorder.VideoSource.CAMERA)
-
-            // Step 3: Set a CamcorderProfile (requires API Level 8 or higher)
-            mMediaRecorder?.setProfile(CamcorderProfile.get(CamcorderProfile.QUALITY_480P))
-
-            val mediaStorageDir = File(Environment.getExternalStoragePublicDirectory(
-                    Environment.DIRECTORY_PICTURES), "MyCameraApp")
-            if (!mediaStorageDir.exists()) {
-                if (!mediaStorageDir.mkdirs()) {
-                    Log.e("MyCameraApp", "failed to create directory")
-                    return false
-                }
-            }
-            val mediaFile: File
-            mediaFile = File(mediaStorageDir.path + File.separator +
-                    "qianshe" + ".mp4")
-
-            //        mMediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
-            //        mMediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.DEFAULT);
-            // Step 4: Set output file
-            mMediaRecorder?.setOutputFile(mediaFile.toString())
-            //        mMediaRecorder.setVideoFrameRate(25);
-
-            // Step 5: Set the preview output
-//        mMediaRecorder?.setPreviewDisplay(mPreview.getHolder().getSurface())
-
-            // Step 6: Prepare configured MediaRecorder
-            try {
-                mMediaRecorder?.prepare()
-            } catch (e: IllegalStateException) {
-                Log.d(TAG, "IllegalStateException preparing MediaRecorder: " + e.message)
-                releaseMediaRecorder()
-                return false
-            } catch (e: IOException) {
-                Log.d(TAG, "IOException preparing MediaRecorder: " + e.message)
-                releaseMediaRecorder()
-                return false
-            }
-        }
-        return true
-    }
 
 
     @SuppressLint("MissingPermission")
@@ -481,6 +479,7 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
         super.onDestroy()
         totalDone = false
         imageServer?.stop()
+        onDestroyCamera()
         stop()
         tutorial2_activity_surface_view.visibility = View.INVISIBLE
         tutorial2_activity_surface_view?.disableView()
@@ -502,7 +501,8 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
     }
     var bm:Bitmap? = null
     override fun onCameraViewStarted(width: Int, height: Int) {
-        mRgba = Mat()
+        mRgba = Mat(480,640,CvType.CV_8U)
+//        mGray = Mat(480,640,CvType.CV_8U)
         mGray = Mat()
         bm = Bitmap.createBitmap(640, 480, Bitmap.Config.ARGB_8888)
         if (rgb == null) {
@@ -524,23 +524,18 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
         mRgba = inputFrame.rgba()
         mGray = inputFrame.gray()
 
-//        Log.e(" mat ch ", "" + mRgba?.channels() + " " + mRgba!!.cols() + "" + mRgba!!.rows())
-//        var size = (mRgba!!.cols().times(mRgba!!.cols())).times(mRgba!!.channels())
-//        var array = ByteArray(1024)
-//        mRgba!!.get(mRgba!!.rows(),mRgba!!.cols(),array)
-//        var now = System.currentTimeMillis() - lastFrame
-//        if( now < 20){
-//            return mRgba!!
-//        }
+        if(openTransfer)
+            singleThreadExecutor.execute {
+                var time = System.currentTimeMillis()
+               var byteArray = mRgba!!.toByte()
+//                Log.e("sendmat "," " + byteArray.size  + " " + mRgba!!.total() )
 
-//        singleThreadExecutor.execute {
-//            var time = System.currentTimeMillis()
-////            org.opencv.android.Utils.matToBitmap(mGray?.clone(), bm!!)
-//           var mb = MatOfByte()
-//          Imgcodecs.imencode(".png", mGray!!, mb)
-////            Log.e("sendd "," " + (System.currentTimeMillis() - time))
-//            imageServer?.sendMat(mb.toArray())
-//        }
+//                runOnUiThread {
+//                    test_img.visibility = View.VISIBLE
+//                    test_img.setImageBitmap(BitmapFactory.decodeByteArray(byteArray,0,byteArray.size))
+//                }
+                imageServer?.sendMat(byteArray)
+            }
 
 //        lastFrame = System.currentTimeMillis()
 //
@@ -552,7 +547,6 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
             rgb?.let { it1 ->
                 Imgproc.cvtColor(mRgba, it1, Imgproc.COLOR_RGBA2RGB)
                 if (totalDone){
-                    th.run = true
 
                     mRgba?.let {
 
@@ -590,37 +584,16 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
                         }
 
                     }
-                }else
-                    th.run = true
+                }
             }
         lastFrameDsm = System.currentTimeMillis()
 //        return mRgba!!
 //        if (index >= 10000)
 //            index = 0
 //        index++
-        return mRgba!!
+        return mGray!!
     }
 
-    inner class ImageTh: Thread() {
-        var run = false
-        var time = 0L
-        override fun run() {
-            while (true) {
-                var cost = System.currentTimeMillis() - time
-                if (run) {
-                    run = false
-                    time = System.currentTimeMillis()
-                    imageServer?.apply {
-                        //                        synchronized(mRgba!!) {
-//
-                        org.opencv.android.Utils.matToBitmap(mRgba?.clone(), bm!!)
-                        this.sendImage(bm!!)
-
-                    }
-                }
-            }
-        }
-    }
 
     private val mLoaderCallback = object : BaseLoaderCallback(this) {
         @SuppressLint("MissingPermission")
@@ -688,7 +661,8 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
             }
             var timer2 = Timer()
             timer2.schedule(timerTaskGps,5000,30000)
-
+            if(integer.openFront)
+                integer.onCreate2()
         }
 
         override fun doInBackground(vararg contexts: DetectActitvity): DetectActitvity {
@@ -702,17 +676,14 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
             return contexts[0]
         }
     }
-    private var alertDialog: AlertDialog? = null
 
     internal class AsyncTaskInitTotalFlow : AsyncTask<DetectActitvity, Int, DetectActitvity>() {
         override fun onPostExecute(integer: DetectActitvity) {
             super.onPostExecute(integer)
-//            integer.totalDone = true
             integer.views?.forEachIndexed { index, textView ->
                 textView.text = integer.names[index] + " : " + "正常"
             }
             integer.progressDialog?.dismiss()
-//            integer.alertDialog?.show()
             integer.register = true
             integer.totalDone = true
             var handler = Handler(Looper.getMainLooper())
@@ -723,10 +694,10 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
 
             Handler(Looper.getMainLooper()).postDelayed({
                 integer.beginCali = true
-            },8000)
+            },4000)
 
             Handler().postDelayed({
-//                Utils.deleteFile(integer)
+                Utils.deleteFile(integer)
             },10000)
             Log.e(TAG, "AsyncTaskInitTotalFlow  successfully")
         }
@@ -735,13 +706,7 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
             for (index in 0..6) {
                 contexts[0].players[index] = MediaPlayer.create(contexts[0], contexts[0].audio[index])
             }
-//            var tim = System.currentTimeMillis()/1000 + 1*60*60*24*10
             contexts[0].FindFeatures(contexts[0].mode, contexts[0].page)
-//            contexts[0].CHECK("")
-//            if(contexts[0].CHECK(contexts[0].checks()))
-//                contexts[0].FindFeatures(0, 0)
-//            else
-//                contexts[0].finish()
             return contexts[0]
         }
     }
@@ -764,5 +729,94 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
     companion object {
         private const val TAG = "OCVSample::Activity"
     }
+
+    //front camera recording
+
+    private var surfaceView: SurfaceView? = null
+    private var camera: Camera? = null
+    private var mediaRecorder: MediaRecorder? = null
+
+    fun onCreate2() {
+        Log.e("oncreate ", "11")
+        // Start foreground service to avoid unexpected kill
+
+        // Create new SurfaceView, set its size to 1x1, move it to the top leftcorner and set this service as a callback
+        surfaceView = SurfaceView(this)
+        val layoutParams = FrameLayout.LayoutParams(
+               (208*resources.displayMetrics.density).toInt(), (156*resources.displayMetrics.density).toInt()
+        )
+        layoutParams.gravity = Gravity.LEFT or Gravity.TOP
+        surfaceView?.setZOrderOnTop(true)
+        surfacev.addView(surfaceView, layoutParams)
+        surfaceView?.getHolder()?.addCallback(this)
+
+    }
+
+    private fun openFrontFacingCameraGingerbread(): Camera? {
+        if (camera != null) {
+            camera?.stopPreview()
+            camera?.release()
+        }
+        var cam: Camera? = null
+        cam = Camera.open(camerFront)
+        return cam
+    }
+
+    override fun surfaceCreated(surfaceHolder: SurfaceHolder) {
+        Log.e("surfaceCreated ", "111")
+        camera = openFrontFacingCameraGingerbread()
+
+        mediaRecorder = MediaRecorder()
+        camera?.unlock()
+
+//        camera?.setPreviewDisplay(surfaceHolder)
+        mediaRecorder?.let {
+            it.setPreviewDisplay(surfaceHolder.surface)
+            it.setCamera(camera)
+            it.setAudioSource(MediaRecorder.AudioSource.CAMCORDER)
+            it.setVideoSource(MediaRecorder.VideoSource.CAMERA)
+            it.setProfile(CamcorderProfile.get(CamcorderProfile.QUALITY_480P))
+//            it.setVideoFrameRate(12)
+//            it.setCaptureRate(12.0)
+        }
+
+
+        val imagesFolder = File(
+                Environment.getExternalStorageDirectory(), "frontVideo")
+        if (!imagesFolder.exists())
+            imagesFolder.mkdirs() // <----
+        Log.e("folder ", imagesFolder.path)
+
+        val image = File(imagesFolder, System.currentTimeMillis().toString() + ".mp4")  //file name + extension is .mp4
+
+        mediaRecorder?.setOutputFile(image.absolutePath)
+
+        try {
+            mediaRecorder?.prepare()
+        } catch (e: Exception) {
+        }
+
+        try {
+            mediaRecorder?.start()
+        } catch (e: Exception) {
+
+        }
+    }
+
+    // Stop recording and remove SurfaceView
+    fun onDestroyCamera() {
+        mediaRecorder?.stop()
+        mediaRecorder?.reset()
+        mediaRecorder?.release()
+
+        camera?.lock()
+        camera?.release()
+
+//        windowManager.removeView(surfaceView)
+    }
+
+    override fun surfaceChanged(surfaceHolder: SurfaceHolder, format: Int, width: Int, height: Int) {}
+
+    override fun surfaceDestroyed(surfaceHolder: SurfaceHolder) {}
 
 }
