@@ -12,6 +12,11 @@ import android.support.v4.content.ContextCompat;
 import android.telephony.TelephonyManager;
 import android.util.Log;
 
+import org.opencv.core.Mat;
+import org.opencv.core.Point;
+import org.opencv.core.Scalar;
+import org.opencv.imgproc.Imgproc;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -114,6 +119,19 @@ public class Utils {
         }
 
         return list_storagevolume;
+    }
+
+    public static void putText(Mat mat,String[] names,String[] texts){
+        double y = 20.0;
+        for (int i =0; i< names.length; i++){
+            Imgproc.putText(mat, "测试测试", new Point(20, y), 1, 1, new Scalar(0, 255, 0, 255), 2);
+
+//            Imgproc.putText(mat, names[i]+ " : "+texts[i], new Point(20, y), 1, 1, new Scalar(0, 255, 0, 255), 2);
+            y+= 30.0;
+        }
+
+
+
     }
 
 

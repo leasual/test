@@ -41,10 +41,7 @@ import org.opencv.android.BaseLoaderCallback
 import org.opencv.android.CameraBridgeViewBase
 import org.opencv.android.LoaderCallbackInterface
 import org.opencv.android.OpenCVLoader
-import org.opencv.core.Core
-import org.opencv.core.CvType
-import org.opencv.core.Mat
-import org.opencv.core.MatOfByte
+import org.opencv.core.*
 import org.opencv.imgcodecs.Imgcodecs
 import org.opencv.imgproc.Imgproc
 import java.io.File
@@ -61,7 +58,8 @@ import kotlin.concurrent.timerTask
 class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 , SurfaceHolder.Callback{
     var openFront = false
     var switchMode = false
-    var openTransfer = false
+    var openTransfer = true
+    var closeDms = true
     var camerFront =0
     var camerFace = 1
     internal var index = 0
@@ -72,10 +70,11 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 ,
     //这个优先级会有变动，为了不修改jni里返回值顺序和ui的顺序，引入这个数组，之后只改这里就可以修改警告播报优先级-> 从names[3],names[2],names[1]..这个顺序遍历names数组
     private val priority = arrayOf(3, 6, 0, 1, 2, 5, 4)
     private val names = arrayOf("左顾右盼", "分神" , "吸烟", "打电话", "画面异常","身份异常","打哈欠")
+    private val strings = arrayOfNulls<String>(7)
+    private var jniArray:IntArray = IntArray(7)
     private val lastTime = arrayOf(0L, 0L, 0L, 0L, 0L, 0L, 0L)
     private val audio = arrayOf(R.raw.dis2,R.raw.fenshen, R.raw.chouyan, R.raw.dadianhua, R.raw.huamianyichang,R.raw.shenfenyichang, R.raw.yawn)
     private var views: Array<TextView>? = null
-    private val strings = arrayOfNulls<String>(7)
     internal var totalDone = false
     internal var register = false
     private var players = arrayOfNulls<MediaPlayer>(7)//每秒有n次检测，即时响应，分多个实例
@@ -91,18 +90,10 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 ,
     var locationManager: LocationManager? = null
     var location: Location? = null
     var beginCali = false
-    var totaltime = 0L
     var firsttime = 0L
-    var imageServer: ImageServer? = null
-
-
-
-    init {
-        Log.i(TAG, "Instantiated new " + this.javaClass)
-    }
+    var imageServer: ImageServer2? = null
     var singleThreadExecutor = Executors.newSingleThreadExecutor()
     var singleThreadExecutorDsm = Executors.newSingleThreadExecutor()
-
     var modeln:String? = null
     var simno :String? = null
 
@@ -112,19 +103,20 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 ,
     public override fun onCreate(savedInstanceState: Bundle?) {
         Log.i(TAG, "called onCreate")
         super.onCreate(savedInstanceState)
+        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        setContentView(R.layout.tutorial2_surface_view)
 
         firsttime = System.currentTimeMillis()
         locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager?
         location = locationManager?.getLastKnownLocation(locationManager?.getBestProvider(getCriteria(), true))
 
-
-
-        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-        setContentView(R.layout.tutorial2_surface_view)
         views = arrayOf(dis, fat, smoke, call, abnm,unknown,yawn)
         mode = getPreferences(Context.MODE_PRIVATE).getLong("mode",0L)
         if(mode == 1L){
             mode_text.text = "当前:快速模式"
+        }
+        jniArray.forEachIndexed { index, i ->
+            jniArray[index] = 0
         }
 
 //        val cameraManager = getSystemService(Context.CAMERA_SERVICE) as CameraManager
@@ -134,7 +126,7 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 ,
 //        }
         if (openTransfer){
             Thread{
-                imageServer = ImageServer()
+                imageServer = ImageServer2()
             }.start()
         }
         getSimId()
@@ -329,12 +321,13 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 ,
             priority.forEach {
                 // access the uiText and Jni result by the order of 'priority'
                 when (array[it]) {//jni function return value which represents each item's status --> fat, call, smoke etc.
-                    2 -> {
+                    0 -> {
+                        strings[it] = "正常"
+                    }
+                    else ->{
                         strings[it] = "报警"
                         playWarnning(it)
                     }
-                    1 -> strings[it] = "警告"
-                    else -> strings[it] = "正常"
                 }
             }
         }
@@ -494,6 +487,10 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 ,
 //        timer?.purge()
         timerTask?.cancel()
         timer?.cancel()
+        timerGps?.cancel()
+        timerGps?.cancel()
+        timerTaskMsg?.cancel()
+        timerMsg?.cancel()
         Handler().post {
 //            Utils.deleteFileAll(this)
 //            System.exit(0)
@@ -526,23 +523,12 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 ,
 
         if(openTransfer)
             singleThreadExecutor.execute {
-                var time = System.currentTimeMillis()
-               var byteArray = mRgba!!.toByte()
-//                Log.e("sendmat "," " + byteArray.size  + " " + mRgba!!.total() )
-
-//                runOnUiThread {
-//                    test_img.visibility = View.VISIBLE
-//                    test_img.setImageBitmap(BitmapFactory.decodeByteArray(byteArray,0,byteArray.size))
-//                }
+               var byteArray = mGray!!.toByte()
                 imageServer?.sendMat(byteArray)
             }
-
-//        lastFrame = System.currentTimeMillis()
-//
-//        var now2 = System.currentTimeMillis() - lastFrameDsm
-//        if( now2 < 200){
-//            return mRgba!!
-//        }
+        if (closeDms){
+            return mRgba!!
+        }
 //        return mRgba!!
             rgb?.let { it1 ->
                 Imgproc.cvtColor(mRgba, it1, Imgproc.COLOR_RGBA2RGB)
@@ -572,17 +558,13 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 ,
                             if (true){
 //                                singleThreadExecutorDsm.execute {
 //                                }
-                                var array = FindFeatures2(it1.nativeObjAddr, mRgba!!.nativeObjAddr, register, save)
-                                array?.let {
+                                jniArray = FindFeatures2(it1.nativeObjAddr, mRgba!!.nativeObjAddr, register, save)
+                                jniArray?.let {
                                     if (it.size > 2)
                                         getStringResult(it)
                                 }
                             }//减少uitext更新频率，没必要每帧都改变
-//                        else{
-//                            FindFeatures2(it1.nativeObjAddr, it.nativeObjAddr, register, save)
-//                        }
                         }
-
                     }
                 }
             }
@@ -591,10 +573,10 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 ,
 //        if (index >= 10000)
 //            index = 0
 //        index++
-        return mGray!!
+        return mRgba!!
     }
-
-
+    var timerTaskGps:TimerTask? = null
+    var timerGps : Timer? = null
     private val mLoaderCallback = object : BaseLoaderCallback(this) {
         @SuppressLint("MissingPermission")
         override fun onManagerConnected(status: Int) {
@@ -604,7 +586,7 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 ,
                     System.loadLibrary("native-lib")
                     tutorial2_activity_surface_view?.enableView()
 //                    tutorial2_activity_surface_view2?.enableView()
-                    var timerTask =  timerTask {
+                    timerTaskGps =  timerTask {
                         runOnUiThread {
                             locationManager?.requestLocationUpdates(LocationManager.GPS_PROVIDER, 3000, 1f, locationListener)
                             locationManager?.requestLocationUpdates(LocationManager.PASSIVE_PROVIDER, 3000, 1f, locationListener)
@@ -613,8 +595,8 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 ,
                         }
 
                     }
-                    var timer = Timer()
-                    timer.schedule(timerTask,3000,5000)
+                    timerGps = Timer()
+                    timerGps?.schedule(timerTaskGps,3000,1500)
 
 
 //                    if(prepareVideoRecorder()){
@@ -626,7 +608,8 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 ,
 //                        releaseMediaRecorder() // release the MediaRecorder object
 //                        mCamera?.lock()
 //                    },8000)
-
+                    if(closeDms)
+                        return
                     if (!totalDone) {
                         val context = mAppContext
                         AsyncTaskInitFile().execute(context as DetectActitvity)
@@ -639,6 +622,9 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 ,
         }
     }
 
+    var timerTaskMsg :TimerTask? = null
+    var timerMsg : Timer? = null
+
     internal class AsyncTaskInitFile : AsyncTask<DetectActitvity, Int, DetectActitvity>() {
         override fun onPostExecute(integer: DetectActitvity) {
             super.onPostExecute(integer)
@@ -650,17 +636,12 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 ,
                 AsyncTaskInitTotalFlow().execute(integer)
             },2000)
 
-            var timerTask =  timerTask {
+            integer.timerTaskMsg =  timerTask {
                 integer.OnMessage(integer.lati, integer.longi,integer.alti, integer.speeds,false)
             }
-            var timer = Timer()
-            timer.schedule(timerTask,5000,900)
+            integer.timerMsg = Timer()
+            integer.timerMsg?.schedule(integer.timerTaskMsg,5000,900)
 
-            var timerTaskGps =  timerTask {
-                integer.OnMessage(integer.lati, integer.longi,integer.alti, integer.speeds,true)
-            }
-            var timer2 = Timer()
-            timer2.schedule(timerTaskGps,5000,30000)
             if(integer.openFront)
                 integer.onCreate2()
         }

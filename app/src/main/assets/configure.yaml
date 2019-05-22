@@ -1,7 +1,7 @@
 %YAML:1.0
 
 #左顾右盼的配置参数.
-distraction_threshold : 4          #判决时间， 单位:秒
+distraction_threshold : 2          #判决时间， 单位:秒
 distraction_left_angle : 15        #基准向左偏移的角度,单位:度
 distraction_right_angle : -15      #基准向右偏移的角度,单位:度
 distraction_up_angle : -10         #基准向上偏移的角度,单位:度
@@ -74,7 +74,7 @@ camera_index : 0
 camera_fps: 25
 
 #数据处理帧率
-process_fps: 10
+process_fps: 6
 
 #保存结果
 write_result : 0

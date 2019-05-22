@@ -404,6 +404,7 @@ void TotalFlow::ProcessImageThread() {
         RunProcess();
         auto time_cost = std::chrono::duration_cast<std::chrono::milliseconds>(
                 std::chrono::steady_clock::now()-beg).count();
+        LOGE("RunProcess cost %ld",time_cost);
         auto control_fps_cost = 1000 / config_.process_fps_;
 //        std::cout << "process sleep : " << control_fps_cost-time_cost << std::endl;
         if(control_fps_cost > time_cost)

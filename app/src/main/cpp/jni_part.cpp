@@ -121,6 +121,9 @@ Java_org_opencv_samples_tutorial2_DetectActitvity_FindFeatures2(JNIEnv *jniEnv, 
         std::string showCalibrt = "calibrate : ";
         std::string faceid;
 
+        cv::Rect face_bbox;
+        std::vector<cv::Point2f> landmarks;
+
         result->GetFaceId(faceid);
 //        LOGE(" face id -------- %s", faceid.data());
         unknown = 0;
@@ -134,26 +137,24 @@ Java_org_opencv_samples_tutorial2_DetectActitvity_FindFeatures2(JNIEnv *jniEnv, 
         result->GetCall(call, *bboxc);
         result->GetAbnormal(abnorm);
         result->GetYawn(yawn);//haqi
-
+        result->GetLandmarks(landmarks);
+        result->GetFaceBbox(face_bbox);
 //        LOGE(" fat dis yawn   -------- %d, %d ,%d ",fat, dis, yawn);
-        if(fat == 2 || dis==2 || call == 2 || smoke == 2|| abnorm == 2){
 
 
-        }
-
-        if(picture && (fat == 2 || dis==2 || call == 2 || smoke == 2|| abnorm == 2 || yawn == 2)){
+        if(picture && (fat != 0 || dis!= 0 || call != 0|| smoke != 0|| abnorm != 0 || yawn != 0)){
 
             auto diff = chrono::duration_cast<std::chrono::milliseconds>(
                     std::chrono::steady_clock::now() - old);
             if(diff.count() > 10000L){
                 euDSMAlarmType warn = euDsmAlarmInit;
-                if(fat ==2 || yawn == 2)
+                if(fat != 0 || yawn != 0 )
                     warn = euFatigue;
-                if(call ==2)
+                if(call != 0)
                     warn = euCall;
-                if(smoke ==2)
+                if(smoke != 0)
                     warn = euSmoking;
-                if(dis ==2)
+                if(dis != 0)
                     warn = euDistract;
                 thread t(doi,warn);
                 t.detach();
@@ -184,7 +185,15 @@ Java_org_opencv_samples_tutorial2_DetectActitvity_FindFeatures2(JNIEnv *jniEnv, 
 //        if(dis != 0){
 //            cv::rectangle(*(Mat*)addrRgba,*bboxd,cv::Scalar(255,0,0),2);
 //        }
+//        if(!face_bbox.empty())
+//            cv::rectangle(*(Mat*)addrRgba, face_bbox, cv::Scalar(255,0,0), 1, 1);
 
+        if(landmarks.size() > 0){
+//            for (auto &p : landmarks) {
+//                cv::circle(*(Mat*)addrRgba, p, 1, cv::Scalar(0, 0, 255), 1, 1);
+//            }
+
+        }
 
 
     }
