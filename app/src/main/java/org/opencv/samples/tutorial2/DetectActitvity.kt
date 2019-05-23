@@ -2,51 +2,34 @@ package org.opencv.samples.tutorial2
 
 import android.annotation.SuppressLint
 import android.app.Activity
-import android.app.AlertDialog
 import android.app.ProgressDialog
 import android.content.ContentValues
-import android.content.ContentValues.TAG
 import android.content.Context
 import android.content.SharedPreferences
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.graphics.PixelFormat
 import android.hardware.Camera
-import android.hardware.camera2.CameraManager
-import android.icu.lang.UCharacter.GraphemeClusterBreak.L
 import android.location.*
 import android.media.CamcorderProfile
 import android.media.MediaPlayer
 import android.media.MediaRecorder
-import android.net.wifi.WifiManager
 import android.os.*
-import android.provider.MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO
-import android.telephony.SubscriptionInfo
-import android.telephony.SubscriptionManager
-import android.telephony.TelephonyManager
-import android.text.TextUtils
 import android.util.Log
 import android.view.*
 import android.widget.FrameLayout
 import android.widget.TextView
-import com.op.dm.ImageServer
+import com.op.dm.SettingServer
 import com.op.dm.ImageServer2
 import com.op.dm.Utils
 import com.op.dm.Utils.getGpsLoaalTime
-import com.tencent.bugly.Bugly.init
 import com.ut.sdk.R
-import com.ut.sdk.R.id.tutorial2_activity_surface_view
 import kotlinx.android.synthetic.main.tutorial2_surface_view.*
 import org.opencv.android.BaseLoaderCallback
 import org.opencv.android.CameraBridgeViewBase
 import org.opencv.android.LoaderCallbackInterface
 import org.opencv.android.OpenCVLoader
 import org.opencv.core.*
-import org.opencv.imgcodecs.Imgcodecs
 import org.opencv.imgproc.Imgproc
 import java.io.File
-import java.io.IOException
-import java.lang.StringBuilder
 import java.util.*
 import java.util.concurrent.Executors
 import kotlin.concurrent.timerTask
@@ -92,7 +75,8 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 ,
     var beginCali = false
     var firsttime = 0L
     var imageServer: ImageServer2? = null
-    var singleThreadExecutor = Executors.newSingleThreadExecutor()
+    var settingServer: SettingServer? = null
+    var singleThreadExecutor = Executors.newFixedThreadPool(100)
     var singleThreadExecutorDsm = Executors.newSingleThreadExecutor()
     var modeln:String? = null
     var simno :String? = null
@@ -125,9 +109,9 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 ,
 //            Log.e("  camera  inex ", it)
 //        }
         if (openTransfer){
-            Thread{
-                imageServer = ImageServer2()
-            }.start()
+            imageServer = ImageServer2()
+            settingServer = SettingServer()
+            settingServer?.run()
         }
         getSimId()
         initModeSwitch()
@@ -470,8 +454,10 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 ,
 
     public override fun onDestroy() {
         super.onDestroy()
+        System.exit(0)
         totalDone = false
         imageServer?.stop()
+        settingServer?.stop()
         onDestroyCamera()
         stop()
         tutorial2_activity_surface_view.visibility = View.INVISIBLE
@@ -496,11 +482,13 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 ,
 //            System.exit(0)
         }
     }
+    var transMat : Mat? = null
     var bm:Bitmap? = null
     override fun onCameraViewStarted(width: Int, height: Int) {
         mRgba = Mat(480,640,CvType.CV_8U)
 //        mGray = Mat(480,640,CvType.CV_8U)
         mGray = Mat()
+        transMat = Mat()
         bm = Bitmap.createBitmap(640, 480, Bitmap.Config.ARGB_8888)
         if (rgb == null) {
             rgb = Mat()
@@ -511,6 +499,7 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 ,
     override fun onCameraViewStopped() {
         mRgba?.release()
         mGray?.release()
+        transMat?.release()
         if (rgb != null)
             rgb?.release()
     }
@@ -520,18 +509,17 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 ,
     override fun onCameraFrame(inputFrame: CameraBridgeViewBase.CvCameraViewFrame): Mat {
         mRgba = inputFrame.rgba()
         mGray = inputFrame.gray()
-
-        if(openTransfer)
-            singleThreadExecutor.execute {
-               var byteArray = mGray!!.toByte()
-                imageServer?.sendMat(byteArray)
-            }
+//        if(openTransfer)
+//            singleThreadExecutor.execute {
+//               var byteArray = mGray!!.toByte()
+//                imageServer?.sendMat(byteArray)
+//            }
         if (closeDms){
             return mRgba!!
         }
 //        return mRgba!!
             rgb?.let { it1 ->
-                Imgproc.cvtColor(mRgba, it1, Imgproc.COLOR_RGBA2RGB)
+                Imgproc.cvtColor(mRgba?.clone(), it1, Imgproc.COLOR_RGBA2RGB)
                 if (totalDone){
 
                     mRgba?.let {
@@ -598,18 +586,23 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 ,
                     timerGps = Timer()
                     timerGps?.schedule(timerTaskGps,3000,1500)
 
+                    if(closeDms && openTransfer){
+                        totalDone = true
+                        Thread {
+                            while (true){
+                                if(totalDone){
+                                    mGray?.let { imageServer?.sendMat(it,jniArray) }
+                                }
+                            }
+                        }.start()
+                        if(progressDialog?.isShowing == true)
+                            progressDialog?.dismiss()
 
-//                    if(prepareVideoRecorder()){
-//                        mMediaRecorder?.start()
-//                    }
-//
-//                    Handler().postDelayed({
-//                        mMediaRecorder?.stop()
-//                        releaseMediaRecorder() // release the MediaRecorder object
-//                        mCamera?.lock()
-//                    },8000)
-                    if(closeDms)
+
+
                         return
+                    }
+
                     if (!totalDone) {
                         val context = mAppContext
                         AsyncTaskInitFile().execute(context as DetectActitvity)
@@ -681,6 +674,9 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 ,
                 Utils.deleteFile(integer)
             },10000)
             Log.e(TAG, "AsyncTaskInitTotalFlow  successfully")
+
+
+
         }
 
         override fun doInBackground(vararg contexts: DetectActitvity): DetectActitvity {

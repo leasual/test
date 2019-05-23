@@ -33,16 +33,16 @@ add_library( lib_opencv SHARED IMPORTED )
 set_target_properties(lib_opencv PROPERTIES IMPORTED_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/src/main/jniLibs/${ANDROID_ABI}/libopencv_java3.so)
 
 #dlib
-include_directories(src/main/cpp/algorithm/landmark/dlib/include)
+#include_directories(src/main/cpp/algorithm/landmark/dlib/include)
 add_library( libdlib STATIC IMPORTED )
 set_target_properties(libdlib PROPERTIES IMPORTED_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/src/main/jniLibs/${ANDROID_ABI}/libdlib.a)
-file(GLOB native_srcs7 "src/main/cpp/algorithm/landmark/dlib/src/*.cc")
+#file(GLOB native_srcs7 "src/main/cpp/algorithm/landmark/dlib/src/*.cc")
 
 #ncnn
-#include_directories(src/main/cpp/algorithm/landmark/fast-rcnn/include)
+include_directories(src/main/cpp/algorithm/landmark/fast-rcnn/include)
 add_library( lib_ncnn STATIC IMPORTED )
 set_target_properties(lib_ncnn PROPERTIES IMPORTED_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/src/main/jniLibs/${ANDROID_ABI}/libncnn.a)
-#file(GLOB native_srcs7 "src/main/cpp/algorithm/landmark/fast-rcnn/src/*.cc")
+file(GLOB native_srcs7 "src/main/cpp/algorithm/landmark/fast-rcnn/src/*.cc")
 
 #socket
 add_library( libmsg STATIC IMPORTED )
@@ -53,7 +53,6 @@ file(GLOB native_srcs "src/main/cpp/*.cpp" "src/main/cpp/*.cc")
 file(GLOB native_srcs2 "src/main/cpp/algorithm/align/src/*.cpp")
 file(GLOB native_srcs3 "src/main/cpp/algorithm/face_detection/src/*.cc")
 file(GLOB native_srcs4 "src/main/cpp/algorithm/faceid/src/*.cpp")
-#file(GLOB native_srcs5 "src/main/cpp/algorithm/gaze_tracking/src/*.cpp")
 file(GLOB native_srcs6 "src/main/cpp/algorithm/head_pose/src/*.cc")
 
 
@@ -61,7 +60,6 @@ file(GLOB native_srcs8 "src/main/cpp/algorithm/object_detection/rcnn/src/*.cc")
 file(GLOB native_srcs9 "src/main/cpp/algorithm/utilities/src/*.cc" "src/main/cpp/algorithm/utilities/src/*.cpp")
 file(GLOB native_srcs10 "src/main/cpp/dsm_strategy/*.cpp" "src/main/cpp/dsm_strategy/*.cc")
 file(GLOB native_srcs11 "src/main/cpp/dsm_strategy/utils/file/*.cpp" "src/main/cpp/dsm_strategy/utils/file/*.cc")
-#file(GLOB native_srcs12 "src/main/cpp/dsm_strategy/utils/time/*.cpp" "src/main/cpp/dsm_strategy/utils/time/*.cc")
 file(GLOB native_srcs13 "src/main/cpp/message/*.cpp")
 file(GLOB native_srcs14 "src/main/cpp/message/api/*.cpp")
 file(GLOB native_srcs15 "src/main/cpp/message/base/*.cpp")
