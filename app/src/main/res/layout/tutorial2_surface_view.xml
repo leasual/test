@@ -87,6 +87,14 @@
             android:gravity="center"
             android:textSize="17sp"
             android:textColor="@color/green" />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/speed"
+            android:textSize="17sp"
+            android:textColor="@color/green"
+            android:text="speed"
+            />
         <!--<TextView-->
             <!--android:id="@+id/calibrate"-->
             <!--android:layout_width="wrap_content"-->
@@ -133,5 +141,6 @@
         android:layout_gravity="right"
         android:visibility="gone"
         android:id="@+id/test_img"/>
+
 
 </FrameLayout>

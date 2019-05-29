@@ -90,6 +90,8 @@ dependencies {
     compile 'com.tencent.bugly:nativecrashreport:3.6.0.0'
 //    implementation files('src/main/libs/HorzonUtils_28_20190323_1820.jar')
 //    compile 'com.github.yangjie10930:EpMedia:v0.9.5'
+    compile 'org.zeromq:jeromq:0.4.0'
+
 }
 repositories {
     mavenCentral()

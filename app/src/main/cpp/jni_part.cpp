@@ -111,7 +111,7 @@ Java_org_opencv_samples_tutorial2_DetectActitvity_FindFeatures2(JNIEnv *jniEnv, 
 //        UT_TRACE("before Run  ");
         totalFlow->Run(*(Mat *) copyMat, *result);
         totalFlow->isSave = picture == JNI_TRUE;
-        int yawn, dis, fat, smoke, call, abnorm, unknown;
+        int yawn, dis, fat,fat2, smoke, call, abnorm, unknown;
         std::string showFaceid = "name : ";
         std::string distration = "dis  : ";
         std::string fatigue = "fat  : ";
@@ -132,7 +132,9 @@ Java_org_opencv_samples_tutorial2_DetectActitvity_FindFeatures2(JNIEnv *jniEnv, 
         else
             unknown = 0;
         result->GetDistraction(dis, *bboxd);//左右
-        result->GetFatigueFirst(fat, *bboxf);//分神
+        result->GetFatigueFirst(fat, *bboxf);//疲劳
+        result->GetFatigueSecond(fat2, *bboxf);//疲劳
+
         result->GetSmoke(smoke, *bboxs);
         result->GetCall(call, *bboxc);
         result->GetAbnormal(abnorm);
@@ -142,13 +144,13 @@ Java_org_opencv_samples_tutorial2_DetectActitvity_FindFeatures2(JNIEnv *jniEnv, 
 //        LOGE(" fat dis yawn   -------- %d, %d ,%d ",fat, dis, yawn);
 
 
-        if(picture && (fat != 0 || dis!= 0 || call != 0|| smoke != 0|| abnorm != 0 || yawn != 0)){
+        if(picture && (fat != 0 ||fat2 != 0 || dis!= 0 || call != 0|| smoke != 0|| abnorm != 0 || yawn != 0)){
 
             auto diff = chrono::duration_cast<std::chrono::milliseconds>(
                     std::chrono::steady_clock::now() - old);
             if(diff.count() > 10000L){
                 euDSMAlarmType warn = euDsmAlarmInit;
-                if(fat != 0 || yawn != 0 )
+                if(fat != 0 || yawn != 0 || fat2 != 0  )
                     warn = euFatigue;
                 if(call != 0)
                     warn = euCall;
@@ -166,7 +168,7 @@ Java_org_opencv_samples_tutorial2_DetectActitvity_FindFeatures2(JNIEnv *jniEnv, 
         re1 = jniEnv->NewIntArray(7);
         index2 = jniEnv->GetIntArrayElements(re1, NULL);
         index2[0] = dis;
-        index2[1] = fat;
+        index2[1] = fat==0 ?fat2:fat;
         index2[2] = smoke;
         index2[3] = call;
         index2[4] = abnorm;

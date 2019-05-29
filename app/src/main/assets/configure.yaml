@@ -5,7 +5,7 @@ distraction_threshold : 2          #判决时间， 单位:秒
 distraction_left_angle : 15        #基准向左偏移的角度,单位:度
 distraction_right_angle : -15      #基准向右偏移的角度,单位:度
 distraction_up_angle : -10         #基准向上偏移的角度,单位:度
-distraction_down_angle : 10        #基准向下偏移的角度,单位:度
+distraction_down_angle : 25        #基准向下偏移的角度,单位:度
 distraction_video_times : 5        #前后视频录制时间：单位秒，取值范围0~60，默认5
 distraction_photo_numbers : 3      #拍照张数：取值范围0~10，默认3，0表示不抓拍
 distraction_photo_interval : 2     #拍照间隔：单位100ms，取值范围1~5，默认2
