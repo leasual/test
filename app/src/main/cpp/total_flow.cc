@@ -300,13 +300,18 @@ void TotalFlow::ProcessPictureThread() {
                     strftime(str, 1000, "%Y-%m-%d %H-%M-%S", &p);
                     queue<string> queue1;
 
+                    int yawn, dis, fat,fat2, smoke, call, abnorm, unknown;
+                    result_.GetDistraction(dis, bboxd);//左右
+                    result_.GetFatigueFirst(fat, bboxf);//疲劳
+                    result_.GetFatigueSecond(fat2, bboxf);//疲劳
 
-                    int dis, fat, smoke, call, abnorm;
-                    result_.GetDistraction(dis, bboxd);
-                    result_.GetFatigueFirst(fat, bboxf);
                     result_.GetSmoke(smoke, bboxs);
                     result_.GetCall(call, bboxc);
                     result_.GetAbnormal(abnorm);
+                    result_.GetYawn(yawn);//haqi
+
+
+
                     result_.GetFaceId(faceid);
 
                     if (faceid == "UnknowFace")
@@ -315,48 +320,50 @@ void TotalFlow::ProcessPictureThread() {
                         unknown = 0;
 
 
-                    if (dis == 2) {
+                    if (dis != 0) {
                         currentPath = pathDis;
-                    } else if (call == 2) {
+                    } else if (call != 0) {
                         currentPath = pathCall;
-                    } else if (fat == 2) {
+                    } else if (fat != 0 || fat2 != 0) {
                         currentPath = pathFat;
-                    } else if (smoke == 2) {
+                    } else if (yawn != 0) {
+                        currentPath = pathYawn;
+                    }else if (smoke != 0) {
                         currentPath = pathSmoke;
-                    } else if (abnorm == 2) {
+                    } else if (abnorm != 0) {
                         currentPath = pathAbnormal;
-                    } else if (unknown == 2) {
+                    } else if (unknown != 0) {
                         currentPath = pathUnknow;
                     } else
                         currentPath = path;
 
 //                    LOGE("warning --  fat %d,dis %d,call %d,", fat,dis,call);
 
-                    cv::putText(frame, distration + to_string(dis), cv::Point(10, 10),
-                                1, 1, cv::Scalar(122, 255, 50));
-                    cv::putText(frame, fatigue + to_string(fat), cv::Point(10, 25), 1,
-                                1, cv::Scalar(122, 255, 50));
-                    cv::putText(frame, showSmoke + to_string(smoke),
-                                cv::Point(10, 40), 1, 1, cv::Scalar(122, 255, 50));
-                    cv::putText(frame, showCall + to_string(call), cv::Point(10, 55),
-                                1, 1, cv::Scalar(122, 255, 50));
-                    cv::putText(frame, showAbnorm + to_string(abnorm),
-                                cv::Point(10, 70), 1, 1, cv::Scalar(122, 255, 50));
-                    cv::putText(frame, "id :" + faceid,
-                                cv::Point(10, 85), 1, 1, cv::Scalar(122, 255, 50));
-
-                    if (fat != 0) {
-                        cv::rectangle(frame, bboxf, cv::Scalar(255, 0, 0), 2);
-                    }
-                    if (dis != 0) {
-                        cv::rectangle(frame, bboxd, cv::Scalar(255, 0, 0), 2);
-                    }
-                    if (smoke != 0) {
-                        cv::rectangle(frame, bboxs, cv::Scalar(255, 0, 0), 2);
-                    }
-                    if (call != 0) {
-                        cv::rectangle(frame, bboxc, cv::Scalar(255, 0, 0), 2);
-                    }
+//                    cv::putText(frame, distration + to_string(dis), cv::Point(10, 10),
+//                                1, 1, cv::Scalar(122, 255, 50));
+//                    cv::putText(frame, fatigue + to_string(fat), cv::Point(10, 25), 1,
+//                                1, cv::Scalar(122, 255, 50));
+//                    cv::putText(frame, showSmoke + to_string(smoke),
+//                                cv::Point(10, 40), 1, 1, cv::Scalar(122, 255, 50));
+//                    cv::putText(frame, showCall + to_string(call), cv::Point(10, 55),
+//                                1, 1, cv::Scalar(122, 255, 50));
+//                    cv::putText(frame, showAbnorm + to_string(abnorm),
+//                                cv::Point(10, 70), 1, 1, cv::Scalar(122, 255, 50));
+//                    cv::putText(frame, "id :" + faceid,
+//                                cv::Point(10, 85), 1, 1, cv::Scalar(122, 255, 50));
+//
+//                    if (fat != 0) {
+//                        cv::rectangle(frame, bboxf, cv::Scalar(255, 0, 0), 2);
+//                    }
+//                    if (dis != 0) {
+//                        cv::rectangle(frame, bboxd, cv::Scalar(255, 0, 0), 2);
+//                    }
+//                    if (smoke != 0) {
+//                        cv::rectangle(frame, bboxs, cv::Scalar(255, 0, 0), 2);
+//                    }
+//                    if (call != 0) {
+//                        cv::rectangle(frame, bboxc, cv::Scalar(255, 0, 0), 2);
+//                    }
 
                     string file = currentPath + str + "-" + to_string(milli) + ".png";
 //                    auto end1 = std::chrono::steady_clock::now();

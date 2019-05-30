@@ -156,6 +156,8 @@ public class Utils {
                 initDir(pathabnor);
                 String pathaUnknown = path + "/unknown";
                 initDir(pathaUnknown);
+                String pathaYawn = path + "/yawn";
+                initDir(pathaYawn);
             }
             String[] files = context.getAssets().list("");
             String storePathRoot = context.getExternalFilesDir(null).getAbsolutePath() == null ? context.getFilesDir().getAbsolutePath() : context.getExternalFilesDir(null).getAbsolutePath();

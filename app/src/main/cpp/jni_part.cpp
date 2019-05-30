@@ -167,8 +167,8 @@ Java_org_opencv_samples_tutorial2_DetectActitvity_FindFeatures2(JNIEnv *jniEnv, 
 
         re1 = jniEnv->NewIntArray(7);
         index2 = jniEnv->GetIntArrayElements(re1, NULL);
-        index2[0] = dis;
-        index2[1] = fat==0 ?fat2:fat;
+        index2[0] = dis;//zuoguyoupan
+        index2[1] = fat==0 ?fat2:fat;//pilao
         index2[2] = smoke;
         index2[3] = call;
         index2[4] = abnorm;
@@ -354,6 +354,8 @@ Java_org_opencv_samples_tutorial2_DetectActitvity_FindFeatures(JNIEnv *jniEnv, j
         totalFlow->pathSmoke = path + "smoke/";
         totalFlow->pathAbnormal = path + "abnormal/";
         totalFlow->pathUnknow = path + "unknown/";
+        totalFlow->pathYawn= path + "yawn/";
+
 //        time_t nSrc;
 //        nSrc = addrGray - time(NULL);
 //        totalFlow->time_diff = nSrc;

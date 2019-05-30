@@ -179,8 +179,11 @@ public:
     ~TotalFlow();
     bool isSave = true;
     string path = "/storage/sdcard1/img/";
+
     string pathDis = "/storage/sdcard1/distract/";
     string pathFat = "/storage/sdcard1/fat/";
+    string pathYawn = "/storage/sdcard1/yawn/";
+
     string pathCall = "/storage/sdcard1/call/";
     string pathSmoke = "/storage/sdcard1/smoke/";
     string pathAbnormal = "/storage/sdcard1/abnormal/";
