@@ -33,7 +33,9 @@ import org.opencv.android.OpenCVLoader
 import org.opencv.core.CvType
 import org.opencv.core.Mat
 import org.opencv.imgproc.Imgproc
+import java.io.BufferedWriter
 import java.io.File
+import java.io.FileWriter
 import java.util.*
 import java.util.concurrent.Executors
 import kotlin.concurrent.timerTask
@@ -45,7 +47,7 @@ import kotlin.concurrent.timerTask
 class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2, SurfaceHolder.Callback {
     var openFront = true
     var switchMode = false
-    var openTransfer = false
+    var openTransfer = true
     var closeDms = false
     var camerFront = 0
     var camerFace = 1
@@ -113,8 +115,9 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2, 
 //        }
         if (openTransfer){
             imageServer = ImageServer2()
-            settingServer = SettingServer()
+            settingServer = SettingServer.instance
             settingServer?.run()
+            settingServer?.loadParam(this)
         }
         getSimId()
         initModeSwitch()
@@ -140,9 +143,9 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2, 
         timerTask = kotlin.concurrent.timerTask {
             //TODO::加上换卡创建文件夹
             var size = Utils.getSDAvailableSize(this@DetectActitvity)
-            save = size > 500
+            save = size > 100
             Log.e(" save  ", save.toString())
-            if (size > 0 && size < 500 && !(sdPlayer?.isPlaying() ?: false)) {
+            if (size in 1..99 && sdPlayer?.isPlaying != true) {
                 runOnUiThread {
                     sdPlayer?.start()
                 }
@@ -374,6 +377,14 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2, 
 
         }
         if (time > 4000) {
+            if(settingServer?.data?.beans?.size?:0 > 6){
+                var bean = settingServer?.data?.beans?.get(index)
+                if(bean?.checked == false){
+                    Log.e("stop playing- ", names[index])
+                    return
+                }
+            }
+
             players[index]?.apply {
                 if (!this.isPlaying) {
                     lastTime[0] = System.currentTimeMillis()
@@ -629,7 +640,6 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2, 
                     timerGps?.schedule(timerTaskGps, 3000, 100)
 
                     if(openTransfer) {
-                        totalDone = true
                         Thread {
                             while (true) {
                                 if (totalDone) {
@@ -677,6 +687,17 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2, 
 
             integer.timerTaskMsg = timerTask {
                 integer.OnMessage(integer.lati, integer.longi, integer.alti, integer.speeds, false)
+                var path = "/sdcard/Dmsinfo.txt"
+                var out = if(File(path).exists()){
+                    BufferedWriter(FileWriter(path, true))
+                }else{
+                    BufferedWriter(FileWriter(path))
+                }
+
+
+                out.newLine()
+                out.write("time: " + Utils.time() + "  latitude :"+ integer.lati + "  longitude :"+ integer.longi + "  speed :"+ integer.speeds)
+                out.close()
             }
             integer.timerMsg = Timer()
             integer.timerMsg?.schedule(integer.timerTaskMsg, 5000, 900)
@@ -742,10 +763,10 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2, 
     external fun OnMessage(lati: Long, alti: Long, height: Int, speed: Short, gps: Boolean): Boolean
     //    external fun CHECK(mac:String)
     external fun FindFeatures(matAddrGr: Long, index: Int)
-
     external fun Cali(matAddrGr: Long, index: Int)
     external fun Detect(matAddrGr: Long, index: Int)
     external fun FindFeatures2(matAddrGr: Long, matAddrRgba: Long, time: Boolean, save: Boolean): IntArray
+
 
     companion object {
         private const val TAG = "OCVSample::Activity"
@@ -802,8 +823,8 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2, 
         }
 
 
-        val imagesFolder = File(
-                Environment.getExternalStorageDirectory(), "frontVideo")
+
+        val imagesFolder = File("/storage/sdcard1/frontVideo")
         if (!imagesFolder.exists())
             imagesFolder.mkdirs() // <----
         Log.e("folder ", imagesFolder.path)

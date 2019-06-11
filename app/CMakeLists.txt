@@ -34,15 +34,15 @@ set_target_properties(lib_opencv PROPERTIES IMPORTED_LOCATION ${CMAKE_CURRENT_SO
 
 #dlib
 include_directories(src/main/cpp/algorithm/landmark/dlib/include)
+file(GLOB native_srcs7 "src/main/cpp/algorithm/landmark/dlib/src/*.cc")
 add_library( libdlib STATIC IMPORTED )
 set_target_properties(libdlib PROPERTIES IMPORTED_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/src/main/jniLibs/${ANDROID_ABI}/libdlib.a)
-file(GLOB native_srcs7 "src/main/cpp/algorithm/landmark/dlib/src/*.cc")
 
 #ncnn
 #include_directories(src/main/cpp/algorithm/landmark/fast-rcnn/include)
+#file(GLOB native_srcs7 "src/main/cpp/algorithm/landmark/fast-rcnn/src/*.cc")
 add_library( lib_ncnn STATIC IMPORTED )
 set_target_properties(lib_ncnn PROPERTIES IMPORTED_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/src/main/jniLibs/${ANDROID_ABI}/libncnn.a)
-#file(GLOB native_srcs7 "src/main/cpp/algorithm/landmark/fast-rcnn/src/*.cc")
 
 #socket
 add_library( libmsg STATIC IMPORTED )

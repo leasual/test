@@ -1,5 +1,6 @@
 package com.op.dm
 
+import com.google.gson.Gson
 import org.opencv.core.Mat
 import org.zeromq.ZContext
 import org.zeromq.ZMQ
@@ -10,15 +11,14 @@ class ImageServer2 {
     var thread:Thread? = null
     var run = false
     var timeControl = 0L
+    val gson = Gson()
 
     constructor(){
         Thread{
             var contex = ZContext()
-            socket = contex.createSocket(ZMQ.DEALER)
+            socket = contex.createSocket(ZMQ.PUSH)
             socket?.bind("tcp://*:6600")
         }.start()
-
-
     }
 
     fun sendMat(data :Mat,status:IntArray){
@@ -32,7 +32,9 @@ class ImageServer2 {
         status?.forEach {
             buffer.append(it)
         }
-        buffer.replace(0,1,"2")
+        buffer.append(":")
+        buffer.append(gson.toJson(SettingServer.instance.data))
+//        buffer.replace(0,1,"2")
         socket?.send(buffer.toString())
 //        var receive = socket?.recvStr()
 //        Log.e("receive :", receive)

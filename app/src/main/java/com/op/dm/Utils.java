@@ -1,15 +1,10 @@
 package com.op.dm;
 
-import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.Context;
-import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
 import android.os.StatFs;
 import android.os.storage.StorageManager;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.ContextCompat;
-import android.telephony.TelephonyManager;
 import android.util.Log;
 
 import org.opencv.core.Mat;
@@ -28,6 +23,7 @@ import java.lang.reflect.Method;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
 
 /**
  * Created by chris on 12/10/18.
@@ -132,6 +128,21 @@ public class Utils {
 
 
 
+    }
+
+    public static String time(){
+        long time=System.currentTimeMillis();
+        SimpleDateFormat format=new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        Date d1 = new Date(time);
+        return format.format(d1);
+    }
+
+    public static String time2(){
+        long time=System.currentTimeMillis();
+        SimpleDateFormat format=new SimpleDateFormat("MM-dd-HH:mm");
+        Date d1 = new Date(time);
+        Log.e("时间戳 ：" , format.format(d1));
+        return format.format(d1);
     }
 
 

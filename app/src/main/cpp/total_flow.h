@@ -174,6 +174,17 @@ private:
 
 class TotalFlow {
 public:
+    enum JudgerParam
+    {
+        SMOKEJUDGER,
+        CALLJUDGER,
+        CLOSEEYEJUDGER,
+        OPENMOUTHJUDGER,
+        HEADLEFTRIGHTJUDGER,
+        HEADUPDOWNJUDGER
+        //DRIVERABNORMAL,
+        //IMGABNORAML
+    };
     /// \brief 构造函数
     explicit TotalFlow(const std::string& path);
     ~TotalFlow();
@@ -194,7 +205,6 @@ public:
     int index = 0;
     long time_diff = 0;
     std::thread process_picture_thread_;
-
     /// \brief 程序运行入口
     void Run(cv::Mat& frame, Result& result);
 
@@ -206,6 +216,11 @@ public:
         lock_guard<mutex>lock_guard(result_mutex_);
         result_.SetSpeed(speed);
     }
+
+    /// \brief 设置参数的接口 参数值 5>  threshold <100 表示 0.5s -- 10s
+    /// \brief 设置成功返回true 否则返回false
+    bool SetJudgerParam(JudgerParam judder, size_t threshold);
+
 private:
     /// \brief 用于处理图像的线程
     void ProcessImageThread();
@@ -265,7 +280,7 @@ private:
     Judger call_judger_;                //打电话检测
     Judger open_mouth_judger_;          //打哈欠检测
     Judger head_left_right_judger_;     //左顾右盼检测
-    DistractJudger close_eye_judger_;           //闭眼检测
+        DistractJudger close_eye_judger_;           //闭眼检测
     DistractJudger head_up_down_judger_;        //低头仰头检测
 
     /// 以下为在图像中检测到的有效信息,用于各种策略判断

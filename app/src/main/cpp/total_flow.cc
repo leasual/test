@@ -46,22 +46,22 @@ TotalFlow::TotalFlow(const std::string& path) :
 
     result_.SetParam(config_.alarm_interval_, config_.speed_threshold_);
 
-    smoke_judger_.SetParam(config_.process_fps_ * 5,
+    smoke_judger_.SetParam(config_.process_fps_ * 10,
                            config_.process_fps_ * config_.smoke_threshold_);
-    call_judger_.SetParam(config_.process_fps_ * 5,
+    call_judger_.SetParam(config_.process_fps_ * 10,
                           config_.process_fps_ * config_.call_threshold_);
-    close_eye_judger_.SetParam(config_.process_fps_ * 5,
+    close_eye_judger_.SetParam(config_.process_fps_ * 10,
                                config_.process_fps_ * config_.fatigue_threshold_,
                                config_.process_fps_ * 2);
-    open_mouth_judger_.SetParam(config_.process_fps_ * 5,
+
+    open_mouth_judger_.SetParam(config_.process_fps_ * 10,
                                 config_.process_fps_ * config_.yawn_threshold_);
-    head_left_right_judger_.SetParam(config_.process_fps_ * 5,
+    head_left_right_judger_.SetParam(config_.process_fps_ * 10,
                                      config_.process_fps_ * config_.distraction_threshold_);
-    head_up_down_judger_.SetParam(config_.process_fps_ * 5,
+    head_up_down_judger_.SetParam(config_.process_fps_ * 10,
                                   config_.process_fps_ * config_.fatigue_threshold_,
                                   config_.process_fps_ * 2);
 }
-
 
 /**
  * 检测frame中的人脸信息
@@ -187,7 +187,6 @@ bool TotalFlow::DetectFrame(const cv::Mat &image) {
     return true;
 }
 
-
 void CropAndResize(cv::Mat& src) {
     if (src.cols != 1280) {
         return;
@@ -200,10 +199,6 @@ void CropAndResize(cv::Mat& src) {
     src = src(bb);
     cv::resize(src,src,cv::Size(640,480));
 }
-
-
-
-
 
 /**
  * 程序运行入口
@@ -220,7 +215,7 @@ void TotalFlow::Run(cv::Mat& frame, Result& result) {
         LoadFeature();
         if(Features_.empty()) {
             std::cerr << "Please register first!" << std::endl;
-            std::abort();
+            //std::abort();
         }
         name_ = NoFace;
         process_image_thread_ = thread(mem_fn(&TotalFlow::ProcessImageThread), this);
@@ -411,7 +406,6 @@ void TotalFlow::ProcessImageThread() {
         RunProcess();
         auto time_cost = std::chrono::duration_cast<std::chrono::milliseconds>(
                 std::chrono::steady_clock::now()-beg).count();
-        LOGE("RunProcess cost %ld",time_cost);
         auto control_fps_cost = 1000 / config_.process_fps_;
 //        std::cout << "process sleep : " << control_fps_cost-time_cost << std::endl;
         if(control_fps_cost > time_cost)
@@ -420,7 +414,6 @@ void TotalFlow::ProcessImageThread() {
     std::cout << "keep_running_flag_ : " << keep_running_flag_ << std::endl;
     std::abort();
 }
-
 
 /**
  * 根据当前运行阶段,执行不同的程序
@@ -450,6 +443,7 @@ void TotalFlow::RunProcess() {
 /**
  * 程序主函数
  */
+
 void TotalFlow::RunMainStep() {
     float pitch = angles_[0];
     float yaw = angles_[1];
@@ -711,3 +705,49 @@ bool TotalFlow::RegistFeature(cv::Mat &frame, const string &name) {
     return FaceIDRun(name);
 }
 
+bool TotalFlow::SetJudgerParam(JudgerParam judder, size_t threshold)
+{
+    if( threshold<5 || threshold>100 )
+    {
+        return false;
+    }
+    switch(judder)
+    {
+        case SMOKEJUDGER:
+        {
+            smoke_judger_.SetThresholdParam(threshold);
+        }
+        break;
+        case CALLJUDGER:
+        {
+            call_judger_.SetThresholdParam(threshold);
+        }
+        break;
+        case CLOSEEYEJUDGER:
+        {
+            close_eye_judger_.SetThresholdParam(threshold);
+        }
+        break;
+        case OPENMOUTHJUDGER:
+        {
+            open_mouth_judger_.SetThresholdParam(threshold);
+        }
+        break;
+        case HEADLEFTRIGHTJUDGER:
+        {
+            head_left_right_judger_.SetThresholdParam(threshold);
+        }
+        break;
+        case HEADUPDOWNJUDGER:
+        {
+            head_up_down_judger_.SetThresholdParam(threshold);
+        }
+        break;
+        default:
+        {
+            return  false;
+        }
+    }
+    return true;
+
+}

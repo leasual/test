@@ -11,6 +11,7 @@
 class Judger{
 public:
     void SetParam(size_t size, size_t threshold){ size_ = size; threshold_ = threshold;}
+    void SetThresholdParam(size_t threshold){ threshold_ = threshold;}
     bool Detect(bool state);
 
 protected:

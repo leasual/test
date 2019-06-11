@@ -11,7 +11,7 @@ bool Judger::Detect(bool state) {
 
     int count = 0;
     for(auto iter = states_.rbegin() ; iter != states_.rend(); ++iter){
-        if(*iter){ if(++count > threshold_) return true;}//
+        if(*iter){ if(++count >= threshold_) return true;}//
         else break;
     }
     return false;

@@ -25,8 +25,8 @@ android {
 //                        "-DANDROID_PLATFORM=android-24"
                 abiFilters  'arm64-v8a'
 //                        'armeabi-v7a'
-                arguments '-DANDROID_STL=gnustl_static ',
-                            "-DCMAKE_BUILD_TYPE=Release"
+                arguments '-DANDROID_STL=gnustl_static '
+//                            "-DCMAKE_BUILD_TYPE=Release"
 //                arguments '-DANDROID_STL=c++_shared',
 //                          '-DANDROID_TOOLCHAIN=gcc'
 //                arguments '-DANDROID_STL=gnustl_shared'
@@ -91,7 +91,7 @@ dependencies {
 //    implementation files('src/main/libs/HorzonUtils_28_20190323_1820.jar')
 //    compile 'com.github.yangjie10930:EpMedia:v0.9.5'
     compile 'org.zeromq:jeromq:0.4.0'
-
+    implementation 'com.google.code.gson:gson:2.8.5'
 }
 repositories {
     mavenCentral()

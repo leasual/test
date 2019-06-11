@@ -142,7 +142,7 @@ Java_org_opencv_samples_tutorial2_DetectActitvity_FindFeatures2(JNIEnv *jniEnv, 
         result->GetLandmarks(landmarks);
         result->GetFaceBbox(face_bbox);
 //        LOGE(" fat dis yawn   -------- %d, %d ,%d ",fat, dis, yawn);
-
+        //totalFlow->SetJudgerParam(TotalFlow::SMOKEJUDGER,40);
 
         if(picture && (fat != 0 ||fat2 != 0 || dis!= 0 || call != 0|| smoke != 0|| abnorm != 0 || yawn != 0)){
 
@@ -158,6 +158,7 @@ Java_org_opencv_samples_tutorial2_DetectActitvity_FindFeatures2(JNIEnv *jniEnv, 
                     warn = euSmoking;
                 if(dis != 0)
                     warn = euDistract;
+
                 thread t(doi,warn);
                 t.detach();
             }
@@ -210,7 +211,6 @@ Java_org_opencv_samples_tutorial2_DetectActitvity_FindFeatures2(JNIEnv *jniEnv, 
 //                cv::Scalar(122, 255, 50));
 //    cv::putText(*(Mat*)addrRgba, to_string(totalFlow->keep_running_flag_), cv::Point(220,130),1,1,cv::Scalar(122,255,50));
 
-
     return re1;
 }
 
@@ -228,6 +228,48 @@ Java_org_opencv_samples_tutorial2_DetectActitvity_stop(JNIEnv *jniEnv, jobject) 
     CDsmJTT808_API::GetInstance()->StopTimer();
     CDsmJTT808_API::GetInstance()->Destroy();
 //    std::abort();
+}
+const int frame = 6;
+JNIEXPORT void JNICALL
+Java_com_op_dm_SettingServer_SetParam(JNIEnv *jniEnv, jobject,jint param, jint value) {
+    if (totalFlow != nullptr) {
+        if(param > 4)
+            return;
+        TotalFlow::JudgerParam  type = TotalFlow::SMOKEJUDGER;
+        switch(param)
+        {
+            case 0:
+            {
+               type = TotalFlow::SMOKEJUDGER;
+            }
+                break;
+            case 1:
+            {
+                type = TotalFlow::CALLJUDGER;
+            }
+                break;
+            case 2:
+            {
+                type = TotalFlow::CLOSEEYEJUDGER;
+                totalFlow->SetJudgerParam(TotalFlow::HEADUPDOWNJUDGER, size_t(value * frame));
+            }
+                break;
+            case 3:
+
+            {
+                type = TotalFlow::OPENMOUTHJUDGER;
+            }
+                break;
+            case 4:
+            {
+                type = TotalFlow::HEADLEFTRIGHTJUDGER;
+            }
+                break;
+        }
+        LOGE(" param type is %d , %d value is %d ", param, type, value);
+        totalFlow->SetJudgerParam(type, size_t(value*frame));
+    }
+
 }
 
 string js2string(JNIEnv *env, jstring jStr){
