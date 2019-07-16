@@ -20,6 +20,20 @@ std::string to_string(T value) {
     return os.str();
 }
 
+void resize(cv::Mat& src) {
+    LOGE("resize col %d",src.cols);
+//    if (src.cols != 1280) {
+//        return;
+//    }
+    if (src.cols != 640) {
+        return;
+    }
+
+    cv::Rect bb(121,91,400,300);
+    src = src(bb);
+    cv::resize(src,src,cv::Size(320,240));
+}
+
 extern "C" {
 
 
@@ -68,13 +82,19 @@ Java_org_opencv_samples_tutorial2_DetectActitvity_Cali(JNIEnv *jniEnv, jobject o
     bool done = *caliDone;
     if (totalFlow != nullptr && !done) {
 //        LOGE(" Calibration");
+
+        resize(*(Mat *) copyMat);
+
+        int ran = rand();
+
+//        cv::imwrite("/sdcard/imgs/" + to_string(ran) + ".png",*(Mat *) copyMat);
+
         if (totalFlow->Calibration(*(Mat *) copyMat)) {
             *caliDone = true;
             jclass cl = jniEnv->FindClass("org/opencv/samples/tutorial2/DetectActitvity");
             jmethodID meth = jniEnv->GetMethodID(cl, "caliDone", "()V");
             jniEnv->CallVoidMethod(obj, meth);
 //            LOGE(" Calibration is %d", *caliDone);
-
         }
     }
 }
@@ -85,6 +105,9 @@ Java_org_opencv_samples_tutorial2_DetectActitvity_Detect(JNIEnv *jniEnv, jobject
 //    LOGE("before!!! RegistFeature is %d", *featureNum);
     bool ndone = (*featureNum < 25);
     if (totalFlow != nullptr && (*caliDone) && ndone) {
+
+        resize(*(Mat *) copyMat);
+
 //        LOGE(" RegistFeature");
         if (totalFlow->RegistFeature(*(Mat *) copyMat)) {
             *featureNum = *featureNum + 1;
@@ -100,6 +123,8 @@ Java_org_opencv_samples_tutorial2_DetectActitvity_Detect(JNIEnv *jniEnv, jobject
 }
 
 
+
+
 JNIEXPORT jintArray JNICALL
 Java_org_opencv_samples_tutorial2_DetectActitvity_FindFeatures2(JNIEnv *jniEnv, jobject obj,
                                                                 jlong copyMat, jlong addrRgba,
@@ -108,7 +133,12 @@ Java_org_opencv_samples_tutorial2_DetectActitvity_FindFeatures2(JNIEnv *jniEnv, 
     jint *index2;
     if (totalFlow != nullptr && (*caliDone) && ((*featureNum) >= 25)) {
 
-//        UT_TRACE("before Run  ");
+        LOGE("before Run  ");
+        resize(*(Mat *) copyMat);
+
+        int ran = rand();
+
+//        cv::imwrite("/sdcard/imgs/" + to_string(ran) + ".png",*(Mat *) copyMat);
         totalFlow->Run(*(Mat *) copyMat, *result);
         totalFlow->isSave = picture == JNI_TRUE;
         int yawn, dis, fat,fat2, smoke, call, abnorm, unknown;
@@ -175,13 +205,14 @@ Java_org_opencv_samples_tutorial2_DetectActitvity_FindFeatures2(JNIEnv *jniEnv, 
         index2[4] = abnorm;
         index2[5] = unknown;
         index2[6] = yawn;
-        if (smoke != 0) {
-            cv::rectangle(*(Mat *) addrRgba, *bboxs, cv::Scalar(255, 1, 1), 1);
-        }
-        if (call != 0) {
-             LOGE(" call box   --------  %d ",bboxc->width);
-            cv::rectangle(*(Mat *) addrRgba, *bboxc, cv::Scalar(255, 1, 1), 1);
-        }
+
+//        if (smoke != 0) {
+//            cv::rectangle(*(Mat *) addrRgba, *bboxs, cv::Scalar(255, 1, 1), 1);
+//        }
+//        if (call != 0) {
+//             LOGE(" call box   --------  %d ",bboxc->width);
+//            cv::rectangle(*(Mat *) addrRgba, *bboxc, cv::Scalar(255, 1, 1), 1);
+//        }
 //        if( fat != 0){
 //            cv::rectangle(*(Mat*)addrRgba,*bboxf,cv::Scalar(255,0,0),2);
 //        }
@@ -195,7 +226,6 @@ Java_org_opencv_samples_tutorial2_DetectActitvity_FindFeatures2(JNIEnv *jniEnv, 
 //            for (auto &p : landmarks) {
 //                cv::circle(*(Mat*)addrRgba, p, 1, cv::Scalar(0, 0, 255), 1, 1);
 //            }
-
         }
 
 
@@ -389,6 +419,7 @@ Java_org_opencv_samples_tutorial2_DetectActitvity_FindFeatures(JNIEnv *jniEnv, j
         string path = "/storage/sdcard1/img" + to_string(index) + "/";
 
 //        string path = "/sdcard/img"+ to_string(index) + "/";
+
         totalFlow->path = path;
         totalFlow->pathDis = path + "distract/";
         totalFlow->pathFat = path + "fat/";

@@ -97,7 +97,8 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2, 
 
         firsttime = System.currentTimeMillis()
         locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager?
-        location = locationManager?.getLastKnownLocation(locationManager?.getBestProvider(getCriteria(), true))
+        locationManager?.getBestProvider(getCriteria(), true)?.let { location = locationManager?.getLastKnownLocation(it) }
+
 
         views = arrayOf(dis, fat, smoke, call, abnm, unknown, yawn)
         mode = getPreferences(Context.MODE_PRIVATE).getLong("mode", 0L)
@@ -127,6 +128,7 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2, 
             setCvCameraViewListener(this@DetectActitvity)
             setCameraIndex(camerFace)
             setMaxFrameSize(640, 480)
+//            setMaxFrameSize(1280, 720)
         }
 
 
@@ -269,8 +271,8 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2, 
 
         override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) {
             var loc: Location? = getLastKnownLocation()
-            Log.e(ContentValues.TAG, "onLocationChanged time is " + getGpsLoaalTime(loc?.time ?: 0))
-            Log.e(ContentValues.TAG, "onLocationChanged lat is " + loc?.latitude)
+//            Log.e(ContentValues.TAG, "onLocationChanged time is " + getGpsLoaalTime(loc?.time ?: 0))
+//            Log.e(ContentValues.TAG, "onLocationChanged lat is " + loc?.latitude)
 
         }
 
@@ -327,9 +329,9 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2, 
                         speeds = (speed.toShort()*3.6).toShort()
                     }
                 }
-                Log.e(ContentValues.TAG, " time is " + getGpsLoaalTime(l.time
-                        ?: 0) + " type- " + provider)
-                Log.e(ContentValues.TAG, " gps is " + l.latitude + "  " + l.longitude + " type- " + provider + " speed " + l.speed)
+//                Log.e(ContentValues.TAG, " time is " + getGpsLoaalTime(l.time
+//                        ?: 0) + " type- " + provider)
+//                Log.e(ContentValues.TAG, " gps is " + l.latitude + "  " + l.longitude + " type- " + provider + " speed " + l.speed)
 
             }
         }
@@ -531,6 +533,7 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2, 
     }
     var transMat : Mat? = null
     var bm:Bitmap? = null
+
     override fun onCameraViewStarted(width: Int, height: Int) {
         mRgba = Mat(480, 640, CvType.CV_8U)
 //        mGray = Mat(480,640,CvType.CV_8U)

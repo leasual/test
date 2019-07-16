@@ -276,7 +276,7 @@ public class Utils {
                 }
             } else {//如果是文件
                 File temp = new File(storagePath);
-                if(temp.exists()){
+                if(temp.exists() && !temp.getName().contains("configure.yaml")){
 //                    Log.e("tag",  temp.getAbsolutePath() + " is exist --");
                     return;
                 }

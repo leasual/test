@@ -54,8 +54,17 @@
 
 
 
+        <!--<activity-->
+            <!--android:name="org.opencv.samples.tutorial2.DetectActitvity"-->
+            <!--android:screenOrientation="landscape">-->
+            <!--<intent-filter>-->
+                <!--<action android:name="android.intent.action.MAIN" />-->
+                <!--<category android:name="android.intent.category.LAUNCHER" />-->
+            <!--</intent-filter>-->
+        <!--</activity>-->
+
         <activity
-            android:name="org.opencv.samples.tutorial2.DetectActitvity"
+            android:name="com.example.android.camera2video.MainAct2"
             android:screenOrientation="landscape">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -64,7 +73,7 @@
         </activity>
 
 
-        <receiver android:name="com.op.MyReceiver"
+        <receiver android:name="com.example.android.camera2video.MyReceiver2"
             android:enabled="true"
             android:exported="true"
             android:permission="android.permission.RECEIVE_BOOT_COMPLETED">

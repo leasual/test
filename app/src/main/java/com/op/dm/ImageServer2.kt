@@ -16,7 +16,7 @@ class ImageServer2 {
     constructor(){
         Thread{
             var contex = ZContext()
-            socket = contex.createSocket(ZMQ.PUSH)
+            socket = contex.createSocket(ZMQ.DEALER)
             socket?.bind("tcp://*:6600")
         }.start()
     }
