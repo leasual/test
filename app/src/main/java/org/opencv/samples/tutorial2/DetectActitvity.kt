@@ -250,6 +250,7 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2, 
     var locationListener = object : LocationListener {
 
         private var mLastLocation: Location? = null
+
         override fun onLocationChanged(location: Location?) {
             var speed = 0.0
             location?.apply {
@@ -853,10 +854,8 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2, 
         mediaRecorder?.stop()
         mediaRecorder?.reset()
         mediaRecorder?.release()
-
         camera?.lock()
         camera?.release()
-
 //        windowManager.removeView(surfaceView)
     }
 

@@ -311,28 +311,14 @@ string js2string(JNIEnv *env, jstring jStr){
 
 JNIEXPORT jboolean JNICALL
 Java_org_opencv_samples_tutorial2_DetectActitvity_CHECK(JNIEnv *jniEnv, jobject, jstring mac) {
-//    return JNI_FALSE;
 
-        string mod = js2string(jniEnv, mac);
-        string sim = "0" + mod;
+    string mod = js2string(jniEnv, mac);
+    string sim = "0" + mod;
     UT_TRACE("sim  model  is ! %s , %s " ,sim.c_str(),mod.c_str());
     string s = "106.14.186.44";
-
     CConfigFileReader::GetInstance()->LoadFromFile( "/sdcard/Android/data/com.ut.sdk/files/dsm_jtt808.cfg");
     CDSMLog::GetInstance()->InitialiseLog4z("/sdcard/Android/data/com.ut.sdk/files/dsm_log.cfg");
-
     CDsmJTT808_API::GetInstance()->Start((char*)sim.c_str(),(char*)mod.c_str(),(char*)s.c_str(), 7000);
-
-//    if (!CDsmJTT808_API::GetInstance()->Inialise((char*)sim.c_str(), (char*)mod.c_str(),(char*)s.c_str(),7000)) {
-//        UT_FATAL("Inialise failed!");
-//        return JNI_FALSE;
-//    }
-//
-//
-//    if (!CDsmJTT808_API::GetInstance()->Connect()) {
-//        UT_FATAL("Connect failed!");
-//        return JNI_FALSE;
-//    }
 
     lati = new  long;
     longi = new  long;
