@@ -71,9 +71,9 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
 
         if(true){
 //           pathRoot = "/sdcard"
-//           pathRoot = "/baidu_map/" + "imgs"
+           pathRoot = "/baidu_map/" + "imgs"
 
-            pathRoot += "/record_pic"
+//            pathRoot += "/record_pic"
 
             var file = File(pathRoot)
             if(!file.exists())
@@ -89,9 +89,9 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
         with(tutorial2_activity_surface_view) {
             visibility = CameraBridgeViewBase.VISIBLE
             setCameraIndex(1)
-//            setMaxFrameSize(1280, 960)
+            setMaxFrameSize(1280, 960)
             setCvCameraViewListener(this@DetectActitvity)
-            setMaxFrameSize(640, 480)
+//            setMaxFrameSize(640, 480)
         }
 
         start.setOnClickListener {
@@ -169,7 +169,7 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
 
         mRgba = inputFrame.rgba()
         mGray = inputFrame.gray()
-        if( !stop && now >190){//&& now > 480
+        if( !stop && now >40){//&& now > 480
             if(stop)
                 runOnUiThread {
                     textv.text = "结束录制。。。"
