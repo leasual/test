@@ -14,7 +14,7 @@ import org.opencv.imgproc.Imgproc;
 
 import android.content.res.Resources;
 
-import com.ut.sdk.R;
+import com.ut.sdk2.R;
 
 
 abstract class FrameRender {

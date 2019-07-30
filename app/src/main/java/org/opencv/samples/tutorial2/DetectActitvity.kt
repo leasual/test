@@ -4,26 +4,22 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.AlertDialog
 import android.app.ProgressDialog
-import android.content.Context
 import android.media.MediaPlayer
-import android.net.wifi.WifiManager
-import android.os.AsyncTask
-import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
+import android.os.*
 import android.text.TextUtils
 import android.util.Log
 import android.view.WindowManager
 import android.widget.TextView
-import com.op.dm.Utils
-import com.ut.sdk.R
+import com.ut.sdk2.R
 import kotlinx.android.synthetic.main.tutorial2_surface_view.*
 import org.opencv.android.BaseLoaderCallback
 import org.opencv.android.CameraBridgeViewBase
 import org.opencv.android.LoaderCallbackInterface
 import org.opencv.android.OpenCVLoader
 import org.opencv.core.Mat
+import org.opencv.core.Size
 import org.opencv.imgproc.Imgproc
+import java.io.File
 import java.util.*
 
 /**
@@ -53,27 +49,15 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
     private var save = false
     private var timer:Timer? = null
     private var timerTask: TimerTask? = null
+    var page = "test"
 
+    var pathRoot = "/storage/sdcard1"
+
+    var external = false
     init {
         Log.i(TAG, "Instantiated new " + this.javaClass)
     }
 
-    private fun getAndroidLowVersionMac(wifiManager: WifiManager): String {
-        try {
-            val wifiInfo = wifiManager.connectionInfo
-            val mac = wifiInfo.macAddress
-            return if (TextUtils.isEmpty(mac)) {
-                "null"
-            } else {
-                mac.substring(0,5)
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-            Log.e("mac", "get android low version mac error:" + e.message)
-            return "null"
-        }
-
-    }
 
 
     @SuppressLint("MissingPermission")
@@ -82,88 +66,137 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
         super.onCreate(savedInstanceState)
 //        var mac = checks()
 //        Log.e("mac  dizhi   " , mac)
-
+        count = 0
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+
+        if(true){
+//           pathRoot = "/sdcard"
+//           pathRoot = "/baidu_map/" + "imgs"
+
+            pathRoot += "/record_pic"
+
+            var file = File(pathRoot)
+            if(!file.exists())
+                initDir(pathRoot)
+            pathRoot = pathRoot+ "/"
+
+//            stop = false
+
+        }
+
         setContentView(R.layout.tutorial2_surface_view)
-        views = arrayOf(dis, fat, smoke, call, abnm)
+//        views = arrayOf(dis, fat, smoke, call, abnm)
         with(tutorial2_activity_surface_view) {
             visibility = CameraBridgeViewBase.VISIBLE
+            setCameraIndex(1)
+//            setMaxFrameSize(1280, 960)
             setCvCameraViewListener(this@DetectActitvity)
-            setCameraIndex(0)
-//            setMaxFrameSize(1280, 720)
             setMaxFrameSize(640, 480)
+        }
+
+        start.setOnClickListener {
+            stop = false
+            page = file_name.text.toString()
+            if(TextUtils.isEmpty(page))
+                page = "test"
+            if(!TextUtils.isEmpty( pic_count.text))
+                max = pic_count.text?.toString()?.toInt() ?: 5
+            addIndex(this)
+            recorde = true
+            textv.text = "录制中。。。"
+            count = 0
+//            Thread{
+//                var time = System.currentTimeMillis()
+//               for (i in 0..10){
+//                   Thread.sleep(200)
+//                   Log.e("thread  is  sleeping ", "  iiuuu  ")
+//               }
+//                recorde = false
+//                runOnUiThread {
+//                    textv.text = "结束录制。。。"
+//                }
+//            }.start()
 
         }
 
-        progressDialog = ProgressDialog(this)
-        progressDialog?.setTitle("加载中,请稍后")
-        progressDialog?.show()
-
-        var builder: AlertDialog.Builder? = AlertDialog.Builder(this)
-        builder?.let {
-            with(it) {
-                setTitle("是否进行注册?")
-                setMessage("注册时请保持摄像头能清晰照到脸部")
-                setPositiveButton("注册") { _, _ ->
-                    register = true
-                    totalDone = true
-                }
-                setNegativeButton("直接进入") { _, _ ->
-                    register = false
-                    totalDone = true
-                }
-                setCancelable(false)
-                alertDialog = it.create()
-                alertDialog?.setCanceledOnTouchOutside(false)
+        end.setOnClickListener {
+            stop = true
+            runOnUiThread {
+                textv.text = "结束录制。。。"
             }
         }
+
         sdPlayer = MediaPlayer.create(this,R.raw.sdcard)
         detectFacePlayer = MediaPlayer.create(this,R.raw.detect)
 
-        timerTask = kotlin.concurrent.timerTask {
-            var size = Utils.getSDAvailableSize(this@DetectActitvity)
-            save = size > 500
-            Log.e(" save  ",save.toString())
-            if(size > 0 && size < 500 && !(sdPlayer?.isPlaying()?:false)){
+
+//        timer = Timer()
+//        timer?.schedule(timerTask,0,5000)
+
+    }
+
+    var count = 0
+    var max = 5
+    var last = 0L
+//    override fun onCameraFrame(inputFrame: CameraBridgeViewBase.CvCameraViewFrame): Mat {
+//        var now = System.currentTimeMillis() - last
+//
+//        mRgba = inputFrame.rgba()
+//        mGray = inputFrame.gray()
+//        if( count < max){//&& now > 480
+//            if(count == max-1)
+//                runOnUiThread {
+//                    textv.text = "结束录制。。。"
+//                }
+//            last = System.currentTimeMillis()
+//            Imgproc.cvtColor(mGray,rgb,Imgproc.COLOR_GRAY2BGR)
+////            Imgproc.cvtColor(mRgba,rgb,Imgproc.COLOR_RGBA2BGR)
+//
+//            rgb = rgb?.submat(0,720,160,960+160)
+//            var size = Size(640.0,480.0)
+//            Imgproc.resize(rgb,rgb,size)
+//            rgb?.nativeObjAddr?.let { FindFeatures(it,pathRoot+ page) }
+//            count++
+//        }
+//
+//        return mGray!!
+//    }
+
+    var stop :Boolean = true
+
+    override fun onCameraFrame(inputFrame: CameraBridgeViewBase.CvCameraViewFrame): Mat {
+        var now = System.currentTimeMillis() - last
+
+        mRgba = inputFrame.rgba()
+        mGray = inputFrame.gray()
+        if( !stop && now >190){//&& now > 480
+            if(stop)
                 runOnUiThread {
-                    sdPlayer?.start()
+                    textv.text = "结束录制。。。"
                 }
-            }
-        }
-        timer = Timer()
-        timer?.schedule(timerTask,0,5000)
+            last = System.currentTimeMillis()
 
+            Imgproc.cvtColor(mGray,rgb,Imgproc.COLOR_GRAY2BGR)
+//            Imgproc.cvtColor(mRgba,rgb,Imgproc.COLOR_RGBA2BGR)
+
+//            rgb = rgb?.submat(0,720,160,960+160)
+//            var size = Size(640.0,480.0)
+//            Imgproc.resize(rgb,rgb,size)
+
+
+            rgb?.nativeObjAddr?.let { FindFeatures(it,pathRoot+ page) }
+
+        }
+
+        return mGray!!
     }
 
-    private fun checks(): String {
-        var mac = getAndroidLowVersionMac(applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager)
-        return mac
-    }
 
-    private fun getStringResult(result: IntArray?) {
-        if(!haveface){
-//            playWarnning()
-        }
-        result?.let { array ->
-            priority.forEach {// access the uiText and Jni result by the order of 'priority'
-                when(array[it]){//jni function return value which represents each item's status --> fat, call, smoke etc.
-                    2 -> {
-                        strings[it] = "报警"
-                        playWarnning(it)
-                    }
-                    1 -> strings[it] = "警告"
-                    else -> strings[it] = "正常"
-                }
-            }
-        }
-        writeViews()
-    }
 
     private fun playWarnning(index: Int) {//每种提示音分开计算，4秒内不重复播放同一种
         var time = System.currentTimeMillis()- lastTime[0]
         if(time > 4000){
             if(index == 100){
-                Log.e(" --- no face warning -- ","  yes  ")
                 detectFacePlayer?.apply {
                     if(register && !this.isPlaying){
                         start()
@@ -183,38 +216,8 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
 
     }
 
-    fun RegistDone(){
-        haveface = true
-        register = false
-        save = true
-        var detectFacePlayerDone = MediaPlayer.create(this, R.raw.detectdone)
-        detectFacePlayerDone.start()
-        Log.e("sss","has registerd --------------- ")
-    }
 
-    private fun writeViews() {
-        views?.forEachIndexed { index, textView ->
-            with(textView) {
-                post {
-                    text = names[index] + " : " + strings[index]
-                    if (text.contains("报警")) {
-                        setTextColor(resources.getColor(R.color.red))
-                    } else
-                        setTextColor(resources.getColor(R.color.green))
-                }
-            }
-        }
-    }
 
-    private fun writeViews2(result: IntArray?) {
-        result?.let {
-            views?.forEachIndexed { index, textView ->
-                textView.post {
-                    textView.text = names[index] + " : " + result[index]
-                }
-            }
-        }
-    }
 
 
     public override fun onPause() {
@@ -235,20 +238,19 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
 
     public override fun onDestroy() {
         super.onDestroy()
-        stop()
+//        stop()
         tutorial2_activity_surface_view?.disableView()
 //        android.os.Process.killProcess(android.os.Process.myPid())
         players.forEach {
             it?.stop()
             it?.release()
         }
-        sdPlayer?.stop()
-        sdPlayer?.release()
-//        timer?.purge()
-        timer?.cancel()
+//        sdPlayer?.stop()
+//        sdPlayer?.release()
+////        timer?.purge()
+//        timer?.cancel()
         System.exit(0)
     }
-
     override fun onCameraViewStarted(width: Int, height: Int) {
         mRgba = Mat()
         mGray = Mat()
@@ -264,31 +266,24 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
             rgb?.release()
     }
 
-    override fun onCameraFrame(inputFrame: CameraBridgeViewBase.CvCameraViewFrame): Mat {
+    var recording = false
+    var recorde = false
 
-        mRgba = inputFrame.rgba()
-        mGray = inputFrame.gray()
-        rgb?.let { it1 ->
-            Imgproc.cvtColor(mRgba, it1, Imgproc.COLOR_RGBA2RGB)
-            if (totalDone)
-                mRgba?.let {
-                    //                    if(index % 2 == 0){//每两帧调用一次算法
-//                    Log.e("save is --", save.toString())
-                    if (index % 3 == 0)//减少uitext更新频率，没必要每帧都改变
-                        getStringResult(FindFeatures2(it1.nativeObjAddr, it.nativeObjAddr, register,save))
-                    else
-                        FindFeatures2(it1.nativeObjAddr, it.nativeObjAddr, register,save)
-//                    }
-                    if(!haveface && !(detectFacePlayer?.isPlaying?:false)){
-                        playWarnning(100)
-                    }
-                }
-        }
-        if (index >= 10000)
-            index = 0
-        index++
-        return mRgba!!
+    fun addIndex(context :Activity){
+        var path = pathRoot  + page
+        initDir(path)
+        Log.e(" file  directory ",path)
+
+        path_str.text = path
     }
+
+    private fun initDir(path: String) {
+        val images = File(path)
+        if (!images.exists()) {
+            images.mkdir()
+        }
+    }
+
 
     private val mLoaderCallback = object : BaseLoaderCallback(this) {
         override fun onManagerConnected(status: Int) {
@@ -297,30 +292,19 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
                     Log.e(TAG, "OpenCV loaded successfully")
                     System.loadLibrary("native-lib")
                     tutorial2_activity_surface_view?.enableView()
-                    if (!totalDone) {
-                        val context = mAppContext
-                        AsyncTaskInitFile().execute(context as DetectActitvity)
-                    }
+//                    FindFeatures(0,0)
+//                    if (!totalDone) {
+//                        val context = mAppContext
+//                        AsyncTaskInitFile().execute(context as DetectActitvity)
+//                    }
                 }
-                else -> {
-                    super.onManagerConnected(status)
-                }
+//                else -> {
+//                    super.onManagerConnected(status)
+//                }
             }
         }
     }
 
-    internal class AsyncTaskInitFile : AsyncTask<DetectActitvity, Int, DetectActitvity>() {
-        override fun onPostExecute(integer: DetectActitvity) {
-            super.onPostExecute(integer)
-            Log.e(TAG, "AsyncTaskInitFile  successfully")
-            AsyncTaskInitTotalFlow().execute(integer)
-        }
-
-        override fun doInBackground(vararg contexts: DetectActitvity): DetectActitvity {
-            Utils.addModeles(contexts[0])
-            return contexts[0]
-        }
-    }
 
     private var alertDialog: AlertDialog? = null
 
@@ -342,7 +326,7 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
             for (index in 0..4){
                 contexts[0].players[index] = MediaPlayer.create(contexts[0],contexts[0].audio[index])
             }
-            contexts[0].FindFeatures(0, 0)
+//            contexts[0].FindFeatures(0, "")
             var handler = Handler(Looper.getMainLooper());
             handler.postDelayed({
                 contexts[0].playWarnning(100)
@@ -359,7 +343,7 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
     external fun stop()
     external fun CHECK(mac: String):Boolean
     //    external fun CHECK(mac:String)
-    external fun FindFeatures(matAddrGr: Long, matAddrRgba: Long)
+    external fun FindFeatures(matAddrGr: Long, dir: String)
     external fun FindFeatures2(matAddrGr: Long, matAddrRgba: Long, time: Boolean, save: Boolean): IntArray
 
     companion object {

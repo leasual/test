@@ -17,32 +17,32 @@ include_directories(D:/OpenCV-android-sdk/sdk/native/jni/include)
 add_library( lib_opencv SHARED IMPORTED )
 set_target_properties(lib_opencv PROPERTIES IMPORTED_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/src/main/jniLibs/${ANDROID_ABI}/libopencv_java3.so)
 
-include_directories(src/main/cpp/include/dsm)
-include_directories(src/main/cpp/include/dsm/algorithm/align/include)
-include_directories(src/main/cpp/include/dsm/algorithm/face_detection/include)
-include_directories(src/main/cpp/include/dsm/algorithm/faceid/include)
-include_directories(src/main/cpp/include/dsm/algorithm/gaze_tracking/include)
-include_directories(src/main/cpp/include/dsm/algorithm/head_pose/include)
-include_directories(src/main/cpp/include/dsm/algorithm/object_detection/include)
-include_directories(src/main/cpp/include/dsm/algorithm/utilities/include)
-include_directories(src/main/cpp/include/dsm/dsm_strategy)
-include_directories(src/main/cpp/include/dsm/dsm_strategy/judgement_strategy)
-include_directories(src/main/cpp/include/dsm/dsm_strategy/utils/file)
-
-include_directories(src/main/cpp/include)
+#include_directories(src/main/cpp/include/dsm)
+#include_directories(src/main/cpp/include/dsm/algorithm/align/include)
+#include_directories(src/main/cpp/include/dsm/algorithm/face_detection/include)
+#include_directories(src/main/cpp/include/dsm/algorithm/faceid/include)
+#include_directories(src/main/cpp/include/dsm/algorithm/gaze_tracking/include)
+#include_directories(src/main/cpp/include/dsm/algorithm/head_pose/include)
+#include_directories(src/main/cpp/include/dsm/algorithm/object_detection/include)
+#include_directories(src/main/cpp/include/dsm/algorithm/utilities/include)
+#include_directories(src/main/cpp/include/dsm/dsm_strategy)
+#include_directories(src/main/cpp/include/dsm/dsm_strategy/judgement_strategy)
+#include_directories(src/main/cpp/include/dsm/dsm_strategy/utils/file)
+#
+include_directories(src/main/cpp)
 
 #add_library( libutils STATIC IMPORTED )
-#set_target_properties(libutils PROPERTIES IMPORTED_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/src/main/jniLibs/${ANDROID_ABI}/libutils.a)
-add_library( libdlib STATIC IMPORTED )
-set_target_properties(libdlib PROPERTIES IMPORTED_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/src/main/jniLibs/${ANDROID_ABI}/libdlib.a)
-#add_library( libdsm_strategy STATIC IMPORTED )
-#set_target_properties(libdsm_strategy PROPERTIES IMPORTED_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/src/main/jniLibs/${ANDROID_ABI}/libdsm_strategy.a)
-#add_library( lib_dsm STATIC IMPORTED )
-#set_target_properties(lib_dsm PROPERTIES IMPORTED_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/src/main/jniLibs/${ANDROID_ABI}/libdsm.a)
-add_library( libmsg STATIC IMPORTED )
-set_target_properties(libmsg PROPERTIES IMPORTED_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/src/main/jniLibs/${ANDROID_ABI}/libhpsocket.so)
+##set_target_properties(libutils PROPERTIES IMPORTED_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/src/main/jniLibs/${ANDROID_ABI}/libutils.a)
+#add_library( libdlib STATIC IMPORTED )
+#set_target_properties(libdlib PROPERTIES IMPORTED_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/src/main/jniLibs/${ANDROID_ABI}/libdlib.a)
+##add_library( libdsm_strategy STATIC IMPORTED )
+##set_target_properties(libdsm_strategy PROPERTIES IMPORTED_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/src/main/jniLibs/${ANDROID_ABI}/libdsm_strategy.a)
+##add_library( lib_dsm STATIC IMPORTED )
+##set_target_properties(lib_dsm PROPERTIES IMPORTED_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/src/main/jniLibs/${ANDROID_ABI}/libdsm.a)
+#add_library( libmsg STATIC IMPORTED )
+#set_target_properties(libmsg PROPERTIES IMPORTED_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/src/main/jniLibs/${ANDROID_ABI}/libhpsocket.so)
 
-include_directories(src/main/cpp/message/include)
+#include_directories(src/main/cpp/message/include)
 #include_directories(src/main/cpp/aes/include)
 
 
@@ -61,58 +61,18 @@ add_library( # Sets the name of the library.
              # Provides a relative path to your source file(s).
              # Associated headers in the same location as their source
              # file are automatically included.
+#        src/main/cpp/message/src/dsm_transmit_jtt.cpp
+#        src/main/cpp/message/src/dsmapp_sms_custom_jtt.cpp
+#        src/main/cpp/message/src/dsmapp_srv_jtt.cpp
+#        src/main/cpp/message/src/dsmapp_srvinteraction_jtt.cpp
+#        src/main/cpp/message/src/others.cpp
+#        src/main/cpp/message/src/main.cpp
+#        src/main/cpp/message/src/DSM_JTT_API.cpp
+
             src/main/cpp/native-lib.cpp
-            src/main/cpp/interface.cc
             src/main/cpp/jni_part.cpp
-            src/main/cpp/cameras.cc
 
-        src/main/cpp/message/src/dsm_transmit_jtt.cpp
-                src/main/cpp/message/src/dsmapp_sms_custom_jtt.cpp
-                src/main/cpp/message/src/dsmapp_srv_jtt.cpp
-                src/main/cpp/message/src/dsmapp_srvinteraction_jtt.cpp
-                src/main/cpp/message/src/others.cpp
-                src/main/cpp/message/src/main.cpp
-                 src/main/cpp/message/src/DSM_JTT_API.cpp
 
-        src/main/cpp/dsm_strategy/judgement_strategy/alignment_detection.cc
-        src/main/cpp/dsm_strategy/judgement_strategy/call_judger.cc
-        src/main/cpp/dsm_strategy/judgement_strategy/distraction_judger.cc
-        src/main/cpp/dsm_strategy/judgement_strategy/yawn_judger.cc
-        src/main/cpp/dsm_strategy/judgement_strategy/fatigue_judger.cc
-        src/main/cpp/dsm_strategy/judgement_strategy/real_time_detect.cc
-        src/main/cpp/dsm_strategy/judgement_strategy/smoke_judger.cc
-       # src/main/cpp/dsm_strategy/eyemouthstatus.cc
-        src/main/cpp/dsm_strategy/config_tracker.cc
-        src/main/cpp/total_flow.cc
-        src/main/cpp/algorithm/align/src/align_method.cpp
-        src/main/cpp/algorithm/align/src/faceAlign.cpp
-        src/main/cpp/algorithm/align/src/shape_predict_untouch.cc
-        src/main/cpp/algorithm/face_detection/src/detector.cc
-        src/main/cpp/algorithm/face_detection/src/onet.cc
-        src/main/cpp/algorithm/face_detection/src/pnet.cc
-        src/main/cpp/algorithm/face_detection/src/rnet.cc
-        src/main/cpp/algorithm/faceid/src/faceAttribute.cpp
-        src/main/cpp/algorithm/faceid/src/faceID.cpp
-        src/main/cpp/algorithm/head_pose/src/head_pose_estimator.cc
-        src/main/cpp/algorithm/object_detection/src/objDetection.cpp
-        src/main/cpp/algorithm/utilities/src/transform.cpp
-        src/main/cpp/algorithm/utilities/src/utils.cc
-        src/main/cpp/dsm_strategy/judgement_strategy/smoke_judger_plus.cc
-        src/main/cpp/dsm_strategy/judgement_strategy/fatigure_judger_plus.cc
-        src/main/cpp/dsm_strategy/eye_mouth_plus.cc
-
-        src/main/cpp/dsm_strategy/utils/file/config.cc
-        src/main/cpp/dsm_strategy/utils/file/file_read_write_utils.cc
-        src/main/cpp/dsm_strategy/utils/file/file_system.cc
-        src/main/cpp/dsm_strategy/utils/file/file_utils.cc
-        src/main/cpp/dsm_strategy/utils/file/system_config.cc
-        src/main/cpp/dsm_strategy/utils/file/text_table_file.cc
-
-#        src/main/cpp/aes/src/example2.c
-#        src/main/cpp/aes/src/interface.c
-#        src/main/cpp/aes/src/sw200x_aes.c
-#        src/main/cpp/aes/src/sw2001.c
-#        src/main/cpp/aes/src/sw2001_aes.c
         )
 
 
@@ -143,10 +103,11 @@ target_link_libraries( # Specifies the target library.
                        #lib_dsm
                        #libdsm_strategy
 
-                       libdlib
+#                       libdlib
                        #libutils
                        lib_opencv
-                       libmsg
+#                       libmsg
+#                        libmsg
                         ${log-lib}
                        ${android-lib}
                        )

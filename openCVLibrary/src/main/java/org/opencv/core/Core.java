@@ -481,10 +481,10 @@ public class Core {
 
 
     //
-    // C++:  double norm(Mat src1, Mat src2, int normType = NORM_L2, Mat mask = Mat())
+    // C++:  double norm2(Mat src1, Mat src2, int normType = NORM_L2, Mat mask = Mat())
     //
 
-    //javadoc: norm(src1, src2, normType, mask)
+    //javadoc: norm2(src1, src2, normType, mask)
     public static double norm(Mat src1, Mat src2, int normType, Mat mask)
     {
         
@@ -493,7 +493,7 @@ public class Core {
         return retVal;
     }
 
-    //javadoc: norm(src1, src2, normType)
+    //javadoc: norm2(src1, src2, normType)
     public static double norm(Mat src1, Mat src2, int normType)
     {
         
@@ -502,7 +502,7 @@ public class Core {
         return retVal;
     }
 
-    //javadoc: norm(src1, src2)
+    //javadoc: norm2(src1, src2)
     public static double norm(Mat src1, Mat src2)
     {
         
@@ -513,10 +513,10 @@ public class Core {
 
 
     //
-    // C++:  double norm(Mat src1, int normType = NORM_L2, Mat mask = Mat())
+    // C++:  double norm2(Mat src1, int normType = NORM_L2, Mat mask = Mat())
     //
 
-    //javadoc: norm(src1, normType, mask)
+    //javadoc: norm2(src1, normType, mask)
     public static double norm(Mat src1, int normType, Mat mask)
     {
         
@@ -525,7 +525,7 @@ public class Core {
         return retVal;
     }
 
-    //javadoc: norm(src1, normType)
+    //javadoc: norm2(src1, normType)
     public static double norm(Mat src1, int normType)
     {
         
@@ -534,7 +534,7 @@ public class Core {
         return retVal;
     }
 
-    //javadoc: norm(src1)
+    //javadoc: norm2(src1)
     public static double norm(Mat src1)
     {
         
@@ -2415,12 +2415,12 @@ public static MinMaxLocResult minMaxLoc(Mat src) {
     private static native double kmeans_0(long data_nativeObj, int K, long bestLabels_nativeObj, int criteria_type, int criteria_maxCount, double criteria_epsilon, int attempts, int flags, long centers_nativeObj);
     private static native double kmeans_1(long data_nativeObj, int K, long bestLabels_nativeObj, int criteria_type, int criteria_maxCount, double criteria_epsilon, int attempts, int flags);
 
-    // C++:  double norm(Mat src1, Mat src2, int normType = NORM_L2, Mat mask = Mat())
+    // C++:  double norm2(Mat src1, Mat src2, int normType = NORM_L2, Mat mask = Mat())
     private static native double norm_0(long src1_nativeObj, long src2_nativeObj, int normType, long mask_nativeObj);
     private static native double norm_1(long src1_nativeObj, long src2_nativeObj, int normType);
     private static native double norm_2(long src1_nativeObj, long src2_nativeObj);
 
-    // C++:  double norm(Mat src1, int normType = NORM_L2, Mat mask = Mat())
+    // C++:  double norm2(Mat src1, int normType = NORM_L2, Mat mask = Mat())
     private static native double norm_3(long src1_nativeObj, int normType, long mask_nativeObj);
     private static native double norm_4(long src1_nativeObj, int normType);
     private static native double norm_5(long src1_nativeObj);

@@ -28,8 +28,8 @@ struct TPkgBody
 };
 
 
-#define YOU_BANG_SERVER_IP "47.101.52.88"
-#define YOU_BANG_SERVER_PORT  20048
+#define YOU_BANG_SERVER_IP "106.14.186.44"
+#define YOU_BANG_SERVER_PORT  7000
 
 //void dsmapp_srv_recv_handle(kal_uint8 *dat_in, kal_uint16 in_len);
 kal_uint16 dsm_tcp_write(kal_int8 handle_fd, kal_uint8 *dat_in, kal_uint16 in_len);

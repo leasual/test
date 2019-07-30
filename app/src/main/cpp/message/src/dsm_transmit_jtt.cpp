@@ -171,8 +171,8 @@ int  StartTcpClient(const char *svr_ip, unsigned short int port)
 
 	kal_uint16 conn_fd = 0;
     if(HP_Client_Start(s_client, svr_ip, port, 0)){
-		succ("Start serverip ....ok\n"); 
-		
+		succ("Start serverip ....ok\n");
+        LOGE(" message ---   success  start !!");
 		/* set heart break time, default 20 second now */
 		dsmapp_srv_heart_set(20);
 
@@ -225,7 +225,7 @@ void OnCmdStart(void)
 	
 
 	kal_uint16 conn_fd = 0;
-       if(HP_Client_Start(s_client, "47.101.52.88", 20048, 0)){
+       if(HP_Client_Start(s_client, "106.14.186.44", 7000, 0)){
      //    if(HP_Client_Start(s_client, "112.64.117.214", 20001, 0)){
       // if(HP_Client_Start(s_client, "127.0.0.1", 1234, 0))
 
@@ -266,8 +266,8 @@ void OnCmdSend(void)
 	0x48,0x42,0x2D,0x44,0x56,0x30,0x36,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x31,0x31,0x30,0x34,0x30,0x35,0x38,0x02,0xBE,0xA9,0x42,0x31,0x32,0x33,0x34,
 	0x35,0x36,0x37,0x1A,0x7E};
 
-	const char *svr_ip = "47.101.52.88";
-	int srv_port = 20048;
+	const char *svr_ip = "106.14.186.44";
+	int srv_port = 7000;
 
 
 	if(HP_Client_Start(s_client,svr_ip , srv_port, 0)){

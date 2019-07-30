@@ -1,13 +1,21 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
+    xmlns:opencv="http://schemas.android.com/apk/res-auto"
+
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
     <org.opencv.android.JavaCameraView
         android:id="@+id/tutorial2_activity_surface_view"
         android:layout_width="fill_parent"
-        android:layout_height="fill_parent" />
-
+        android:layout_height="fill_parent"
+        opencv:camera_id="any" />
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentTop="true"
+        android:id="@+id/path_str"/>
     <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -16,67 +24,57 @@
         android:orientation="vertical"
         android:visibility="visible">
 
-        <TextView
-            android:id="@+id/name"
+        <Button
+            android:id="@+id/start"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:textSize="36sp"
             android:layout_marginBottom="10dp"
-            android:gravity="center"
-            android:textSize="17sp"
-            android:textColor="@color/green" />
-
-        <TextView
-            android:id="@+id/dis"
+            android:text="开始"/>
+        <Button
+            android:id="@+id/end"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:textSize="36sp"
             android:layout_marginBottom="10dp"
-            android:gravity="center"
-            android:textSize="17sp"
-            android:textColor="@color/green" />
+            android:text="结束"/>
 
-        <TextView
-            android:id="@+id/fat"
+        <EditText
+            android:id="@+id/file_name"
+            android:layout_marginTop="20dp"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="10dp"
-            android:gravity="center"
-            android:textSize="17sp"
-            android:textColor="@color/green" />
-
-        <TextView
-            android:id="@+id/smoke"
+            android:textColorHint="#888888"
+            android:minWidth="100dp"
+            android:textColor="@color/green"
+            android:hint="输入文件夹名称"
+            android:textSize="28sp"/>
+        <EditText
+            android:id="@+id/pic_count"
+            android:layout_marginTop="20dp"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="10dp"
-            android:gravity="center"
-            android:textSize="17sp"
-            android:textColor="@color/green" />
-
-        <TextView
-            android:id="@+id/call"
+            android:textColorHint="#888888"
+            android:minWidth="100dp"
+            android:textColor="@color/green"
+            android:hint="输入拍摄张数"
+            android:inputType="number"
+            android:visibility="gone"
+            android:textSize="28sp"/>
+        <Button
+            android:id="@+id/stop"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:textSize="18sp"
             android:layout_marginBottom="10dp"
-            android:gravity="center"
-            android:textSize="17sp"
-            android:textColor="@color/green" />
-
+            android:visibility="invisible"
+            android:text="停止"/>
         <TextView
-            android:id="@+id/abnm"
+            android:id="@+id/textv"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="10dp"
-            android:gravity="center"
-            android:textSize="17sp"
-            android:textColor="@color/green" />
-
-        <!--<TextView-->
-            <!--android:id="@+id/calibrate"-->
-            <!--android:layout_width="wrap_content"-->
-            <!--android:layout_height="wrap_content"-->
-            <!--android:layout_marginBottom="10dp"-->
-            <!--android:gravity="center"-->
-            <!--android:textSize="17sp"-->
-            <!--android:textColor="@color/green" />-->
+            android:textSize="20sp"
+            android:textColor="@color/green"
+            android:text=" 未开始。。"/>
     </LinearLayout>
 </RelativeLayout>

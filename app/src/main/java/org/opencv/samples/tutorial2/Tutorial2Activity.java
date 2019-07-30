@@ -12,7 +12,7 @@ import android.view.WindowManager;
 import android.widget.TextView;
 
 import com.op.dm.Utils;
-import com.ut.sdk.R;
+import com.ut.sdk2.R;
 
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.CameraBridgeViewBase;
@@ -34,7 +34,7 @@ public class Tutorial2Activity extends Activity implements CvCameraViewListener2
     private byte s;
     private TextView[] views;
     private String[] name = {"用户","分神","疲劳","吸烟","打电话","异常","校准"};
-    private int[] ids = {R.id.name,R.id.dis,R.id.fat,R.id.smoke,R.id.call,R.id.abnm,R.id.calibrate};
+//    private int[] ids = {R.id.name,R.id.dis,R.id.fat,R.id.smoke,R.id.call,R.id.abnm,R.id.calibrate};
     private BaseLoaderCallback  mLoaderCallback = new BaseLoaderCallback(this) {
         @Override
         public void onManagerConnected(int status) {

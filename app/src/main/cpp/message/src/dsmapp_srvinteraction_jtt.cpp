@@ -1792,7 +1792,6 @@ static kal_int32 dsm_srv_send_handle(DSM_SRV_JTT_CMD_TYPE cmd, kal_uint8 *para, 
 	if (func_l->handle)
 	{
 		kal_mem_set(buf_tmp, 0, sizeof(g_s8TmpBuf));
-
 		// execute cmd-function handler
 		ret = func_l->handle(cmd, para, para_len, buf_tmp);
 

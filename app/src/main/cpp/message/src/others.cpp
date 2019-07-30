@@ -454,7 +454,7 @@ void my_vprint(char* fmt, va_list va_args)
         char buffer[BUG_LEN] = {0};
         vsnprintf(buffer, BUG_LEN-1, fmt, va_args);
         printf("%s", buffer);
-		LOGE("%s", buffer);
+		LOGE(" %s", buffer);
 }
 
 // \u4e0d\u4f7f\u7528\u80cc\u666f\u8272
@@ -465,7 +465,7 @@ void _print_color(int attr, int color, const char* fmt,...)
     va_start(marker, fmt);
 
     // \u80cc\u666f\u8272\u4e3a0\u65f6\uff0c\u4e0d\u5f71\u54cd\u540e\u9762\u7684\u4fe1\u606f\uff0c\u5176\u5b83\u503c\u4f1a\u5f71\u54cd
-    snprintf(buffer, BUG_LEN-1, "\x1b[%d;%dm%s\x1b[0m", attr, color+30, fmt);
+    snprintf(buffer, BUG_LEN-1, "\x1b[%d;%dm  %s\x1b[0m", attr, color+30, fmt);
     my_vprint(buffer, marker);  // \u4e00\u5b9a\u8981\u8fd9\u4e2a\u51fd\u6570\u624d\u80fd\u4f7f\u7528\u53ef\u53d8\u53c2\u6570
     va_end(marker);
 }

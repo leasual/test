@@ -17,7 +17,7 @@ import android.view.SurfaceView;
 import android.view.View;
 import android.widget.Button;
 
-import com.ut.sdk.R;
+import com.ut.sdk2.R;
 
 
 public class MainActivity extends Activity {

@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">untouch</string>
+    <string name="app_name">untouch录图</string>
     <string name="action_calibrate">Calibrate</string>
     <string name="calibration">Calibration</string>
     <string name="undistortion">Undistortion</string>
