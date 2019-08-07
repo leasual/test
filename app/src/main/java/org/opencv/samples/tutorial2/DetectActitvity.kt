@@ -10,6 +10,7 @@ import android.text.TextUtils
 import android.util.Log
 import android.view.WindowManager
 import android.widget.TextView
+import com.op.dm.Utils
 import com.ut.sdk2.R
 import kotlinx.android.synthetic.main.tutorial2_surface_view.*
 import org.opencv.android.BaseLoaderCallback
@@ -52,7 +53,8 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
     var page = "test"
 
     var pathRoot = "/storage/sdcard1"
-
+    var arg1 = 1
+    var arg2 = "-r"
     var external = false
     init {
         Log.i(TAG, "Instantiated new " + this.javaClass)
@@ -130,6 +132,36 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
         detectFacePlayer = MediaPlayer.create(this,R.raw.detect)
 
 
+        on.setOnClickListener {
+            Utils.rumCmd(1,arg2)
+            arg1 = 1
+            on.setTextColor(resources.getColor(R.color.green))
+            off.setTextColor(resources.getColor(R.color.black))
+        }
+
+        off.setOnClickListener {
+            Utils.rumCmd(0,arg2)
+            off.setTextColor(resources.getColor(R.color.green))
+            on.setTextColor(resources.getColor(R.color.black))
+            arg1 = 0
+        }
+
+        rgb1.setOnClickListener {
+            Utils.rumCmd(arg1,"-r")
+            arg2 = "-r"
+            rgb1.setTextColor(resources.getColor(R.color.green))
+            ir.setTextColor(resources.getColor(R.color.black))
+        }
+
+        ir.setOnClickListener {
+            Utils.rumCmd(arg1,"-i")
+            arg2 = "-i"
+            ir.setTextColor(resources.getColor(R.color.green))
+            rgb1.setTextColor(resources.getColor(R.color.black))
+        }
+
+
+
 //        timer = Timer()
 //        timer?.schedule(timerTask,0,5000)
 
@@ -169,6 +201,8 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
 
         mRgba = inputFrame.rgba()
         mGray = inputFrame.gray()
+        Imgproc.cvtColor(mRgba,rgb,Imgproc.COLOR_RGBA2RGB)
+
         if( !stop && now >40){//&& now > 480
             if(stop)
                 runOnUiThread {
@@ -176,8 +210,7 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
                 }
             last = System.currentTimeMillis()
 
-            Imgproc.cvtColor(mGray,rgb,Imgproc.COLOR_GRAY2BGR)
-//            Imgproc.cvtColor(mRgba,rgb,Imgproc.COLOR_RGBA2BGR)
+//            Imgproc.cvtColor(mGray,rgb,Imgproc.COLOR_GRAY2BGR)
 
 //            rgb = rgb?.submat(0,720,160,960+160)
 //            var size = Size(640.0,480.0)
@@ -188,7 +221,7 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
 
         }
 
-        return mGray!!
+        return rgb!!
     }
 
 

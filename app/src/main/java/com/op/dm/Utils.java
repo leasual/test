@@ -7,15 +7,20 @@ import android.os.storage.StorageManager;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
 
+import java.io.BufferedReader;
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+
+import static android.content.ContentValues.TAG;
 
 /**
  * Created by chris on 12/10/18.
@@ -93,7 +98,61 @@ public class Utils {
         return list_storagevolume;
     }
 
+    public static void rumCmd(final int arg1, final String arg2){
+        try{
+           getForegroundApp();
 
+            String[] cmdline = { "cd /system/bin","./testcameralight.sh 0 -i" };
+//            String[] cmdline = { "/system/bin/testcameralight 0 -r" };
+
+            ShellUtil.CommandResult s = ShellUtil.execCommand(cmdline,false,true);
+            Log.e("shell 1: ",s.result + " - " + s.errorMsg + " -" + s.successMsg);
+
+            String[] cmdline2 = { "cd /sdcard/Android/data/com.ut.sdk2/files","testcameralight 0 -i"};
+
+            ShellUtil.CommandResult s2 = ShellUtil.execCommand(cmdline2,false,true);
+            Log.e("shell 2: ",s2.result + " - " + s2.errorMsg + " -" + s2.successMsg);
+
+        }catch(Exception e){
+            e.printStackTrace();
+        }
+    }
+
+    private static String getForegroundApp() {
+        String packageName = "";
+        try {
+            String command[] = new String[]{"sh", "-c",
+                    "dumpsys activity | grep \"ACTIVITY MANAGER RECENT TASKS\" -A 10 |grep \"Recent tasks:\" -A 1"};
+            //"dumpsys window | grep mCurrentFocus"
+            Process process = Runtime.getRuntime().exec(command);
+            int code = process.waitFor();
+            Log.e(TAG, "code ： " + code);
+            StringBuilder successMsg = new StringBuilder();
+            StringBuilder errorMsg = new StringBuilder();
+            BufferedReader successResult = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            BufferedReader errorResult = new BufferedReader(new InputStreamReader(process.getErrorStream()));
+            String s;
+            while ((s = successResult.readLine()) != null) {
+                successMsg.append(s);
+            }
+            while ((s = errorResult.readLine()) != null) {
+                errorMsg.append(s);
+            }
+            Log.e(TAG, "successMsg ： " + successMsg);
+            Log.e(TAG, "errorMsg ： " + errorMsg);
+            String content = successMsg.toString();
+            if (content.contains("A") && content.contains("U")) {
+                int indexA = content.lastIndexOf("A");
+                int indexU = content.lastIndexOf("U");
+                packageName = content.substring(indexA + 2, indexU - 1);
+                Log.e(TAG, "content ： " + packageName);
+                return packageName.trim();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return packageName.trim();
+    }
 
     public  static void addModeles(Context context){
         try {

@@ -22,6 +22,8 @@
         android:layout_marginLeft="30dp"
         android:layout_marginTop="30dp"
         android:orientation="vertical"
+        android:focusable="true"
+        android:focusableInTouchMode="true"
         android:visibility="visible">
 
         <Button
@@ -76,5 +78,45 @@
             android:textSize="20sp"
             android:textColor="@color/green"
             android:text=" 未开始。。"/>
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_alignParentRight="true"
+        android:layout_width="wrap_content"
+        android:orientation="vertical"
+        android:layout_marginRight="20dp"
+        android:layout_marginTop="150dp"
+        android:layout_height="wrap_content">
+        <Button
+            android:id="@+id/on"
+            android:layout_width="100dp"
+            android:layout_height="80dp"
+            android:textSize="23sp"
+            android:textColor="@color/green"
+            android:layout_marginBottom="30dp"
+            android:text="开灯"/>
+        <Button
+            android:id="@+id/off"
+            android:layout_width="100dp"
+            android:layout_height="80dp"
+            android:textSize="23sp"
+            android:layout_marginBottom="30dp"
+            android:text="关灯"/>
+        <Button
+            android:id="@+id/ir"
+            android:layout_width="100dp"
+            android:layout_height="80dp"
+            android:textSize="23sp"
+            android:layout_marginBottom="30dp"
+            android:text="IR"/>
+        <Button
+            android:id="@+id/rgb1"
+            android:layout_width="100dp"
+            android:layout_height="80dp"
+            android:textSize="23sp"
+            android:textColor="@color/green"
+            android:layout_marginBottom="30dp"
+            android:text="RGB"/>
+
     </LinearLayout>
 </RelativeLayout>
