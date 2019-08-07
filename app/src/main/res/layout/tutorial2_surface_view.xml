@@ -38,6 +38,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textSize="36sp"
+            android:visibility="gone"
             android:layout_marginBottom="10dp"
             android:text="结束"/>
 
@@ -61,16 +62,16 @@
             android:textColor="@color/green"
             android:hint="输入拍摄张数"
             android:inputType="number"
-            android:visibility="gone"
+            android:visibility="visible"
             android:textSize="28sp"/>
         <Button
-            android:id="@+id/stop"
+            android:id="@+id/stop_btn"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textSize="18sp"
             android:layout_marginBottom="10dp"
-            android:visibility="invisible"
-            android:text="停止"/>
+            android:visibility="visible"
+            android:text="打包图片"/>
         <TextView
             android:id="@+id/textv"
             android:layout_width="wrap_content"

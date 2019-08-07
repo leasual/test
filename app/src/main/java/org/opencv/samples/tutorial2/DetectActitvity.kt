@@ -10,18 +10,20 @@ import android.text.TextUtils
 import android.util.Log
 import android.view.WindowManager
 import android.widget.TextView
+import com.op.dm.CompressUtil
 import com.op.dm.Utils
 import com.ut.sdk2.R
 import kotlinx.android.synthetic.main.tutorial2_surface_view.*
+import kotlinx.coroutines.async
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
 import org.opencv.android.BaseLoaderCallback
 import org.opencv.android.CameraBridgeViewBase
 import org.opencv.android.LoaderCallbackInterface
 import org.opencv.android.OpenCVLoader
 import org.opencv.core.Mat
-import org.opencv.core.Size
 import org.opencv.imgproc.Imgproc
 import java.io.File
-import java.util.*
 
 /**
  * Created by chris on 1/4/19.
@@ -45,7 +47,8 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
     private var sdPlayer:MediaPlayer? = null
     private var detectFacePlayer:MediaPlayer? = null
     var page = "test"
-    var pathRoot = "/storage/sdcard1"
+    var pathRoot = "/baidu_map/imgs"
+    var  path = ""
     var arg1 = 1
     var arg2 = "-r"
     var external = false
@@ -64,15 +67,15 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
         if(true){
-//           pathRoot = "/sdcard"
-           pathRoot = "/baidu_map/" + "imgs"
+//           path = "/sdcard"
+//           path = "/baidu_map/" + "imgs"
 
-//            pathRoot += "/record_pic"
+//            path += "/record_pic"
 
             var file = File(pathRoot)
             if(!file.exists())
                 initDir(pathRoot)
-            pathRoot = pathRoot+ "/"
+            path = pathRoot+ "/"
 
 //            stop = false
 
@@ -94,30 +97,22 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
             if(TextUtils.isEmpty(page))
                 page = "test"
             if(!TextUtils.isEmpty( pic_count.text))
-                max = pic_count.text?.toString()?.toInt() ?: 5
+                max = pic_count.text?.toString()?.toInt() ?: 20
             addIndex(this)
             recorde = true
             textv.text = "录制中。。。"
             count = 0
-//            Thread{
-//                var time = System.currentTimeMillis()
-//               for (i in 0..10){
-//                   Thread.sleep(200)
-//                   Log.e("thread  is  sleeping ", "  iiuuu  ")
-//               }
-//                recorde = false
-//                runOnUiThread {
-//                    textv.text = "结束录制。。。"
-//                }
-//            }.start()
 
         }
 
-        end.setOnClickListener {
-            stop = true
-            runOnUiThread {
-                textv.text = "结束录制。。。"
-            }
+        stop_btn.setOnClickListener {
+           if(!comTask.isCompressing){
+               progressDialog = ProgressDialog(this)
+               progressDialog?.setTitle("加载中,请稍后")
+               progressDialog?.show()
+               comTask = ComTask()
+               comTask.execute(this@DetectActitvity)
+           }
         }
 
         sdPlayer = MediaPlayer.create(this,R.raw.sdcard)
@@ -159,62 +154,100 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
 
     }
 
-    var count = 0
-    var max = 5
+
+    internal class ComTask : AsyncTask<DetectActitvity,Int,DetectActitvity>(){
+        override fun doInBackground(vararg params: DetectActitvity): DetectActitvity {
+            isCompressing = true
+            var dstFile = File("/baidu_map/imgs.zip")
+            if (dstFile.exists())
+                dstFile.delete()
+            CompressUtil.compress("/sdcard/aa","/sdcard/aa.zip")
+            CompressUtil.compress("/baidu_map/imgs","/baidu_map/imgs.zip")
+            return params[0]
+        }
+        var  isCompressing = false
+        override fun onPostExecute(result: DetectActitvity) {
+            super.onPostExecute(result)
+            isCompressing = false
+            result.progressDialog?.dismiss()
+        }
+    }
+
+    private var comTask = ComTask()
+
+//     suspend fun compress():Boolean{
+//        var dstFile = File("/baidu_map/imgs.zip")
+//        if (dstFile.exists())
+//            dstFile.delete()
+//        CompressUtil.compress("/sdcard/aa","/sdcard/aa.zip")
+//
+////        CompressUtil.compress(pathRoot,"/baidu_map/imgs.zip")
+//        delay(2000)
+//        return true
+//    }
+//
+//    private fun compress2():asyc {
+//        val result = async { compress() }
+//        if (result.await()){
+//            progressDialog?.dismiss()
+//        }
+//    }
+
+    var count = 10000
+    var max = 20
     var last = 0L
+    override fun onCameraFrame(inputFrame: CameraBridgeViewBase.CvCameraViewFrame): Mat {
+        mRgba = inputFrame.rgba()
+        mGray = inputFrame.gray()
+        if( count < max){//&& now > 480
+            if(count == max-1)
+                runOnUiThread {
+                    textv.text = "结束录制。。。"
+                }
+            last = System.currentTimeMillis()
+            Imgproc.cvtColor(mRgba,rgb,Imgproc.COLOR_RGBA2BGR)
+//            Imgproc.cvtColor(mRgba,rgb,Imgproc.COLOR_RGBA2BGR)
+
+//            rgb = rgb?.submat(0,720,160,960+160)
+//            var size = Size(640.0,480.0)
+//            Imgproc.resize(rgb,rgb,size)
+            rgb?.nativeObjAddr?.let { FindFeatures(it,path+ page) }
+            count++
+        }
+
+
+        return mRgba!!
+    }
+
+    var stop :Boolean = true
+
 //    override fun onCameraFrame(inputFrame: CameraBridgeViewBase.CvCameraViewFrame): Mat {
 //        var now = System.currentTimeMillis() - last
 //
 //        mRgba = inputFrame.rgba()
 //        mGray = inputFrame.gray()
-//        if( count < max){//&& now > 480
-//            if(count == max-1)
+////        Imgproc.cvtColor(mRgba,rgb,Imgproc.COLOR_RGBA2RGB)
+//        Imgproc.cvtColor(mGray,rgb,Imgproc.COLOR_GRAY2BGR)
+//        if( !stop && now >40){//&& now > 480
+//            if(stop)
 //                runOnUiThread {
 //                    textv.text = "结束录制。。。"
 //                }
 //            last = System.currentTimeMillis()
-//            Imgproc.cvtColor(mGray,rgb,Imgproc.COLOR_GRAY2BGR)
-////            Imgproc.cvtColor(mRgba,rgb,Imgproc.COLOR_RGBA2BGR)
 //
-//            rgb = rgb?.submat(0,720,160,960+160)
-//            var size = Size(640.0,480.0)
-//            Imgproc.resize(rgb,rgb,size)
-//            rgb?.nativeObjAddr?.let { FindFeatures(it,pathRoot+ page) }
-//            count++
+//            Imgproc.cvtColor(mGray,rgb,Imgproc.COLOR_GRAY2BGR)
+//
+////            rgb = rgb?.submat(0,720,160,960+160)
+////            var size = Size(640.0,480.0)
+////            Imgproc.resize(rgb,rgb,size)
+//
+//
+//            rgb?.nativeObjAddr?.let { FindFeatures(it,path+ page) }
+//
 //        }
 //
-//        return mGray!!
+//        return rgb!!
 //    }
-
-    var stop :Boolean = true
-
-    override fun onCameraFrame(inputFrame: CameraBridgeViewBase.CvCameraViewFrame): Mat {
-        var now = System.currentTimeMillis() - last
-
-        mRgba = inputFrame.rgba()
-        mGray = inputFrame.gray()
-//        Imgproc.cvtColor(mRgba,rgb,Imgproc.COLOR_RGBA2RGB)
-        Imgproc.cvtColor(mGray,rgb,Imgproc.COLOR_GRAY2BGR)
-        if( !stop && now >40){//&& now > 480
-            if(stop)
-                runOnUiThread {
-                    textv.text = "结束录制。。。"
-                }
-            last = System.currentTimeMillis()
-
-            Imgproc.cvtColor(mGray,rgb,Imgproc.COLOR_GRAY2BGR)
-
-//            rgb = rgb?.submat(0,720,160,960+160)
-//            var size = Size(640.0,480.0)
-//            Imgproc.resize(rgb,rgb,size)
-
-
-            rgb?.nativeObjAddr?.let { FindFeatures(it,pathRoot+ page) }
-
-        }
-
-        return rgb!!
-    }
 
 
 
@@ -295,7 +328,7 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
     var recorde = false
 
     fun addIndex(context :Activity){
-        var path = pathRoot  + page
+        var path = path  + page
         initDir(path)
         Log.e(" file  directory ",path)
 
