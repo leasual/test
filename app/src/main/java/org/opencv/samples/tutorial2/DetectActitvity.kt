@@ -193,8 +193,8 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
 
         mRgba = inputFrame.rgba()
         mGray = inputFrame.gray()
-        Imgproc.cvtColor(mRgba,rgb,Imgproc.COLOR_RGBA2RGB)
-
+//        Imgproc.cvtColor(mRgba,rgb,Imgproc.COLOR_RGBA2RGB)
+        Imgproc.cvtColor(mGray,rgb,Imgproc.COLOR_GRAY2BGR)
         if( !stop && now >40){//&& now > 480
             if(stop)
                 runOnUiThread {
@@ -202,7 +202,7 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
                 }
             last = System.currentTimeMillis()
 
-//            Imgproc.cvtColor(mGray,rgb,Imgproc.COLOR_GRAY2BGR)
+            Imgproc.cvtColor(mGray,rgb,Imgproc.COLOR_GRAY2BGR)
 
 //            rgb = rgb?.submat(0,720,160,960+160)
 //            var size = Size(640.0,480.0)
