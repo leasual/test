@@ -10,6 +10,7 @@ import android.text.TextUtils
 import android.util.Log
 import android.view.WindowManager
 import android.widget.TextView
+import com.op.dm.CompressUtil
 import com.op.dm.Utils
 import com.ut.sdk2.R
 import kotlinx.android.synthetic.main.tutorial2_surface_view.*
@@ -125,6 +126,7 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
                 progressDialog = ProgressDialog(this)
                 progressDialog?.setTitle("加载中,请稍后")
                 progressDialog?.show()
+                progressDialog?.setCanceledOnTouchOutside(false)
                 comTask = ComTask()
                 comTask.execute(this@DetectActitvity)
             }
