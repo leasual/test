@@ -64,13 +64,13 @@
             android:visibility="gone"
             android:textSize="28sp"/>
         <Button
-            android:id="@+id/stop"
+            android:id="@+id/stop_btn"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textSize="18sp"
             android:layout_marginBottom="10dp"
-            android:visibility="invisible"
-            android:text="停止"/>
+            android:visibility="visible"
+            android:text="打包图片"/>
         <TextView
             android:id="@+id/textv"
             android:layout_width="wrap_content"

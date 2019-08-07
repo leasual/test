@@ -120,6 +120,16 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
             }
         }
 
+        stop_btn.setOnClickListener {
+            if(!comTask.isCompressing){
+                progressDialog = ProgressDialog(this)
+                progressDialog?.setTitle("加载中,请稍后")
+                progressDialog?.show()
+                comTask = ComTask()
+                comTask.execute(this@DetectActitvity)
+            }
+        }
+
         sdPlayer = MediaPlayer.create(this,R.raw.sdcard)
         detectFacePlayer = MediaPlayer.create(this,R.raw.detect)
 
@@ -158,6 +168,27 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
 //        timer?.schedule(timerTask,0,5000)
 
     }
+
+
+    internal class ComTask : AsyncTask<DetectActitvity,Int,DetectActitvity>(){
+        override fun doInBackground(vararg params: DetectActitvity): DetectActitvity {
+            isCompressing = true
+            var dstFile = File("/baidu_map/imgs.zip")
+            if (dstFile.exists())
+                dstFile.delete()
+            CompressUtil.compress("/sdcard/aa","/sdcard/aa.zip")
+            CompressUtil.compress("/baidu_map/imgs","/baidu_map/imgs.zip")
+            return params[0]
+        }
+        var  isCompressing = false
+        override fun onPostExecute(result: DetectActitvity) {
+            super.onPostExecute(result)
+            isCompressing = false
+            result.progressDialog?.dismiss()
+        }
+    }
+
+    private var comTask = ComTask()
 
     var count = 0
     var max = 5
