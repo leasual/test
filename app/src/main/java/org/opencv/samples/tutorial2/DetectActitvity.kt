@@ -35,23 +35,16 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
     private var mGray: Mat? = null
     private var progressDialog: ProgressDialog? = null
     //这个优先级会有变动，为了不修改jni里返回值顺序和ui的顺序，引入这个数组，之后只改这里就可以修改警告播报优先级-> 从names[3],names[2],names[1]..这个顺序遍历names数组
-    private val priority = arrayOf(3,2,0,1,4)
     private val names = arrayOf("分神", "疲劳", "吸烟", "打电话", "画面异常")
     private val lastTime = arrayOf(0L,0L,0L,0L,0L)
     private val audio = arrayOf(R.raw.fenshen, R.raw.pilao, R.raw.chouyan, R.raw.dadianhua, R.raw.huamianyichang)
     private var views: Array<TextView>? = null
-    private val strings = arrayOfNulls<String>(5)
     internal var totalDone = false
     internal var register = false
     private var players = arrayOfNulls<MediaPlayer>(5)//每秒有n次检测，即时响应，分多个实例
     private var sdPlayer:MediaPlayer? = null
     private var detectFacePlayer:MediaPlayer? = null
-    private var haveface = false
-    private var save = false
-    private var timer:Timer? = null
-    private var timerTask: TimerTask? = null
     var page = "test"
-
     var pathRoot = "/storage/sdcard1"
     var arg1 = 1
     var arg2 = "-r"
@@ -59,7 +52,6 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
     init {
         Log.i(TAG, "Instantiated new " + this.javaClass)
     }
-
 
 
     @SuppressLint("MissingPermission")
