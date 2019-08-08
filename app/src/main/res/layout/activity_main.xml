@@ -4,24 +4,25 @@
     android:id="@+id/activity_main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="com.untouch.androidjnionpencv.MainActivity2">
-
-    <org.opencv.android.JavaCameraView
-            android:layout_width="fill_parent"
-            android:layout_height="fill_parent"
-            android:id="@+id/main_surface" />
-
-
+    >
     <RelativeLayout
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"
-        android:gravity="bottom|center_horizontal">
+       >
         <Button
-            android:id="@+id/deal_btn"
-            android:layout_width="100dp"
-            android:layout_height="40dp"
-            android:layout_marginBottom="20dp"
-            android:text="处理"/>
+            android:id="@+id/b640"
+            android:layout_width="150dp"
+            android:layout_height="90dp"
+            android:layout_centerHorizontal="true"
+            android:text="640*480"/>
+        <Button
+            android:id="@+id/b720"
+            android:layout_width="150dp"
+            android:layout_height="90dp"
+            android:layout_below="@id/b640"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="200dp"
+            android:text="1280*720"/>
     </RelativeLayout>
 
 </RelativeLayout>

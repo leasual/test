@@ -28,13 +28,19 @@
         tools:ignore="GoogleAppIndexingWarning">
 
         <activity
-            android:name="org.opencv.samples.tutorial2.DetectActitvity"
+            android:name="org.opencv.samples.tutorial2.MainActivity"
             android:screenOrientation="landscape">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <activity
+            android:name="org.opencv.samples.tutorial2.DetectActitvity"
+            android:screenOrientation="landscape">
+        </activity>
+
         <!--<receiver android:name="org.opencv.samples.tutorial2.BootBroadcastReceiver"-->
             <!--android:enabled="true"-->
             <!--android:exported="true"-->

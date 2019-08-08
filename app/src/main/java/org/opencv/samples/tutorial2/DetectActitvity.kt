@@ -2,21 +2,19 @@ package org.opencv.samples.tutorial2
 
 import android.annotation.SuppressLint
 import android.app.Activity
-import android.app.AlertDialog
 import android.app.ProgressDialog
 import android.media.MediaPlayer
 import android.os.*
 import android.text.TextUtils
 import android.util.Log
+import android.view.View
 import android.view.WindowManager
 import android.widget.TextView
+import android.widget.Toast
 import com.op.dm.CompressUtil
 import com.op.dm.Utils
 import com.ut.sdk2.R
 import kotlinx.android.synthetic.main.tutorial2_surface_view.*
-import kotlinx.coroutines.async
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
 import org.opencv.android.BaseLoaderCallback
 import org.opencv.android.CameraBridgeViewBase
 import org.opencv.android.LoaderCallbackInterface
@@ -47,11 +45,18 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
     private var sdPlayer:MediaPlayer? = null
     private var detectFacePlayer:MediaPlayer? = null
     var page = "test"
-    var pathRoot = "/baidu_map/imgs"
+//    var pathRoot = "/baidu_map/imgs"
+    var pathRoot = "/sdcard/imgs"
+
     var  path = ""
     var arg1 = 1
     var arg2 = "-r"
     var external = false
+    var captureThread :Thread? = null
+
+    var CONTROL_NUM = true
+
+
     init {
         Log.i(TAG, "Instantiated new " + this.javaClass)
     }
@@ -61,36 +66,54 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
     public override fun onCreate(savedInstanceState: Bundle?) {
         Log.i(TAG, "called onCreate")
         super.onCreate(savedInstanceState)
-//        var mac = checks()
-//        Log.e("mac  dizhi   " , mac)
         count = 0
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-
-        if(true){
-//           path = "/sdcard"
-//           path = "/baidu_map/" + "imgs"
-
-//            path += "/record_pic"
-
-            var file = File(pathRoot)
-            if(!file.exists())
-                initDir(pathRoot)
-            path = pathRoot+ "/"
-
-//            stop = false
-
-        }
-
+        var file = File(pathRoot)
+        if(!file.exists())
+            initDir(pathRoot)
+        path = pathRoot+ "/"
         setContentView(R.layout.tutorial2_surface_view)
-//        views = arrayOf(dis, fat, smoke, call, abnm)
+        var px = intent.getIntExtra("px",640)
         with(tutorial2_activity_surface_view) {
             visibility = CameraBridgeViewBase.VISIBLE
             setCameraIndex(1)
-            setMaxFrameSize(1280, 960)
+            if(px == 720)
+                setMaxFrameSize(1280, 960)
+            else
+                setMaxFrameSize(640, 480)
             setCvCameraViewListener(this@DetectActitvity)
-//            setMaxFrameSize(640, 480)
         }
 
+        if(CONTROL_NUM){
+            pic_count.visibility = View.VISIBLE
+            end.visibility = View.GONE
+        }
+        else{
+            pic_count.visibility = View.GONE
+            end.visibility = View.VISIBLE
+        }
+
+        captureThread = Thread{
+            while (true){
+                if(!stop){
+                    if (CONTROL_NUM){
+                        if( count < max){//&& now > 480
+                            if(count == max-1){
+                                stop = true
+                                runOnUiThread {
+                                    textv.text = "结束录制。。。"
+                                }
+                            }
+                            rgb?.nativeObjAddr?.let { FindFeatures(it,path+ page) }
+                            count++
+                        }
+                    }else{
+                        rgb?.nativeObjAddr?.let { FindFeatures(it,path+ page) }
+                    }
+                }
+            }
+        }
+        captureThread?.start()
         start.setOnClickListener {
             stop = false
             page = file_name.text.toString()
@@ -99,16 +122,21 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
             if(!TextUtils.isEmpty( pic_count.text))
                 max = pic_count.text?.toString()?.toInt() ?: 20
             addIndex(this)
-            recorde = true
             textv.text = "录制中。。。"
             count = 0
-
         }
 
-        stop_btn.setOnClickListener {
+        end.setOnClickListener {
+            stop = true
+            textv.text = "结束录制。。。"
+        }
+
+        //压缩
+        compress_btn.setOnClickListener {
            if(!comTask.isCompressing){
                progressDialog = ProgressDialog(this)
                progressDialog?.setTitle("加载中,请稍后")
+               progressDialog?.setCanceledOnTouchOutside(false)
                progressDialog?.show()
                comTask = ComTask()
                comTask.execute(this@DetectActitvity)
@@ -119,39 +147,61 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
         detectFacePlayer = MediaPlayer.create(this,R.raw.detect)
 
 
+        cmdControl()
+
+        delete_btn.setOnClickListener { view ->
+            var filename = delete_name.text.toString()
+            if(!TextUtils.isEmpty(filename)){
+                var file = File(pathRoot + "/" + filename.trim())
+//                var file = File("/sdcard/imgs/" + filename.trim())
+                if(file.exists()){
+                    file.list().forEach {
+                        var tmp = File(file.absolutePath +"/"+ it)
+                        tmp.delete()
+                    }
+                    file.delete()
+                    Toast.makeText(this@DetectActitvity,"删除成功",Toast.LENGTH_LONG).show()
+                }else{
+                    Toast.makeText(this@DetectActitvity,"不存在这个文件夹",Toast.LENGTH_LONG).show()
+                }
+
+            }
+        }
+
+        back_btn.setOnClickListener {
+            finish()
+        }
+
+    }
+
+    private fun cmdControl() {
         on.setOnClickListener {
-            Utils.rumCmd(1,arg2)
+            Utils.rumCmd(1, arg2)
             arg1 = 1
             on.setTextColor(resources.getColor(R.color.green))
             off.setTextColor(resources.getColor(R.color.black))
         }
 
         off.setOnClickListener {
-            Utils.rumCmd(0,arg2)
+            Utils.rumCmd(0, arg2)
             off.setTextColor(resources.getColor(R.color.green))
             on.setTextColor(resources.getColor(R.color.black))
             arg1 = 0
         }
 
         rgb1.setOnClickListener {
-            Utils.rumCmd(arg1,"-r")
+            Utils.rumCmd(arg1, "-r")
             arg2 = "-r"
             rgb1.setTextColor(resources.getColor(R.color.green))
             ir.setTextColor(resources.getColor(R.color.black))
         }
 
         ir.setOnClickListener {
-            Utils.rumCmd(arg1,"-i")
+            Utils.rumCmd(arg1, "-i")
             arg2 = "-i"
             ir.setTextColor(resources.getColor(R.color.green))
             rgb1.setTextColor(resources.getColor(R.color.black))
         }
-
-
-
-//        timer = Timer()
-//        timer?.schedule(timerTask,0,5000)
-
     }
 
 
@@ -161,8 +211,8 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
             var dstFile = File("/baidu_map/imgs.zip")
             if (dstFile.exists())
                 dstFile.delete()
-            CompressUtil.compress("/sdcard/aa","/sdcard/aa.zip")
-            CompressUtil.compress("/baidu_map/imgs","/baidu_map/imgs.zip")
+//            CompressUtil.compress("/sdcard/imgs","/sdcard/imgs.zip")
+            CompressUtil.compress(params[0].pathRoot,params[0].pathRoot + ".zip")
             return params[0]
         }
         var  isCompressing = false
@@ -172,26 +222,9 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
             result.progressDialog?.dismiss()
         }
     }
-
     private var comTask = ComTask()
 
-//     suspend fun compress():Boolean{
-//        var dstFile = File("/baidu_map/imgs.zip")
-//        if (dstFile.exists())
-//            dstFile.delete()
-//        CompressUtil.compress("/sdcard/aa","/sdcard/aa.zip")
-//
-////        CompressUtil.compress(pathRoot,"/baidu_map/imgs.zip")
-//        delay(2000)
-//        return true
-//    }
-//
-//    private fun compress2():asyc {
-//        val result = async { compress() }
-//        if (result.await()){
-//            progressDialog?.dismiss()
-//        }
-//    }
+
 
     var count = 10000
     var max = 20
@@ -199,88 +232,14 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
     override fun onCameraFrame(inputFrame: CameraBridgeViewBase.CvCameraViewFrame): Mat {
         mRgba = inputFrame.rgba()
         mGray = inputFrame.gray()
-        if( count < max){//&& now > 480
-            if(count == max-1)
-                runOnUiThread {
-                    textv.text = "结束录制。。。"
-                }
-            last = System.currentTimeMillis()
-            Imgproc.cvtColor(mRgba,rgb,Imgproc.COLOR_RGBA2BGR)
-//            Imgproc.cvtColor(mRgba,rgb,Imgproc.COLOR_RGBA2BGR)
-
-//            rgb = rgb?.submat(0,720,160,960+160)
-//            var size = Size(640.0,480.0)
-//            Imgproc.resize(rgb,rgb,size)
-            rgb?.nativeObjAddr?.let { FindFeatures(it,path+ page) }
-            count++
-        }
-
-
+        Imgproc.cvtColor(mRgba,rgb,Imgproc.COLOR_RGBA2BGR)
         return mRgba!!
     }
 
     var stop :Boolean = true
 
-//    override fun onCameraFrame(inputFrame: CameraBridgeViewBase.CvCameraViewFrame): Mat {
-//        var now = System.currentTimeMillis() - last
-//
-//        mRgba = inputFrame.rgba()
-//        mGray = inputFrame.gray()
-////        Imgproc.cvtColor(mRgba,rgb,Imgproc.COLOR_RGBA2RGB)
-//        Imgproc.cvtColor(mGray,rgb,Imgproc.COLOR_GRAY2BGR)
-//        if( !stop && now >40){//&& now > 480
-//            if(stop)
-//                runOnUiThread {
-//                    textv.text = "结束录制。。。"
-//                }
-//            last = System.currentTimeMillis()
-//
-//            Imgproc.cvtColor(mGray,rgb,Imgproc.COLOR_GRAY2BGR)
-//
-////            rgb = rgb?.submat(0,720,160,960+160)
-////            var size = Size(640.0,480.0)
-////            Imgproc.resize(rgb,rgb,size)
-//
-//
-//            rgb?.nativeObjAddr?.let { FindFeatures(it,path+ page) }
-//
-//        }
-//
-//        return rgb!!
-//    }
-
-
-
-    private fun playWarnning(index: Int) {//每种提示音分开计算，4秒内不重复播放同一种
-        var time = System.currentTimeMillis()- lastTime[0]
-        if(time > 4000){
-            if(index == 100){
-                detectFacePlayer?.apply {
-                    if(register && !this.isPlaying){
-                        start()
-                    }
-                }
-            }else{
-                players[index]?.apply {
-                    if (!this.isPlaying){
-                        lastTime[0] = System.currentTimeMillis()
-                        start()
-                    }
-                }
-            }
-
-
-        }
-
-    }
-
-
-
-
-
     public override fun onPause() {
         super.onPause()
-//        tutorial2_activity_surface_view?.disableView()
     }
 
     public override fun onResume() {
@@ -296,18 +255,13 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
 
     public override fun onDestroy() {
         super.onDestroy()
-//        stop()
         tutorial2_activity_surface_view?.disableView()
-//        android.os.Process.killProcess(android.os.Process.myPid())
         players.forEach {
             it?.stop()
             it?.release()
         }
-//        sdPlayer?.stop()
-//        sdPlayer?.release()
-////        timer?.purge()
-//        timer?.cancel()
-        System.exit(0)
+
+//        System.exit(0)
     }
     override fun onCameraViewStarted(width: Int, height: Int) {
         mRgba = Mat()
@@ -324,8 +278,6 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
             rgb?.release()
     }
 
-    var recording = false
-    var recorde = false
 
     fun addIndex(context :Activity){
         var path = path  + page
@@ -350,51 +302,8 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
                     Log.e(TAG, "OpenCV loaded successfully")
                     System.loadLibrary("native-lib")
                     tutorial2_activity_surface_view?.enableView()
-//                    FindFeatures(0,0)
-//                    if (!totalDone) {
-//                        val context = mAppContext
-//                        AsyncTaskInitFile().execute(context as DetectActitvity)
-//                    }
                 }
-//                else -> {
-//                    super.onManagerConnected(status)
-//                }
             }
-        }
-    }
-
-
-    private var alertDialog: AlertDialog? = null
-
-    internal class AsyncTaskInitTotalFlow : AsyncTask<DetectActitvity, Int, DetectActitvity>() {
-        override fun onPostExecute(integer: DetectActitvity) {
-            super.onPostExecute(integer)
-//            integer.totalDone = true
-            integer.views?.forEachIndexed { index, textView ->
-                textView.text = integer.names[index] + " : " + "正常"
-            }
-            integer.progressDialog?.dismiss()
-//            integer.alertDialog?.show()
-            integer.register = true
-            integer.totalDone = true
-            Log.e(TAG, "AsyncTaskInitTotalFlow  successfully")
-        }
-
-        override fun doInBackground(vararg contexts: DetectActitvity): DetectActitvity {
-            for (index in 0..4){
-                contexts[0].players[index] = MediaPlayer.create(contexts[0],contexts[0].audio[index])
-            }
-//            contexts[0].FindFeatures(0, "")
-            var handler = Handler(Looper.getMainLooper());
-            handler.postDelayed({
-                contexts[0].playWarnning(100)
-            },10000)
-
-//            if(contexts[0].CHECK(contexts[0].checks()))
-//                contexts[0].FindFeatures(0, 0)
-//            else
-//                contexts[0].finish()
-            return contexts[0]
         }
     }
 
@@ -407,4 +316,22 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
     companion object {
         private const val TAG = "OCVSample::Activity"
     }
+
+    //     suspend fun compress():Boolean{
+//        var dstFile = File("/baidu_map/imgs.zip")
+//        if (dstFile.exists())
+//            dstFile.delete()
+//        CompressUtil.compress("/sdcard/aa","/sdcard/aa.zip")
+//
+////        CompressUtil.compress(pathRoot,"/baidu_map/imgs.zip")
+//        delay(2000)
+//        return true
+//    }
+//
+//    private fun compress2():asyc {
+//        val result = async { compress() }
+//        if (result.await()){
+//            progressDialog?.dismiss()
+//        }
+//    }
 }

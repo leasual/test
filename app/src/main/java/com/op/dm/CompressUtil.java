@@ -21,8 +21,6 @@ public class CompressUtil {
         if (!srcFile.exists()) {
             return;
         }
-
-
         FileOutputStream out = null;
         ZipOutputStream zipOut = null;
         try {
@@ -37,7 +35,6 @@ public class CompressUtil {
                 zipOut.close();
                 out = null;
             }
-
             if(null != out){
                 out.close();
             }
@@ -76,7 +73,6 @@ public class CompressUtil {
             while ((count = bis.read(data, 0, BUFFER)) != -1) {
                 zipOut.write(data, 0, count);
             }
-
         }finally {
             if(null != bis){
                 bis.close();

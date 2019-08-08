@@ -5,11 +5,19 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
+
     <org.opencv.android.JavaCameraView
         android:id="@+id/tutorial2_activity_surface_view"
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"
         opencv:camera_id="any" />
+    <Button
+        android:id="@+id/back_btn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="24sp"
+        android:text="返回"/>
+
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -64,14 +72,7 @@
             android:inputType="number"
             android:visibility="visible"
             android:textSize="28sp"/>
-        <Button
-            android:id="@+id/stop_btn"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textSize="18sp"
-            android:layout_marginBottom="10dp"
-            android:visibility="visible"
-            android:text="打包图片"/>
+
         <TextView
             android:id="@+id/textv"
             android:layout_width="wrap_content"
@@ -86,7 +87,42 @@
         android:layout_width="wrap_content"
         android:orientation="vertical"
         android:layout_marginRight="20dp"
-        android:layout_marginTop="150dp"
+        android:layout_marginTop="15dp"
+        android:visibility="visible"
+        android:focusable="true"
+        android:focusableInTouchMode="true"
+        android:layout_height="wrap_content">
+        <Button
+            android:id="@+id/compress_btn"
+            android:layout_width="wrap_content"
+            android:layout_height="80dp"
+            android:textSize="24sp"
+            android:visibility="visible"
+            android:text="打包图片"/>
+        <EditText
+            android:id="@+id/delete_name"
+            android:layout_marginTop="60dp"
+            android:layout_height="80dp"
+            android:layout_width="wrap_content"
+            android:textColorHint="#888888"
+            android:minWidth="100dp"
+            android:textColor="@color/green"
+            android:hint="输入要删除的文件夹"
+            android:visibility="visible"
+            android:textSize="24sp"/>
+        <Button
+            android:id="@+id/delete_btn"
+            android:layout_width="wrap_content"
+            android:layout_height="80dp"
+            android:textSize="24sp"
+            android:layout_marginTop="60dp"
+            android:visibility="visible"
+            android:text="删除文件夹"/>
+
+    </LinearLayout>
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:visibility="gone"
         android:layout_height="wrap_content">
         <Button
             android:id="@+id/on"
@@ -94,6 +130,7 @@
             android:layout_height="80dp"
             android:textSize="23sp"
             android:textColor="@color/green"
+            android:visibility="gone"
             android:layout_marginBottom="30dp"
             android:text="开灯"/>
         <Button
@@ -101,6 +138,7 @@
             android:layout_width="100dp"
             android:layout_height="80dp"
             android:textSize="23sp"
+            android:visibility="gone"
             android:layout_marginBottom="30dp"
             android:text="关灯"/>
         <Button
@@ -108,6 +146,7 @@
             android:layout_width="100dp"
             android:layout_height="80dp"
             android:textSize="23sp"
+            android:visibility="gone"
             android:layout_marginBottom="30dp"
             android:text="IR"/>
         <Button
@@ -115,9 +154,9 @@
             android:layout_width="100dp"
             android:layout_height="80dp"
             android:textSize="23sp"
+            android:visibility="gone"
             android:textColor="@color/green"
             android:layout_marginBottom="30dp"
             android:text="RGB"/>
-
     </LinearLayout>
 </RelativeLayout>
