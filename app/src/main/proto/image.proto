@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+option java_package = "com.op.dm";
+option java_outer_classname = "ImageDataProto";
+
+message ImageData {
+    string diretory = 1;
+    string fileName = 2;
+    bytes data = 3;
+    bool deleted = 4;
+}

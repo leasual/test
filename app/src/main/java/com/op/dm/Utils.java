@@ -1,27 +1,39 @@
 package com.op.dm;
 
+import android.Manifest;
+import android.app.Activity;
 import android.content.Context;
 import android.content.res.AssetManager;
 import android.os.StatFs;
 import android.os.storage.StorageManager;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
+import android.text.TextUtils;
 import android.util.Log;
+
+import org.opencv.samples.tutorial2.DetectActitvity;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.RandomAccessFile;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -33,72 +45,23 @@ import static android.content.ContentValues.TAG;
 
 public class Utils {
 
+    public static void writeFlag(String text){
+        String root = "/data/local/tmp";
+//        String root = "/sdcard";
+        File f = new File(root);
+        if(!f.exists())
+            f.mkdirs();
+        String path = root + "/LIGHT_SWITCH.txt";
 
-    /**
-     * 将存放在sourceFilePath目录下的源文件，打包成fileName名称的zip文件，并存放到zipFilePath路径下
-     *
-     * @param sourceFilePath :待压缩的文件路径
-     * @param zipFilePath    :压缩后存放路径
-     * @param fileName       :压缩后文件的名称
-     * @return
-     */
-    public static boolean fileToZip(String sourceFilePath, String zipFilePath, String fileName) {
-        boolean flag = false;
-        File sourceFile = new File(sourceFilePath);
-        FileInputStream fis = null;
-        BufferedInputStream bis = null;
-        FileOutputStream fos = null;
-        ZipOutputStream zos = null;
-
-        if (sourceFile.exists() == false) {
-            System.out.println("待压缩的文件目录：" + sourceFilePath + "不存在.");
-            sourceFile.mkdir(); // 新建目录
-        }
         try {
-            File zipFile = new File(zipFilePath + "/" + fileName + ".zip");
-            if (zipFile.exists()) {
-                System.out.println(zipFilePath + "目录下存在名字为:" + fileName + ".zip" + "打包文件.");
-            } else {
-                File[] sourceFiles = sourceFile.listFiles();
-                if (null == sourceFiles || sourceFiles.length < 1) {
-                    System.out.println("待压缩的文件目录：" + sourceFilePath + "里面不存在文件，无需压缩.");
-                } else {
-                    fos = new FileOutputStream(zipFile);
-                    zos = new ZipOutputStream(new BufferedOutputStream(fos));
-                    byte[] bufs = new byte[1024 * 10];
-                    for (int i = 0; i < sourceFiles.length; i++) {
-                        //创建ZIP实体，并添加进压缩包
-                        ZipEntry zipEntry = new ZipEntry(sourceFiles[i].getName());
-                        zos.putNextEntry(zipEntry);
-                        //读取待压缩的文件并写进压缩包里
-                        fis = new FileInputStream(sourceFiles[i]);
-                        bis = new BufferedInputStream(fis, 1024 * 10);
-                        int read = 0;
-                        while ((read = bis.read(bufs, 0, 1024 * 10)) != -1) {
-                            zos.write(bufs, 0, read);
-                        }
-                    }
-                    flag = true;
-                }
-            }
-        } catch (FileNotFoundException e) {
+            BufferedWriter writer = new BufferedWriter(new FileWriter(path));
+            writer.write(text);
+            writer.close();
+        } catch (Exception e) {
             e.printStackTrace();
-            throw new RuntimeException(e);
-        } catch (IOException e) {
-            e.printStackTrace();
-            throw new RuntimeException(e);
-        } finally {
-            //关闭流
-            try {
-                if (null != bis) bis.close();
-                if (null != zos) zos.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-                throw new RuntimeException(e);
-            }
         }
-        return flag;
     }
+
 
 
     public static class Volume {
@@ -225,6 +188,11 @@ public class Utils {
             e.printStackTrace();
         }
         return packageName.trim();
+    }
+
+    public void  a(Activity context){
+        ActivityCompat.requestPermissions(context,
+                new String[]{Manifest.permission.READ_CONTACTS}, 1);
     }
 
     public static void addModeles(Context context) {
@@ -379,6 +347,21 @@ public class Utils {
 
     }
 
+    public static String time(){
+        long time=System.currentTimeMillis();
+        SimpleDateFormat format=new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        Date d1 = new Date(time);
+        return format.format(d1);
+    }
+
+    public static String time2(){
+        long time=System.currentTimeMillis();
+        SimpleDateFormat format=new SimpleDateFormat("MM-dd-HH:mm:ss");
+        Date d1 = new Date(time);
+        Log.e("时间戳 ：" , format.format(d1));
+        return format.format(d1);
+    }
+
 
     public static void copyAssets(Context context) {
         AssetManager assetManager = context.getAssets();
@@ -392,6 +375,11 @@ public class Utils {
             File outFile = new File(context.getExternalFilesDir(null), filename);
             fileOrDir(context, outFile, assetManager, filename);
         }
+    }
+
+    private static void randomfile(){
+        RandomAccessFile f ;
+        
     }
 
     private static void fileOrDir(Context context, File outFile, AssetManager assetManager, String fileName) {

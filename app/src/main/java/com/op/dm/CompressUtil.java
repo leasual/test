@@ -13,7 +13,7 @@ import java.util.zip.ZipOutputStream;
 
 public class CompressUtil {
 
-    static final int BUFFER = 8192;
+    private static final int BUFFER = 8192;
 
     public static void compress(String srcPath , String dstPath) throws IOException{
         File srcFile = new File(srcPath);

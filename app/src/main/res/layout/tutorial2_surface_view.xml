@@ -28,7 +28,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginLeft="30dp"
-        android:layout_marginTop="30dp"
+        android:layout_marginTop="90dp"
         android:orientation="vertical"
         android:focusable="true"
         android:focusableInTouchMode="true"
@@ -87,7 +87,7 @@
         android:layout_width="wrap_content"
         android:orientation="vertical"
         android:layout_marginRight="20dp"
-        android:layout_marginTop="15dp"
+        android:layout_marginTop="45dp"
         android:visibility="visible"
         android:focusable="true"
         android:focusableInTouchMode="true"
@@ -97,8 +97,8 @@
             android:layout_width="wrap_content"
             android:layout_height="80dp"
             android:textSize="24sp"
-            android:visibility="visible"
-            android:text="打包图片"/>
+            android:visibility="gone"
+            android:text="解压图片"/>
         <EditText
             android:id="@+id/delete_name"
             android:layout_marginTop="60dp"

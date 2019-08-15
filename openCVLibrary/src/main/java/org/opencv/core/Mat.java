@@ -1,5 +1,7 @@
 package org.opencv.core;
 
+import org.opencv.imgcodecs.Imgcodecs;
+
 import java.nio.ByteBuffer;
 
 // C++: class Mat
@@ -52,6 +54,18 @@ public class Mat {
         nativeObj = n_Mat(rows, cols, type, data);
 
         return;
+    }
+
+    public byte[] toByte(String format){
+        MatOfByte matOfByte = new MatOfByte();
+        Imgcodecs.imencode(format,this,matOfByte);
+        return matOfByte.toArray();
+    }
+
+    public byte[] toByte(){
+        MatOfByte matOfByte = new MatOfByte();
+        Imgcodecs.imencode(".jpg",this,matOfByte);
+        return matOfByte.toArray();
     }
 
     //

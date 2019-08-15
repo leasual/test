@@ -22,6 +22,9 @@ class MainActivity :Activity() {
             intent.putExtra("px",720)
             startActivity(intent)
         }
+        back.setOnClickListener {
+            finish()
+        }
     }
 
 }

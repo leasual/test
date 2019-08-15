@@ -79,8 +79,8 @@ Java_org_opencv_samples_tutorial2_DetectActitvity_FindFeatures(JNIEnv *jniEnv, j
     char str[80];
     strftime(str, 1000, "%Y_%m_%d_%H_%M_%S", &p);
     string path =js2string(jniEnv,dir) + "/" + str + "_" + to_string(milli) + ".jpg";
-    cv::imwrite(path,*(Mat*)addrGray);
-    LOGE("jni parh %s",path.c_str());
+//    cv::imwrite(path,*(Mat*)addrGray);
+//    LOGE("jni parh %s",path.c_str());
 
 }
 
