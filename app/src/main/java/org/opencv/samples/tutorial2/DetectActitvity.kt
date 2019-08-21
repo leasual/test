@@ -4,19 +4,25 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.ProgressDialog
+import android.content.ContentValues.TAG
+import android.content.Context
 import android.content.pm.PackageManager
+import android.graphics.Rect
 import android.media.MediaPlayer
 import android.os.Bundle
 import android.support.v4.app.ActivityCompat
 import android.support.v4.content.ContextCompat
 import android.text.TextUtils
 import android.util.Log
+import android.view.KeyEvent
 import android.view.View
 import android.view.WindowManager
+import android.view.inputmethod.InputMethodManager
 import android.widget.Toast
 import com.google.protobuf.ByteString
 import com.op.dm.ImageDataProto
 import com.op.dm.Utils
+import com.tencent.bugly.Bugly.init
 import com.ut.sdk2.R
 import kotlinx.android.synthetic.main.tutorial2_surface_view.*
 import org.opencv.android.BaseLoaderCallback
@@ -46,8 +52,11 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
     private var sdPlayer:MediaPlayer? = null
     private var detectFacePlayer:MediaPlayer? = null
     var page = "test"
-    var pathRoot = "/baidu_map/imgs"
-//    var pathRoot = "/sdcard/imgs"
+//    var interalPath = "/sdcard/imgs"
+    val interalPath = "/baidu_map/imgs"
+    val usbPath ="/storage/usb0/imgs"
+    //    var pathRoot = "/baidu_map/imgs"
+    var pathRoot = interalPath
 
     var matQueue = LinkedBlockingQueue<Mat>(30)
 
@@ -76,7 +85,11 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         window.addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
         setContentView(R.layout.tutorial2_surface_view)
-
+        var check = intent.getIntExtra("store",R.id.internal)
+        if(check == R.id.usb){
+            pathRoot = usbPath
+            Log.e("is use ", " true --------")
+        }
         var permissionCheck = ContextCompat.checkSelfPermission(this,
         Manifest.permission.CAMERA)
         if(permissionCheck == PackageManager.PERMISSION_GRANTED){
@@ -87,6 +100,54 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
                     arrayOf(Manifest.permission.CAMERA), 100)
         }
 
+        start.postDelayed({
+//            var rect = Rect()
+            val arry = IntArray(2)
+
+            start.getLocationOnScreen(arry)
+            Log.e(" start", "start "+arry[0] + " "+ arry[1])
+
+            file_name.getLocationOnScreen(arry)
+            Log.e(" file_name", "start "+arry[0] + " "+ arry[1])
+
+            pic_count.getLocationOnScreen(arry)
+            Log.e(" pic_count", "start "+arry[0] + " "+ arry[1])
+
+            delete_name.getLocationOnScreen(arry)
+            Log.e(" delete_name", "start "+arry[0] + " "+ arry[1])
+
+            delete_btn.getLocationOnScreen(arry)
+            Log.e(" delete_btn", "start "+arry[0] + " "+ arry[1])
+
+            clear_name.getLocationOnScreen(arry)
+            Log.e(" clear_name", "start "+arry[0] + " "+ arry[1])
+
+            clear_count.getLocationOnScreen(arry)
+            Log.e(" clear_count", "start "+arry[0] + " "+ arry[1])
+
+        },1000)
+
+        file_name.setOnKeyListener { v, keyCode, event ->
+            if(keyCode == KeyEvent.KEYCODE_CLEAR){
+                file_name.setText("")
+                Log.e("clear "," is clicked! ")
+            }
+            false
+        }
+        pic_count.setOnKeyListener { v, keyCode, event ->
+            if(keyCode == KeyEvent.KEYCODE_CLEAR){
+                pic_count.setText("")
+                Log.e("clear "," is clicked! ")
+            }
+            false
+        }
+
+        start.setOnClickListener {
+            val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager //得到InputMethodManager的实例
+            if (imm.isActive) {//如果开启
+                imm.toggleSoftInput(InputMethodManager.SHOW_IMPLICIT, InputMethodManager.HIDE_NOT_ALWAYS)//关闭软键盘，开启方法相同，这个方法是切换开启与关闭状态的
+            }
+        }
 
     }
 
@@ -101,12 +162,11 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
 
     }
 
-//    fun a(context: Activity) {
-//        ActivityCompat.requestPermissions(context,
-//                arrayOf(Manifest.permission.READ_CONTACTS), 1)
-//    }
-    var px = 640;
-    fun init(){
+    var px = 640
+    private fun init(){
+        Thread{
+            Utils.addModeles(this)
+        }.start()
         var file = File(pathRoot)
         if(!file.exists())
             initDir(pathRoot)
@@ -116,10 +176,6 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
             visibility = CameraBridgeViewBase.VISIBLE
             setCameraIndex( 1)
             setMaxFrameSize(1280, 960)
-//            if(px == 720)
-//                setMaxFrameSize(1280, 960)
-//            else
-//                setMaxFrameSize(640, 480)
             setCvCameraViewListener(this@DetectActitvity)
         }
 
@@ -152,6 +208,10 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
             textv.text = "录制中。。。"
             count = 0
             stop = false
+            val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager //得到InputMethodManager的实例
+            if (imm.isActive) {//如果开启
+                imm.toggleSoftInput(InputMethodManager.SHOW_IMPLICIT, InputMethodManager.HIDE_NOT_ALWAYS)//关闭软键盘，开启方法相同，这个方法是切换开启与关闭状态的
+            }
         }
 
         end.setOnClickListener {
@@ -160,22 +220,9 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
             textv.postDelayed({matQueue.clear()},200)
         }
 
-        //压缩
-//        compress_btn.setOnClickListener {
-//           if(!comTask.isCompressing){
-//               progressDialog = ProgressDialog(this)
-//               progressDialog?.setTitle("加载中,请稍后")
-//               progressDialog?.setCanceledOnTouchOutside(false)
-//               progressDialog?.show()
-//               comTask = ComTask()
-//               comTask.execute(this@DetectActitvity)
-//           }
-//        }
 
         sdPlayer = MediaPlayer.create(this,R.raw.sdcard)
         detectFacePlayer = MediaPlayer.create(this,R.raw.detect)
-
-
 
         cmdControl()
 
@@ -199,7 +246,24 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
             finish()
         }
 
+        file_name.setOnKeyListener { v, keyCode, event ->
+            if(keyCode == KeyEvent.KEYCODE_CLEAR){
+                file_name.setText("")
+                Log.e("clear "," is clicked! ")
+            }
+            false
+        }
+        pic_count.setOnKeyListener { v, keyCode, event ->
+            if(keyCode == KeyEvent.KEYCODE_CLEAR){
+                pic_count.setText("")
+                Log.e("clear "," is clicked! ")
+            }
+            false
+        }
+
         Utils.writeFlag(arg2 + arg1)
+
+
     }
 
     private fun recordFile() {
@@ -282,6 +346,7 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
         imgData = builder.build()
         val f = File(path + page + ".bin")
         val tagFile = File(path + page + ".txt")
+        Log.e("saveImage path:",path + page + ".bin")
         if (f.exists()) {
             val o = FileOutputStream(f, true)
             o.write(imgData?.toByteArray())
@@ -298,10 +363,7 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
             timeout.close()
         }
         return true
-//        var img = File(path + page + "/" + times + "img.jpg")
-//        var io = FileOutputStream(img)
-//        io.write(rgb?.toByte())
-//        io.close()
+
     }
 
     private fun cmdControl() {
@@ -334,84 +396,6 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
         }
     }
 
-
-
-
-//    internal class ComTask : AsyncTask<DetectActitvity,Int,DetectActitvity>(){
-//        override fun doInBackground(vararg params: DetectActitvity): DetectActitvity {
-//            isCompressing = true
-////            var dstFile = File("/baidu_map/imgs.zip")
-////            if (dstFile.exists())
-////                dstFile.delete()
-//////            CompressUtil.compress("/sdcard/imgs","/sdcard/imgs.zip")
-////            CompressUtil.compress(params[0].pathRoot,params[0].pathRoot + ".zip")
-//        var file = File("/sdcard/imgs")
-//            if (file.exists()){
-//                file.listFiles().forEach {
-//                    if(it.isFile && it.name.contains(".txt")){
-//                        var filebin :File? = null
-//                        var filetxt :File? = null
-//                        filetxt = it
-//
-//                        var path = it.absolutePath
-//                        var paths = path.split(".")
-//                        filebin = File(paths[0]+ ".bin")
-//
-//                        filetxt?.let { file1 ->
-//                            var input = FileReader(file1)
-//                            var picIndex = input.readText()
-//
-//                            var segment = picIndex?.split("|")
-//                            var inputStream = FileInputStream(filebin)
-//
-//                            input.close()
-//                            segment?.forEach { segments->
-//                                if(!TextUtils.isEmpty(segments)){
-//                                    var size = segments.toInt()
-//                                    filebin?.let {fileb ->
-//                                        var bytedate = ByteArray(size)
-//                                        val count = inputStream.read(bytedate, 0, size)
-//                                        Log.e("parse data :","name :" + fileb.absolutePath
-//                                                +" reade size :" + count  + " serial size " + segments)
-//                                        var data = ImageDataProto.ImageData.parseFrom(bytedate)
-//                                        var fileDir = File("/sdcard/imgs/"+data.diretory)
-//                                        if(!fileDir.exists())
-//                                            fileDir.mkdir()
-//                                        var file = File("/sdcard/imgs/"+data.diretory+ "/" + data.fileName + "_decode.jpg")
-//                                        val out = FileOutputStream(file)
-//                                        out.write(data.data.toByteArray())
-//                                        out.close()
-//                                    }
-//                                }
-//                            }
-//                            //93776|99407|95110|96013|96034|
-//                            inputStream.close()
-//
-//                        }
-//                    }
-//
-//
-//
-//                }
-//
-//
-//
-//            }
-//
-//
-//            return params[0]
-//        }
-//        var  isCompressing = false
-//        override fun onPostExecute(result: DetectActitvity) {
-//            super.onPostExecute(result)
-//            isCompressing = false
-//            result.progressDialog?.dismiss()
-//        }
-//    }
-//    private var comTask = ComTask()
-
-
-
     var count = 10000
     var max = 20
     var last = 0L
@@ -434,29 +418,6 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
         return mRgba!!
     }
 
-//        override fun onCameraFrame(inputFrame: CameraBridgeViewBase.CvCameraViewFrame): Mat {
-//        var now = System.currentTimeMillis() - last
-//
-//        mRgba = inputFrame.rgba()
-//        mGray = inputFrame.gray()
-//        if( count < max){//&& now > 480
-//            if(count == max-1)
-//                runOnUiThread {
-//                    textv.text = "结束录制。。。"
-//                }
-//            last = System.currentTimeMillis()
-//            Imgproc.cvtColor(mGray,rgb,Imgproc.COLOR_GRAY2BGR)
-////            Imgproc.cvtColor(mRgba,rgb,Imgproc.COLOR_RGBA2BGR)
-//
-//            rgb = rgb?.submat(0,720,160,960+160)
-//            var size = Size(640.0,480.0)
-//            Imgproc.resize(rgb,rgb,size)
-//            rgb?.nativeObjAddr?.let { FindFeatures(it,pathRoot+ page) }
-//            count++
-//        }
-//
-//        return mGray!!
-//    }
 
     var stop :Boolean = true
 
@@ -532,21 +493,5 @@ class DetectActitvity : Activity(), CameraBridgeViewBase.CvCameraViewListener2 {
         private const val TAG = "OCVSample::Activity"
     }
 
-    //     suspend fun compress():Boolean{
-//        var dstFile = File("/baidu_map/imgs.zip")
-//        if (dstFile.exists())
-//            dstFile.delete()
-//        CompressUtil.compress("/sdcard/aa","/sdcard/aa.zip")
-//
-////        CompressUtil.compress(pathRoot,"/baidu_map/imgs.zip")
-//        delay(2000)
-//        return true
-//    }
-//
-//    private fun compress2():asyc {
-//        val result = async { compress() }
-//        if (result.await()){
-//            progressDialog?.dismiss()
-//        }
-//    }
+
 }

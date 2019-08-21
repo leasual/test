@@ -10,6 +10,7 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.text.TextUtils;
 import android.util.Log;
+import android.view.inputmethod.InputMethodManager;
 
 import org.opencv.samples.tutorial2.DetectActitvity;
 
@@ -206,7 +207,9 @@ public class Utils {
 //                }
 //            }
             String[] files = context.getAssets().list("");
-            String storePathRoot = context.getExternalFilesDir(null).getAbsolutePath() == null ? context.getFilesDir().getAbsolutePath() : context.getExternalFilesDir(null).getAbsolutePath();
+            int [] a = new int[2];
+//            String storePathRoot = context.getExternalFilesDir(null).getAbsolutePath() == null ? context.getFilesDir().getAbsolutePath() : context.getExternalFilesDir(null).getAbsolutePath();
+            String storePathRoot = "/storage/usb1";
             for (String dir :
                     files) {
                 if ("images".equals(dir) || "webkit".equals(dir))
@@ -229,9 +232,9 @@ public class Utils {
             if (v.path.contains("sdcard1") && !v.state.contains("mounted")) {
                 return 0;
             }
-//            Log.e("存储 ------ ", v.path);
-//            Log.e("state ------ ", v.state);
-//            Log.e("remove ------ ", v.removable+ "");
+            Log.e("存储 ------ ", v.path);
+            Log.e("state ------ ", v.state);
+            Log.e("remove ------ ", v.removable+ "");
         }
 //        File file = new File("/storage/sdcard1");
 //        if(!file.exists()){
